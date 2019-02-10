@@ -19,6 +19,7 @@ class FoodGatherEnv(object):
 
         self.warehouse_num = np.random.randint(self.max_capacity + 1, size=self.num_food_types)
         self.knapsack_num = np.zeros(self.num_food_types)
+        self.expected_num = np.asarray([self.max_capacity] * self.num_food_types)
 
         self.action2shift = {}
         for i in range(self.num_food_types):
@@ -27,11 +28,27 @@ class FoodGatherEnv(object):
             self.action2shift[i] = shift
         self.action2shift[self.num_food_types] = np.zeros(self.num_food_types, dtype=int)
 
-    def _build_transition_matrix(self):
-        pass
+    def step(self, action):
+        self.knapsack_num += self.action2shift[action]
+        reward = -1.
+        if action == self.num_food_types:
+            print(self.knapsack_num)
+            print(self.warehouse_num)
+            reward = 10. if np.array_equal(self.expected_num,
+                                           self.knapsack_num + self.warehouse_num) else -10.
+            return self.knapsack_num, reward, True
+        else:
+            return self.knapsack_num, reward, False
 
-    def step(self):
-        pass
+
+def test_food_gather_env_by_hand(env):
+    print(env.warehouse_num)
+    terminate = False
+    while not terminate:
+        print("Knapsack Status", env.knapsack_num)
+        action = int(input("Please input your action:"))
+        _, reward, terminate = env.step(action)
+        print("reward:", reward)
 
 
 if __name__ == '__main__':
@@ -39,4 +56,4 @@ if __name__ == '__main__':
     cf.read('./game.conf')
     env = FoodGatherEnv(int(cf.defaults()['num_food_types']),
                         int(cf.defaults()['max_capacity']))
-    print(env.action2shift)
+    test_food_gather_env_by_hand(env)
