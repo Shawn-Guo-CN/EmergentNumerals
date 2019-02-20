@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-# @Time    : 2019/2/20 12:54
+# @Time    : 2019/2/20 15:19
 # @Author  : Shawn
-# @File    : train_AC.py
+# @File    : train_AC_perfect_info.py
 # @Classes :
 import configparser
 import torch.optim as optim
@@ -16,17 +16,20 @@ lr = 1e-6
 test_interval = 20
 
 
-def convert_state2onehot(state, m):
-    state_one_hot = np.zeros(45)
+def convert_state2onehot(state):
+    state_min = -1 * np.ones(3, dtype=int)
+    state_max = 6 * np.ones(3, dtype=int)
+    state = np.clip(state, state_min, state_max)
+    state_idx = state + np.ones(3, dtype=int)
+    state_one_hot = np.zeros(24)
     for i in range(3):
-        state_one_hot[m[i] + 5 * i] = 1.
-        state_one_hot[state[i] + 10 * i + 14] = 1.
+        state_one_hot[state_idx[i] + 8 * i] = 1.
     state_one_hot = torch.Tensor(state_one_hot).to(device).unsqueeze(0)
     return state_one_hot
 
 
 def train_ActorCritic_perfect_message(env):
-    model = ActorCritic(45, env.num_actions)
+    model = ActorCritic(24, env.num_actions)
 
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
@@ -35,17 +38,25 @@ def train_ActorCritic_perfect_message(env):
 
     for e in range(6000):
         state = env.reset()
-        m = env.warehouse_num
+        print('reset game:', env.warehouse_num, env.knapsack_num)
+        expected = env.expected_num - env.warehouse_num
+        state = expected - state
+
 
         terminate = False
         running_loss = 0.
         running_steps = 0.
         # create an episode
         while not terminate:
-            state_onehot = convert_state2onehot(state, m)
-            action = model.get_action(state_onehot)
+            print(state, end=' | ')
+            state_onehot = convert_state2onehot(state)
+            print(state_onehot)
+            action = model.get_action(state_onehot, epsilon=0.1)
+            print(action)
             next_state, reward, terminate = env.step(action)
-            next_state_onehot = convert_state2onehot(next_state, m)
+            print(reward)
+            next_state = expected - next_state
+            next_state_onehot = convert_state2onehot(next_state)
 
             mask = 0 if terminate else 1
 
@@ -66,12 +77,14 @@ def train_ActorCritic_perfect_message(env):
             for i in range(100):
                 terminate = False
                 state = env.reset()
-                m = env.warehouse_num
+                expected = env.expected_num - env.warehouse_num
+                state = expected - state
                 score = 0
                 while not terminate:
-                    state_onehot = convert_state2onehot(state, m)
-                    action = model.get_action(state_onehot)
+                    state_onehot = convert_state2onehot(state)
+                    action = model.get_action(state_onehot, epsilon=0.01)
                     next_state, reward, terminate = env.step(action)
+                    next_state = expected - next_state
                     score += reward
                     state = next_state
                 scores.append(score)

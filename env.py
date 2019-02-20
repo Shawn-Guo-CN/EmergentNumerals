@@ -21,7 +21,7 @@ class FoodGatherEnv(object):
         self.knapsack_num = np.zeros(self.num_food_types, dtype=int)
         self.expected_num = np.asarray([self.max_capacity] * self.num_food_types)
 
-        self.num_actions = num_food_types
+        self.num_actions = num_food_types + 1
         self.action2shift = {}
         for i in range(self.num_food_types):
             shift = np.zeros(self.num_food_types, dtype=int)
@@ -37,8 +37,8 @@ class FoodGatherEnv(object):
         self.knapsack_num = np.clip(self.knapsack_num, self.knapsack_min, self.knapsack_max)
         reward = -1.
         if action == self.num_food_types:
-            reward = 10. if np.array_equal(self.expected_num,
-                                           self.knapsack_num + self.warehouse_num) else -10.
+            reward = 100. if np.array_equal(self.expected_num,
+                                           self.knapsack_num + self.warehouse_num) else -100.
             return self.knapsack_num, reward, True
         else:
             return self.knapsack_num, reward, False

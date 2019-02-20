@@ -55,8 +55,11 @@ class ActorCritic(nn.Module):
 
         return loss
 
-    def get_action(self, state):
+    def get_action(self, state, epsilon):
         policy, _ = self.forward(state)
         policy = policy[0].data.numpy()
-        action = np.random.choice(self.output_dim, 1, p=policy)[0]
+        if np.random.rand() > epsilon:
+            action = np.random.choice(self.output_dim, 1, p=policy)[0]
+        else:
+            action = np.random.randint(self.output_dim)
         return action
