@@ -8,8 +8,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
-from collections import namedtuple, deque
 
 
 class ActorCritic(nn.Module):
@@ -60,10 +58,5 @@ class ActorCritic(nn.Module):
     def get_action(self, state):
         policy, _ = self.forward(state)
         policy = policy[0].data.numpy()
-
-        try:
-            action = np.random.choice(self.output_dim, 1, p=policy)[0]
-        except:
-            action = np.random.choice(self.output_dim)[0]
-
+        action = np.random.choice(self.output_dim, 1, p=policy)[0]
         return action
