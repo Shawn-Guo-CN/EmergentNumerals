@@ -38,7 +38,7 @@ def train_ActorCritic_perfect_message(env):
 
     for e in range(6000):
         state = env.reset()
-        print('reset game:', env.warehouse_num, env.knapsack_num)
+        # print('reset game:', env.warehouse_num, env.knapsack_num)
         expected = env.expected_num - env.warehouse_num
         state = expected - state
 
@@ -48,13 +48,13 @@ def train_ActorCritic_perfect_message(env):
         running_steps = 0.
         # create an episode
         while not terminate:
-            print(state, end=' | ')
+            # print(state, end=' | ')
             state_onehot = convert_state2onehot(state)
-            print(state_onehot)
-            action = model.get_action(state_onehot, epsilon=0.1)
-            print(action)
+            # print(state_onehot)
+            action = model.get_action(state_onehot, epsilon=0.01)
+            # print(action)
             next_state, reward, terminate = env.step(action)
-            print(reward)
+            # print(reward)
             next_state = expected - next_state
             next_state_onehot = convert_state2onehot(next_state)
 
@@ -69,7 +69,7 @@ def train_ActorCritic_perfect_message(env):
             running_loss += loss
             running_steps += 1
 
-        print('[loss]episode %d: %.2f' % (e, running_loss / running_steps))
+        # print('[loss]episode %d: %.2f' % (e, running_loss / running_steps))
 
         if e % test_interval == 0 and (not e == 0):
             scores = []
@@ -82,7 +82,7 @@ def train_ActorCritic_perfect_message(env):
                 score = 0
                 while not terminate:
                     state_onehot = convert_state2onehot(state)
-                    action = model.get_action(state_onehot, epsilon=0.01)
+                    action = model.get_action(state_onehot, epsilon=0.001)
                     next_state, reward, terminate = env.step(action)
                     next_state = expected - next_state
                     score += reward
