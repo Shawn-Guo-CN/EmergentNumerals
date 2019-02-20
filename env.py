@@ -38,7 +38,7 @@ class FoodGatherEnv(object):
         reward = -1.
         if action == self.num_food_types:
             reward = 10. if np.array_equal(self.expected_num,
-                                           self.knapsack_num + self.warehouse_num) else -5.
+                                           self.knapsack_num + self.warehouse_num) else -10.
             return self.knapsack_num, reward, True
         else:
             return self.knapsack_num, reward, False
