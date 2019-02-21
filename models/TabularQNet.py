@@ -11,7 +11,7 @@ from env import FoodGatherEnv
 np.random.seed(1234)
 
 test_interval = 100
-decay_interval = 2000
+decay_interval = 1000
 Transition = namedtuple('Transition', ('state', 'next_state', 'action', 'reward'))
 state_min = -1 * np.ones(3, dtype=int)
 state_max = 5 * np.ones(3, dtype=int)
@@ -22,15 +22,14 @@ alpha = 0.5
 
 
 class QNet(object):
-    def __init__(self, num_actions=4, epsilon=1e-2):
-        self.epsilon = epsilon
+    def __init__(self, num_actions=4):
         self.num_actions = num_actions
 
         self.q_est = defaultdict(lambda: np.zeros(self.num_actions))
 
     def get_action(self, state, epsilon=1e-2, greedy=False):
         state = tuple(state)
-        if np.random.uniform() > epsilon or greedy == True:
+        if np.random.uniform() >= epsilon or greedy == True:
             return np.argmax(self.q_est[state])
         else:
             return np.random.randint(self.num_actions)
@@ -151,6 +150,6 @@ if __name__ == '__main__':
     cf.read('../game.conf')
     env = FoodGatherEnv(int(cf.defaults()['num_food_types']),
                         int(cf.defaults()['max_capacity']))
-    q_net = QNet(4, 0.1)
+    q_net = QNet(4)
     # train_sarsa_perfect_info(env, q_net)
     train_q_learning_perfect_info(env, q_net)
