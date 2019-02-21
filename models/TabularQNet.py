@@ -29,7 +29,7 @@ class QNet(object):
 
     def get_action(self, state, epsilon=1e-2, greedy=False):
         state = tuple(state)
-        if np.random.uniform() >= epsilon or greedy == True:
+        if np.random.uniform() >= epsilon or greedy:
             return np.argmax(self.q_est[state])
         else:
             return np.random.randint(self.num_actions)
@@ -127,8 +127,8 @@ def train_q_learning_perfect_info(env, model):
         state = convert_knapsack_state(state, expected)
 
         if e % decay_interval == 0 and not e == 0:
-            alpha = alpha * 0.01
-            epsilon = epsilon * 0.01
+            alpha = alpha * 0.1
+            epsilon = epsilon * 0.1
 
         terminate = False
         # create an episode
