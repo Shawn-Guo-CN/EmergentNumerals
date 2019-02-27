@@ -36,12 +36,12 @@ class FoodGatherEnv(object):
     def step(self, action):
         self.knapsack_num += self.action2shift[action]
         self.knapsack_num = np.clip(self.knapsack_num, self.knapsack_min, self.knapsack_max)
-        reward = 0.
+        reward = -1.
         if action == self.num_food_types:
             result = self.expected_num - (self.knapsack_num + self.warehouse_num)
             multiplier1 = np.count_nonzero(result == 0)
             multiplier2 = np.count_nonzero(result)
-            reward = multiplier1 * 10. - multiplier2 * 10.
+            reward = multiplier1 * 100. - multiplier2 * 100.
             return self.knapsack_num, reward, True
         else:
             return self.knapsack_num, reward, False
@@ -78,9 +78,9 @@ class FoodGatherEnv_GPU(object):
         reward = torch.zeros((1,), dtype=torch.float)
         if action == self.num_food_types:
             if torch.equal(self.expected_num, self.knapsack_num + self.warehouse_num):
-                reward = 10 * torch.ones((1,), dtype=torch.float)
+                reward = 100 * torch.ones((1,), dtype=torch.float)
             else:
-                reward = -10 * torch.ones((1,), dtype=torch.float)
+                reward = -100 * torch.ones((1,), dtype=torch.float)
             return self.knapsack_num, reward, True
         else:
             return self.knapsack_num, reward, False

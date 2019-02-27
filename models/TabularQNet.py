@@ -10,8 +10,8 @@ import configparser
 from env import FoodGatherEnv
 np.random.seed(1234)
 
-test_interval = 100
-decay_interval = 1000
+test_interval = 50
+decay_interval = 100
 Transition = namedtuple('Transition', ('state', 'next_state', 'action', 'reward'))
 global epsilon
 epsilon = 0.1
@@ -61,10 +61,11 @@ def convert_knapsack_state(state, expected, state_dim, max_capacity):
 
 
 def test_model(env, model):
-    print(q_net.q_est[(0, 0)])
-    print(q_net.q_est[(1, 0)])
-    print(q_net.q_est[(0, 1)])
-    print(q_net.q_est[(-1, 0)])
+    # print(q_net.q_est[(0)])
+    # print(q_net.q_est[(1)])
+    # print(q_net.q_est[(0, 1)])
+    # print(q_net.q_est[(-1, 0)])
+    print(q_net.q_est)
     rewards = []
     for _ in range(100):
         terminate = False
@@ -107,7 +108,7 @@ def train_sarsa_perfect_info(env, model):
         while not terminate:
             action = model.get_action(state, epsilon=epsilon)
             next_state, reward, terminate = env.step(action)
-            next_state = convert_knapsack_state(state, expected,
+            next_state = convert_knapsack_state(next_state, expected,
                                        state_dim=env.num_food_types, max_capacity=env.max_capacity)
             transition = [state, next_state, action, reward]
             state = next_state
@@ -139,6 +140,8 @@ def train_q_learning_perfect_info(env, model):
         while not terminate:
             action = model.get_action(state, epsilon=epsilon)
             next_state, reward, terminate = env.step(action)
+            next_state = convert_knapsack_state(next_state, expected,
+                                                state_dim=env.num_food_types, max_capacity=env.max_capacity)
             transition = [state, next_state, action, reward]
             state = next_state
 
@@ -154,6 +157,6 @@ if __name__ == '__main__':
     cf.read('../game.conf')
     env = FoodGatherEnv(int(cf.defaults()['num_food_types']),
                         int(cf.defaults()['max_capacity']))
-    q_net = QNet(env.num_food_types + 1)
+    q_net = QNet(env.num_actions)
     train_sarsa_perfect_info(env, q_net)
     # train_q_learning_perfect_info(env, q_net)
