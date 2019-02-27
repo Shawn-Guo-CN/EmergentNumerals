@@ -28,7 +28,7 @@ class ActorCritic(nn.Module):
                 nn.init.xavier_uniform_(m.weight)
 
     def forward(self, x):
-        x = F.selu(self.fc_hidden(x))
+        x = F.relu(self.fc_hidden(x))
         policy = F.softmax(self.fc_actor(x), dim=-1)
         value = self.fc_critic(x)
         return policy, value
@@ -62,5 +62,6 @@ class ActorCritic(nn.Module):
         if np.random.rand() > epsilon:
             action = m.sample()
         else:
-            action = torch.randint(high=self.output_dim, size=(1,))[0]
-        return action
+            action = torch.randint(high=self.output_dim, size=(1,))
+        return action[0]
+

@@ -12,24 +12,24 @@ from env import FoodGatherEnv
 
 
 device = torch.device("cpu")
-lr = 1e-6
+lr = 1e-3
 test_interval = 20
 
 
-def convert_state2onehot(state):
-    state_min = -1 * np.ones(3, dtype=int)
-    state_max = 6 * np.ones(3, dtype=int)
+def convert_state2onehot(state, state_dim):
+    state_min = -1 * np.ones(state_dim, dtype=int)
+    state_max = 6 * np.ones(state_dim, dtype=int)
     state = np.clip(state, state_min, state_max)
-    state_idx = state + np.ones(3, dtype=int)
-    state_one_hot = np.zeros(24)
-    for i in range(3):
+    state_idx = state + np.ones(state_dim, dtype=int)
+    state_one_hot = np.zeros(8 * state_dim)
+    for i in range(state_dim):
         state_one_hot[state_idx[i] + 8 * i] = 1.
     state_one_hot = torch.Tensor(state_one_hot).to(device).unsqueeze(0)
     return state_one_hot
 
 
 def train_ActorCritic_perfect_message(env):
-    model = ActorCritic(24, env.num_actions)
+    model = ActorCritic(8 * env.num_food_types, env.num_actions)
 
     optimizer = optim.Adam(model.parameters(), lr=lr)
 
@@ -42,25 +42,24 @@ def train_ActorCritic_perfect_message(env):
         expected = env.expected_num - env.warehouse_num
         state = expected - state
 
-
         terminate = False
         running_loss = 0.
         running_steps = 0.
         # create an episode
         while not terminate:
             # print(state, end=' | ')
-            state_onehot = convert_state2onehot(state)
+            state_onehot = convert_state2onehot(state, state_dim=env.num_food_types)
             # print(state_onehot)
-            action = model.get_action(state_onehot, epsilon=0.01)
+            action = model.get_action(state_onehot, epsilon=0.01).numpy().tolist()
             # print(action)
             next_state, reward, terminate = env.step(action)
             # print(reward)
             next_state = expected - next_state
-            next_state_onehot = convert_state2onehot(next_state)
+            next_state_onehot = convert_state2onehot(next_state, state_dim=env.num_food_types)
 
             mask = 0 if terminate else 1
 
-            action_one_hot = torch.zeros(4)
+            action_one_hot = torch.zeros(env.num_actions)
             action_one_hot[action] = 1
             transition = [state_onehot, next_state_onehot, action, reward, mask]
 
@@ -81,8 +80,8 @@ def train_ActorCritic_perfect_message(env):
                 state = expected - state
                 score = 0
                 while not terminate:
-                    state_onehot = convert_state2onehot(state)
-                    action = model.get_action(state_onehot, epsilon=0.001)
+                    state_onehot = convert_state2onehot(state, state_dim=env.num_food_types)
+                    action = model.get_action(state_onehot, epsilon=0.001).numpy().tolist()
                     next_state, reward, terminate = env.step(action)
                     next_state = expected - next_state
                     score += reward
