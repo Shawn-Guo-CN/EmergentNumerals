@@ -30,8 +30,8 @@ class FoodGatherEnv(object):
             self.action2shift[i] = shift
         self.action2shift[self.num_food_types] = np.zeros(self.num_food_types, dtype=int)
 
-        self.knapsack_max = 10 * np.ones(3, dtype=int)
-        self.knapsack_min = np.zeros(3, dtype=int)
+        self.knapsack_max = 10 * np.ones(self.num_food_types, dtype=int)
+        self.knapsack_min = np.zeros(self.num_food_types, dtype=int)
 
     def step(self, action):
         self.knapsack_num += self.action2shift[action]

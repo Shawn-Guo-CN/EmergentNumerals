@@ -3,7 +3,7 @@
 # @Time    : 2019/2/20 16:19
 # @Author  : Shawn
 # @File    : TabularQNet.py
-# @Classes :
+# comment: this version can only run with CPU environment
 from collections import defaultdict, namedtuple
 import numpy as np
 import configparser
@@ -150,6 +150,6 @@ if __name__ == '__main__':
     cf.read('../game.conf')
     env = FoodGatherEnv(int(cf.defaults()['num_food_types']),
                         int(cf.defaults()['max_capacity']))
-    q_net = QNet(4)
+    q_net = QNet(env.num_food_types + 1)
     # train_sarsa_perfect_info(env, q_net)
     train_q_learning_perfect_info(env, q_net)
