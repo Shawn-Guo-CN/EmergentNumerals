@@ -13,8 +13,6 @@ np.random.seed(1234)
 test_interval = 100
 decay_interval = 1000
 Transition = namedtuple('Transition', ('state', 'next_state', 'action', 'reward'))
-state_min = -1 * np.ones(3, dtype=int)
-state_max = 5 * np.ones(3, dtype=int)
 global epsilon
 epsilon = 0.1
 global alpha
@@ -55,28 +53,31 @@ class QNet(object):
                                                - model.q_est[state][action])
 
 
-def convert_knapsack_state(state, expected):
+def convert_knapsack_state(state, expected, state_dim, max_capacity):
+    state_min = -1 * np.ones(state_dim, dtype=int)
+    state_max = max_capacity * np.ones(state_dim, dtype=int)
     state = expected - state
     return np.clip(state, state_min, state_max)
 
 
 def test_model(env, model):
-    print(q_net.q_est[(0, 0, 0)])
-    print(q_net.q_est[(1, 0, 0)])
-    print(q_net.q_est[(0, 1, 0)])
-    print(q_net.q_est[(0, 0, 1)])
-    print(q_net.q_est[(-1, 0, 0)])
+    print(q_net.q_est[(0, 0)])
+    print(q_net.q_est[(1, 0)])
+    print(q_net.q_est[(0, 1)])
+    print(q_net.q_est[(-1, 0)])
     rewards = []
     for _ in range(100):
         terminate = False
         total_reward = 0.
         state = env.reset()
         expected = env.expected_num - env.warehouse_num
-        state = convert_knapsack_state(state, expected)
+        state = convert_knapsack_state(state, expected,
+                                       state_dim=env.num_food_types, max_capacity=env.max_capacity)
         while not terminate:
             action = model.get_action(state, epsilon=1e-3)
             next_state, reward, terminate = env.step(action)
-            next_state = convert_knapsack_state(next_state, expected)
+            next_state = convert_knapsack_state(next_state, expected,
+                                                state_dim=env.num_food_types, max_capacity=env.max_capacity)
             total_reward += reward
             state = next_state
         rewards.append(total_reward)
@@ -90,7 +91,8 @@ def train_sarsa_perfect_info(env, model):
         state = env.reset()
         # print('reset game:', env.warehouse_num, env.knapsack_num)
         expected = env.expected_num - env.warehouse_num
-        state = convert_knapsack_state(state, expected)
+        state = convert_knapsack_state(state, expected,
+                                       state_dim=env.num_food_types, max_capacity=env.max_capacity)
 
         global alpha
         global epsilon
@@ -105,7 +107,8 @@ def train_sarsa_perfect_info(env, model):
         while not terminate:
             action = model.get_action(state, epsilon=epsilon)
             next_state, reward, terminate = env.step(action)
-            next_state = convert_knapsack_state(next_state, expected)
+            next_state = convert_knapsack_state(state, expected,
+                                       state_dim=env.num_food_types, max_capacity=env.max_capacity)
             transition = [state, next_state, action, reward]
             state = next_state
             running_reward += reward
@@ -124,7 +127,8 @@ def train_q_learning_perfect_info(env, model):
     for e in range(60000):
         state = env.reset()
         expected = env.expected_num - env.warehouse_num
-        state = convert_knapsack_state(state, expected)
+        state = convert_knapsack_state(state, expected,
+                                       state_dim=env.num_food_types, max_capacity=env.max_capacity)
 
         if e % decay_interval == 0 and not e == 0:
             alpha = alpha * 0.1
@@ -151,5 +155,5 @@ if __name__ == '__main__':
     env = FoodGatherEnv(int(cf.defaults()['num_food_types']),
                         int(cf.defaults()['max_capacity']))
     q_net = QNet(env.num_food_types + 1)
-    # train_sarsa_perfect_info(env, q_net)
-    train_q_learning_perfect_info(env, q_net)
+    train_sarsa_perfect_info(env, q_net)
+    # train_q_learning_perfect_info(env, q_net)

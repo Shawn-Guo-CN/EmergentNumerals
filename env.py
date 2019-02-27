@@ -38,8 +38,10 @@ class FoodGatherEnv(object):
         self.knapsack_num = np.clip(self.knapsack_num, self.knapsack_min, self.knapsack_max)
         reward = 0.
         if action == self.num_food_types:
-            reward = 10. if np.array_equal(self.expected_num,
-                                           self.knapsack_num + self.warehouse_num) else -10.
+            result = self.expected_num - (self.knapsack_num + self.warehouse_num)
+            multiplier1 = np.count_nonzero(result == 0)
+            multiplier2 = np.count_nonzero(result)
+            reward = multiplier1 * 10. - multiplier2 * 10.
             return self.knapsack_num, reward, True
         else:
             return self.knapsack_num, reward, False
@@ -102,8 +104,8 @@ def test_food_gather_env_by_hand(env):
 if __name__ == '__main__':
     cf = configparser.ConfigParser()
     cf.read('./game.conf')
-    # env = FoodGatherEnv(int(cf.defaults()['num_food_types']),
-    #                     int(cf.defaults()['max_capacity']))
-    env = FoodGatherEnv_GPU(int(cf.defaults()['num_food_types']),
-                            int(cf.defaults()['max_capacity']))
+    env = FoodGatherEnv(int(cf.defaults()['num_food_types']),
+                        int(cf.defaults()['max_capacity']))
+    # env = FoodGatherEnv_GPU(int(cf.defaults()['num_food_types']),
+    #                         int(cf.defaults()['max_capacity']))
     test_food_gather_env_by_hand(env)
