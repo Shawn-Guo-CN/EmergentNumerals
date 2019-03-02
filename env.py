@@ -7,6 +7,7 @@
 import numpy as np
 import configparser
 import torch
+import torch.nn as nn
 
 
 class FoodGatherEnv(object):
@@ -52,44 +53,52 @@ class FoodGatherEnv(object):
         return self.knapsack_num
 
 
-class FoodGatherEnv_GPU(object):
-    def __init__(self, num_food_types=3, max_capacity=5,  device=torch.device("cpu")):
+class FoodGatherEnv_GPU(nn.Module):
+    def __init__(self, num_food_types=3, max_capacity=5):
         """
         This is the game environment.
         :param max_capacity: int, the maximum capacity for specific kind of food
         """
+        super(FoodGatherEnv_GPU, self).__init__()
         self.max_capacity = max_capacity
         self.num_food_types = num_food_types
-        self.device = device
 
-        self.warehouse_num = torch.randint(0, self.max_capacity + 1, (self.num_food_types,), dtype=torch.int8).to(device)
-        self.knapsack_num = torch.zeros((self.num_food_types,), dtype=torch.int8).to(device)
-        self.expected_num = self.max_capacity * torch.ones((self.num_food_types,), dtype=torch.int8).to(device)
+        warehouse_num = torch.randint(0, self.max_capacity + 1, (self.num_food_types,), dtype=torch.int8)
+        knapsack_num = torch.zeros((self.num_food_types,), dtype=torch.int8)
+        expected_num = self.max_capacity * torch.ones((self.num_food_types,), dtype=torch.int8)
 
         self.num_actions = num_food_types + 1
-        action2shift_eye = torch.eye(self.num_food_types, dtype=torch.int8).to(device)
-        action2shift_end = torch.zeros((1, self.num_food_types), dtype=torch.int8).to(device)
-        self.action2shift = torch.cat((action2shift_eye, action2shift_end), dim=0).to(device)
+        action2shift_eye = torch.eye(self.num_food_types, dtype=torch.int8)
+        action2shift_end = torch.zeros((1, self.num_food_types), dtype=torch.int8)
+        action2shift = torch.cat((action2shift_eye, action2shift_end), dim=0)
 
         self.knapsack_max = 10
 
+        self.register_buffer('warehouse_num', warehouse_num)
+        self.register_buffer('knapsack_num', knapsack_num)
+        self.register_buffer('expected_num', expected_num)
+        self.register_buffer('action2shift', action2shift)
+
     def step(self, action):
+        return self.forward(action)
+
+    def forward(self, action):
         self.knapsack_num += self.action2shift[action]
-        self.knapsack_num = torch.clamp(self.knapsack_num, max=self.knapsack_max).to(self.device)
-        reward = torch.zeros((1,), dtype=torch.float).to(self.device)
+        self.knapsack_num = torch.clamp(self.knapsack_num, max=self.knapsack_max)
+        reward = torch.zeros((1,), dtype=torch.float, device=self.knapsack_num.device)
         if action == self.num_food_types:
             if torch.equal(self.expected_num, self.knapsack_num + self.warehouse_num):
-                reward = 100 * torch.ones((1,), dtype=torch.float).to(self.device)
+                reward = 100 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
             else:
-                reward = -100 * torch.ones((1,), dtype=torch.float).to(self.device)
+                reward = -100 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
             return self.knapsack_num, reward, True
         else:
             return self.knapsack_num, reward, False
 
     def reset(self):
         self.warehouse_num = torch.randint(0, self.max_capacity + 1, (self.num_food_types,),
-                                           dtype=torch.int8).to(self.device)
-        self.knapsack_num = torch.zeros((self.num_food_types,), dtype=torch.int8).to(self.device)
+                                           dtype=torch.int8, device=self.knapsack_num.device)
+        self.knapsack_num = torch.zeros((self.num_food_types,), dtype=torch.int8, device=self.knapsack_num.device)
         return self.knapsack_num
 
 
@@ -109,6 +118,6 @@ if __name__ == '__main__':
     # env = FoodGatherEnv(int(cf.defaults()['num_food_types']),
     #                     int(cf.defaults()['max_capacity']))
     env = FoodGatherEnv_GPU(int(cf.defaults()['num_food_types']),
-                            int(cf.defaults()['max_capacity']),
-                            torch.device("cuda"))
+                            int(cf.defaults()['max_capacity']))
+    env.to(torch.device("cuda"))
     test_food_gather_env_by_hand(env)
