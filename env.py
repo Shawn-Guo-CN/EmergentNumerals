@@ -87,7 +87,8 @@ class FoodGatherEnv_GPU(object):
             return self.knapsack_num, reward, False
 
     def reset(self):
-        self.warehouse_num = torch.randint(0, self.max_capacity + 1, (self.num_food_types,)).to(self.device)
+        self.warehouse_num = torch.randint(0, self.max_capacity + 1, (self.num_food_types,),
+                                           dtype=torch.int8).to(self.device)
         self.knapsack_num = torch.zeros((self.num_food_types,), dtype=torch.int8).to(self.device)
         return self.knapsack_num
 
