@@ -63,13 +63,13 @@ class FoodGatherEnv_GPU(nn.Module):
         self.max_capacity = max_capacity
         self.num_food_types = num_food_types
 
-        warehouse_num = torch.randint(0, self.max_capacity + 1, (self.num_food_types,), dtype=torch.int8)
-        knapsack_num = torch.zeros((self.num_food_types,), dtype=torch.int8)
-        expected_num = self.max_capacity * torch.ones((self.num_food_types,), dtype=torch.int8)
+        warehouse_num = torch.randint(0, self.max_capacity + 1, (self.num_food_types,), dtype=torch.int64)
+        knapsack_num = torch.zeros((self.num_food_types,), dtype=torch.int64)
+        expected_num = self.max_capacity * torch.ones((self.num_food_types,), dtype=torch.int64)
 
         self.num_actions = num_food_types + 1
-        action2shift_eye = torch.eye(self.num_food_types, dtype=torch.int8)
-        action2shift_end = torch.zeros((1, self.num_food_types), dtype=torch.int8)
+        action2shift_eye = torch.eye(self.num_food_types, dtype=torch.int64)
+        action2shift_end = torch.zeros((1, self.num_food_types), dtype=torch.int64)
         action2shift = torch.cat((action2shift_eye, action2shift_end), dim=0)
 
         self.knapsack_max = 10
@@ -85,7 +85,7 @@ class FoodGatherEnv_GPU(nn.Module):
     def forward(self, action):
         self.knapsack_num += self.action2shift[action]
         self.knapsack_num = torch.clamp(self.knapsack_num, max=self.knapsack_max)
-        reward = torch.zeros((1,), dtype=torch.float, device=self.knapsack_num.device)
+        reward = -1 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
         if action == self.num_food_types:
             if torch.equal(self.expected_num, self.knapsack_num + self.warehouse_num):
                 reward = 100 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
@@ -97,8 +97,8 @@ class FoodGatherEnv_GPU(nn.Module):
 
     def reset(self):
         self.warehouse_num = torch.randint(0, self.max_capacity + 1, (self.num_food_types,),
-                                           dtype=torch.int8, device=self.knapsack_num.device)
-        self.knapsack_num = torch.zeros((self.num_food_types,), dtype=torch.int8, device=self.knapsack_num.device)
+                                           dtype=torch.int64, device=self.knapsack_num.device)
+        self.knapsack_num = torch.zeros((self.num_food_types,), dtype=torch.int64, device=self.knapsack_num.device)
         return self.knapsack_num
 
 
