@@ -84,7 +84,7 @@ class FoodGatherEnv_GPU(nn.Module):
 
     def forward(self, action):
         self.knapsack_num += self.action2shift[action]
-        self.knapsack_num = torch.clamp(self.knapsack_num, max=self.knapsack_max)
+        self.knapsack_num.clamp_(max=self.knapsack_max)
         reward = -1 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
         if action == self.num_food_types:
             if torch.equal(self.expected_num, self.knapsack_num + self.warehouse_num):

@@ -21,8 +21,9 @@ replay_pool = ReplayMemory(1000)
 
 
 def convert_state2onehot(state, state_dim):
-    state += torch.ones_like(state)
-    state_one_hot = torch.zeros((len(state), state_dim), device=state.device).scatter_(1, state.view(-1, 1), 1).view(1,-1)
+    state_index = state + torch.ones_like(state)
+    state_one_hot = torch.zeros((len(state), state_dim),
+                                device=state.device).scatter_(1, state_index.view(-1, 1), 1).view(1,-1)
     return state_one_hot
 
 
@@ -41,22 +42,24 @@ def train_ActorCritic_perfect_info(env):
         # print('reset game:', env.warehouse_num, env.knapsack_num)
         expected = env.expected_num - env.warehouse_num
         # print('expected num:', expected)
+        # print(state, end='|')
+        state = expected - state
+        # print('transferred:', state)
+        state.clamp_(-1, env.max_capacity)
+        # print('state clamped', state)
 
         terminate = False
         running_loss = 0.
         running_steps = 0.
         # create an episode
         while not terminate:
-            # print(state, end='|')
-            state = expected - state
-            # print('transferred:', state)
-            state.clamp_(-1, env.max_capacity)
-            # print(state, end=' | ')
             state_one_hot = convert_state2onehot(state, state_dim=state_dim)
             # print(state_one_hot)
             action = model.get_action(state_one_hot, epsilon=0.01)
             # print('action:', action)
-            next_state, reward, terminate = env.step(action)
+            next_state, reward, terminate = env.step(action[0])
+            next_state = expected - next_state
+            next_state.clamp_(-1, env.max_capacity)
             # print(reward)
             # print('----------------------------------------------')
             next_state_one_hot = convert_state2onehot(next_state, state_dim=state_dim)
@@ -70,11 +73,11 @@ def train_ActorCritic_perfect_info(env):
 
             state = next_state
             if len(replay_pool) >= batch_size:
-                loss = model.train_model(model, replay_pool.sample(batch_size), optimizer)
+                loss = model.train_(replay_pool.sample(batch_size), optimizer)
                 running_loss += loss
                 running_steps += 1
 
-        # print('[loss]episode %d: %.2f' % (e, running_loss / running_steps))
+                print('[loss]episode %d: %.2f' % (e, running_loss / running_steps))
 
         if e % test_interval == 0 and (not e == 0):
             scores = []
@@ -86,14 +89,16 @@ def train_ActorCritic_perfect_info(env):
                 score = 0
                 while not terminate:
                     state = expected - state
+                    state.clamp_(-1, env.max_capacity)
                     state_one_hot = convert_state2onehot(state, state_dim=state_dim)
                     action = model.get_action(state_one_hot, epsilon=0.001)
-                    next_state, reward, terminate = env.step(action)
+                    next_state, reward, terminate = env.step(action[0])
                     score += reward
                     state = next_state
                 scores.append(score)
             model.train()
-            print('[test score]episode %d: %.2f' % (e, np.mean(np.asarray(scores))))
+            print('[test score]episode %d: %.2f'
+                  % (e, torch.cat(scores, 0).mean().to(torch.device("cpu")).unsqueeze(0).numpy()[0]))
 
 
 if __name__ == '__main__':

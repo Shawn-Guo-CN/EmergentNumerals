@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.distributions import Categorical
+from utils.ReplayMemory import Transition
 
 
 class ActorCritic(nn.Module):
@@ -56,12 +57,36 @@ class ActorCritic(nn.Module):
 
         return loss
 
+    def train_(self, transitions, optimiser, gamma=1.0):
+        batch = Transition(*zip(*transitions))
+        state_batch = torch.cat(batch.state)
+        next_state_batch = torch.cat(batch.next_state)
+        action_batch = torch.cat(batch.action).view(-1, 1)
+        reward_batch = torch.cat(batch.reward).view(-1, 1)
+        non_final_mask = torch.tensor(batch.mask, device=state_batch.device, dtype=torch.uint8)
+
+        state_policies, state_values = self.forward(state_batch)
+        state_policies = state_policies.gather(1, action_batch)
+        next_state_values = torch.zeros((len(transitions),1), device=state_batch.device)
+        next_state_values[non_final_mask] = self.forward(next_state_batch[non_final_mask])[1].detach()
+
+        expected_state_values = reward_batch + (gamma * next_state_values)
+        loss_policy = - torch.log(state_policies) * (expected_state_values - state_values)
+        loss_value = F.mse_loss(expected_state_values, state_values)
+        loss = (loss_policy + loss_value).mean()
+        optimiser.zero_grad()
+        loss.backward()
+        for param in self.parameters():
+            param.grad.data.clamp_(-1, 1)
+        optimiser.step()
+
+        return loss
+
     def get_action(self, state, epsilon):
         policy, _ = self.forward(state)
         m = Categorical(policy)
         if np.random.rand() > epsilon:
             action = m.sample()
         else:
-            action = torch.randint(high=self.output_dim, size=(1,))
-        return action[0]
-
+            action = torch.randint(high=self.output_dim, size=(1,), device=state.device)
+        return action
