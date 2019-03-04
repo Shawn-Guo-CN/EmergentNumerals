@@ -7,6 +7,8 @@
 from collections import namedtuple
 import random
 
+random.seed(1234)
+
 Transition = namedtuple('Transition', ('state', 'next_state', 'action', 'reward', 'mask'))
 
 

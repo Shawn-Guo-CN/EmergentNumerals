@@ -16,8 +16,10 @@ from utils.ReplayMemory import ReplayMemory
 device = torch.device("cuda")
 lr = 1e-3
 test_interval = 20
-batch_size = 32
+decay_interval = 50
+batch_size = 512
 replay_pool = ReplayMemory(1000)
+torch.manual_seed(12345)
 
 
 def convert_state2onehot(state, state_dim):
@@ -31,12 +33,17 @@ def train_ActorCritic_perfect_info(env):
     state_dim = env.max_capacity + 2
     model = ActorCritic(state_dim * env.num_food_types, env.num_actions)
 
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.RMSprop(model.parameters(), lr=lr)
 
     model.to(device)
     model.train()
 
+    epsilon = 0.01
+
     for e in range(6000):
+        if e % decay_interval == 0 and not (e == 0):
+            epsilon *= 0.1
+
         state = env.reset()
         # print('-----------------------------------------------------------------------------------------------------')
         # print('reset game:', env.warehouse_num, env.knapsack_num)
@@ -55,7 +62,7 @@ def train_ActorCritic_perfect_info(env):
         while not terminate:
             state_one_hot = convert_state2onehot(state, state_dim=state_dim)
             # print(state_one_hot)
-            action = model.get_action(state_one_hot, epsilon=0.01)
+            action = model.get_action(state_one_hot, epsilon=epsilon)
             # print('action:', action)
             next_state, reward, terminate = env.step(action[0])
             next_state = expected - next_state
@@ -77,7 +84,7 @@ def train_ActorCritic_perfect_info(env):
                 running_loss += loss
                 running_steps += 1
 
-                print('[loss]episode %d: %.2f' % (e, running_loss / running_steps))
+                # print('[loss]episode %d: %.2f' % (e, running_loss / running_steps))
 
         if e % test_interval == 0 and (not e == 0):
             scores = []
