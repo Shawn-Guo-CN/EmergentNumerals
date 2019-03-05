@@ -9,6 +9,8 @@ import configparser
 import torch
 import torch.nn as nn
 
+torch.manual_seed(1234)
+
 
 class FoodGatherEnv(object):
     def __init__(self, num_food_types=3, max_capacity=5):

@@ -17,9 +17,9 @@ device = torch.device("cuda")
 lr = 1e-3
 test_interval = 20
 decay_interval = 50
-batch_size = 512
+batch_size = 256
 replay_pool = ReplayMemory(1000)
-torch.manual_seed(12345)
+torch.manual_seed(233)
 
 
 def convert_state2onehot(state, state_dim):
@@ -57,7 +57,7 @@ def train_ActorCritic_perfect_info(env):
 
         terminate = False
         running_loss = 0.
-        running_steps = 0.
+        running_steps = 0
         # create an episode
         while not terminate:
             state_one_hot = convert_state2onehot(state, state_dim=state_dim)
