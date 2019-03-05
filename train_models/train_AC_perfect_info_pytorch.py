@@ -17,9 +17,9 @@ device = torch.device("cuda")
 lr = 1e-3
 test_interval = 20
 decay_interval = 50
-batch_size = 256
+batch_size = 64
 replay_pool = ReplayMemory(1000)
-torch.manual_seed(233)
+torch.manual_seed(1234)
 
 
 def convert_state2onehot(state, state_dim):

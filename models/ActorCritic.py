@@ -22,17 +22,26 @@ class ActorCritic(nn.Module):
         self.fc_hidden = nn.Linear(input_dim, hidden_dim)
         self.fc_actor = nn.Linear(hidden_dim, output_dim)
         self.fc_critic = nn.Linear(hidden_dim, 1)
+        self.fc_critic_target = nn.Linear(hidden_dim, 1)
 
         for m in self.modules():
             # in case add more modules later
             if isinstance(m, nn.Linear):
                 nn.init.xavier_uniform_(m.weight)
 
+        self.update_counter = 0
+        self.update_interval = 1
+
     def forward(self, x):
         x = F.relu(self.fc_hidden(x))
         policy = F.softmax(self.fc_actor(x), dim=-1)
         value = self.fc_critic(x)
         return policy, value
+
+    def eval_target_value(self, x):
+        x = F.relu(self.fc_hidden(x))
+        value = self.fc_critic_target(x)
+        return value
 
     @classmethod
     def train_model(cls, model, transition, optimizer, gamma=1.0):
@@ -58,6 +67,13 @@ class ActorCritic(nn.Module):
         return loss
 
     def train_(self, transitions, optimiser, gamma=1.0):
+        if self.update_counter % self.update_interval == 0:
+            self.fc_critic_target.load_state_dict(self.fc_critic.state_dict())
+            for param in self.fc_critic_target.parameters():
+                param.requires_grad = False
+
+        self.update_counter += 1
+
         batch = Transition(*zip(*transitions))
         state_batch = torch.cat(batch.state)
         next_state_batch = torch.cat(batch.next_state)
@@ -68,7 +84,7 @@ class ActorCritic(nn.Module):
         state_policies, state_values = self.forward(state_batch)
         state_policies = state_policies.gather(1, action_batch)
         next_state_values = torch.zeros((len(transitions),1), device=state_batch.device)
-        next_state_values[non_final_mask] = self.forward(next_state_batch[non_final_mask])[1].detach()
+        next_state_values[non_final_mask] = self.eval_target_value(next_state_batch[non_final_mask]).detach()
 
         expected_state_values = reward_batch + (gamma * next_state_values)
         loss_policy = - torch.log(state_policies) * (expected_state_values - state_values)
@@ -76,7 +92,11 @@ class ActorCritic(nn.Module):
         loss = (loss_policy + loss_value).mean()
         optimiser.zero_grad()
         loss.backward()
-        for param in self.parameters():
+        for param in self.fc_actor.parameters():
+            param.grad.data.clamp_(-1, 1)
+        for param in self.fc_hidden.parameters():
+            param.grad.data.clamp_(-1, 1)
+        for param in self.fc_critic.parameters():
             param.grad.data.clamp_(-1, 1)
         optimiser.step()
 

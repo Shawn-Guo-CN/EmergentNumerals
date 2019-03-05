@@ -41,3 +41,34 @@ ENV
 [test score]episode 360: 95.62
 [test score]episode 380: 97.52
 [test score]episode 400: 97.71
+
+---
+CONF
+ - num_food_types = 1
+ - max_capacity = 5
+
+Train Script
+ - device = torch.device("cuda")
+ - lr = 1e-3
+ - test_interval = 20
+ - decay_interval = 50
+ - batch_size = 64
+ - replay_pool = ReplayMemory(1000)
+ - torch.manual_seed(1234)
+
+Replay Memory
+ - random.seed(1234)
+
+ENV
+ - torch.manual_seed(1234)
+
+**Performance Record**
+[test score]episode 20: -77.98
+[test score]episode 40: 9.75
+[test score]episode 60: 82.52
+[test score]episode 80: 95.39
+[test score]episode 100: 97.54
+[test score]episode 120: 97.38
+[test score]episode 140: 95.46
+[test score]episode 160: 97.52
+[test score]episode 180: 97.45
