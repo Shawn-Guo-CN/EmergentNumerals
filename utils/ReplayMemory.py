@@ -28,5 +28,12 @@ class ReplayMemory(object):
     def sample(self, batch_size):
         return random.sample(self.memory, batch_size)
 
+    def reset(self):
+        self.memory = []
+        self.position = 0
+
+    def pop_all(self):
+        return self.memory
+
     def __len__(self):
         return len(self.memory)
