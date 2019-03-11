@@ -16,7 +16,7 @@ from utils.ReplayMemory import ReplayMemory
 device = torch.device("cuda")
 lr = 1e-3
 test_interval = 20
-decay_interval = 200
+decay_interval = 50
 batch_size = 64
 replay_pool = ReplayMemory(batch_size)
 torch.manual_seed(1234)
@@ -40,15 +40,15 @@ def train_ActorCritic_perfect_info():
         env.to(device)
         envs.append(env)
 
-    state_dim = env.max_capacity + 2
-    model = ActorCritic(state_dim * int(cf.defaults()['num_food_types']), envs[0].num_actions)
+    state_dim = envs[0].max_capacity + 2
+    model = ActorCritic(envs[0].num_food_types * state_dim, envs[0].num_actions)
 
     optimizer = optim.RMSprop(model.parameters(), lr=lr)
 
     model.to(device)
     model.train()
 
-    epsilon = 0.01
+    epsilon = 0.05
 
     for e in range(6000):
         if e % decay_interval == 0 and not (e == 0):
@@ -58,25 +58,23 @@ def train_ActorCritic_perfect_info():
         for idx, env in enumerate(envs):
             states.append((idx, env.reset()))
 
-        running_loss = 0.
-        running_loss_steps = 0
-
         keep_going = True
         while keep_going:
             keep_going = False
 
             next_states = []
+            replay_pool.reset()
             for (idx, state) in states:
                 expected = envs[idx].expected_num - envs[idx].warehouse_num
                 state = expected - state
-                state.clamp_(-1, env.max_capacity)
+                state.clamp_(-1, envs[idx].max_capacity)
                 state_one_hot = convert_state2onehot(state, state_dim=state_dim)
 
                 action = model.get_action(state_one_hot, epsilon=epsilon)
 
                 next_state, reward, terminate = envs[idx].step(action[0])
                 next_state = expected - next_state
-                next_state.clamp_(-1, env.max_capacity)
+                next_state.clamp_(-1, envs[idx].max_capacity)
                 next_state_one_hot = convert_state2onehot(next_state, state_dim=state_dim)
 
                 mask = 0 if terminate else 1
@@ -88,7 +86,8 @@ def train_ActorCritic_perfect_info():
 
             states = next_states
 
-            loss = model.train_(replay_pool.pop_all(), optimizer)
+            if not len(replay_pool) == 0:
+                loss = model.train_(replay_pool.pop_all(), optimizer)
             # print(loss)
 
         if e % test_interval == 0 and (not e == 0):
