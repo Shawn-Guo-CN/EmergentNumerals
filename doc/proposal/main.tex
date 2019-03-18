@@ -31,7 +31,7 @@
 %                       for your review, and name of IRR tutor
 
 \newcommand{\examnumber}{B131025}
-\newcommand{\field}{Emergen of Numeral System in \\ Multi-agent Autonomous Communication}
+\newcommand{\field}{Emergence of Numeral System in \\ Multi-agent Autonomous Communication}
 \newcommand{\tutor}{Prof. Stuart Anderson}
 \newcommand{\supervisor}{Dr. Ivan Titov}
 
@@ -91,18 +91,18 @@ Date: \today
 \cfoot{}
 \rfoot{Date: \date{\today}}
 %
-\tableofcontents     
+\tableofcontents
 
 \section{Motivation}
 \label{sec:1intro}
 
-How do natural language emerge and evolve is a very critical question to the field of evolutionary linguistics \cite{macwhinney2013emergence}. As linguistic behaviors are hard to be preserved during history \cite{lieberman2006toward}, it is necessary to develop some quantitative methods to overcome this kind of time limit \cite{evans2009myth}. Among all those quantitative methods, computer simulation \footnote{Without specific indication, computer simulation in this paper all stand for the computer simulation methods in evolutionary linguistics.} has now become a rising direction since it was first introduced by \cite{hurford1989biological}. During the last two decades, computer simulation methods attracted an increasing number of attention (e.g. \cite{hurford1998approaches, knight2000evolutionary, briscoe2002book, cangelosi2012simulating, christiansen2003language, bickerton2009biological}). However, in all these previous works, the basic linguistics elements are preliminarily assigned by experts and thus the learning product of models are essentially bi-directional meaning–utterance mappings \cite{gong2013computer}, which is congenitally deficient to verify hypotheses for the emergence of these basic linguistic elements, such as the emergence of numerals, pronouns and etc.
+How do natural language emerge and evolve is a very critical question to the field of evolutionary linguistics \cite{macwhinney2013emergence}. As linguistic behaviors are hard to be preserved during history \cite{lieberman2006toward}, it is necessary to develop some quantitative methods to overcome this kind of time limit \cite{evans2009myth}. Among all those quantitative methods, computer simulation \footnote{Without specific indication, computer simulation in this paper all stand for the computer simulation methods in evolutionary linguistics.} has now become a rising direction since it was first introduced by \cite{hurford1989biological}. During the last two decades, computer simulation methods attracted an increasing number of attention (e.g. \cite{hurford1998approaches, knight2000evolutionary, briscoe2002book, cangelosi2012simulating, christiansen2003language, bickerton2009biological}). However, in all these previous works, the basic linguistic elements are preliminarily assigned by experts and thus the learning product of models are essentially bi-directional meaning–utterance mappings \cite{gong2013computer}, which is congenitally deficient to verify hypotheses for the emergence of these basic linguistic elements, such as the emergence of numerals, pronouns and etc.
 
-With the recent rapid development of deep reinforcement learning (DRL), e.g.  \cite{mnih2015human, silver2017mastering}, computers are now available master a variety of complicated cognitive activities. Thus, lots of works in grounded language learning (GLL), e.g.  \cite{hermann2017grounded, havrylov2017emergence, mordatch2018emergence}, apply DRL to language game \cite{wittgenstein2009philosophical} and signalling game \cite{lewis2008convention} to facilitate agents to understand natural language or invent a communication protocol that may share some identical characteristics of natural language. Under the assumption that agents should also learn and understand language by interacting with environments and others like human, GLL aims to address the natural language understanding problem with agents that can ground symbols/utterances to their experiences \cite{hill2017understanding}.
+With the recent rapid development of deep reinforcement learning (DRL), e.g. \cite{mnih2015human, silver2017mastering}, computers are now available master a variety of complicated cognitive activities. Thus, lots of works in grounded language learning (GLL), e.g.  \cite{hermann2017grounded, havrylov2017emergence, mordatch2018emergence}, apply DRL to language game \cite{wittgenstein2009philosophical} and signalling game \cite{lewis2008convention} to facilitate agents to understand natural language or invent a communication protocol that may share some identical characteristics of natural language. Under the assumption that agents should also learn and understand language by interacting with environments and others like human, GLL aims to address the natural language understanding problem with agents that can ground symbols/utterances to their experiences \cite{hill2017understanding}.
 
-With these promising progress in GLL, this project aims to propose a new simulation method for the emergence and evolution of language in multi-agent autonomous communication system trained by DRL techniques to solve some specifically designed language games that can imply linguistics hypotheses or theories. However, as language is a too huge a topic, we limit our project in numeral systems for the following reasons: i) numeral systems are more stable during the evolution; ii) concepts related to numeral systems are more straightforward to model with numeric representations; iii) functions of emergent numeral systems can be formalised and verified more reliably in simulation. Moreover, with our new simulation framework, we can not only further evaluate these hypotheses/theories about the emergence and evolution of numeral systems but shape the numeral systems \footnote{Formally, it should be a kind of communication protocol.} invented by computational agents to be similar as those in natural language and thus facilitate agents to understand natural language better (with assumptions from contact linguistics).
+With these promising progress in GLL, this project aims to propose a new simulation method for the emergence of language in multi-agent autonomous communication system trained by DRL techniques to solve some specifically designed language games that can imply linguistics hypotheses or theories. However, as language is a too huge a topic, we limit our project in numeral systems for the following reasons: i) numeral systems are more stable during the evolution; ii) concepts related to numeral systems are more straightforward to model with numeric representations; iii) functions of emergent numeral systems can be formalised and verified more reliably in simulation. Moreover, with our new simulation framework, we can not only further evaluate these hypotheses/theories about the emergence of numeral systems but shape the numeral systems \footnote{Formally, it should be a kind of communication protocol.} invented by computational agents to be similar as those in natural language and thus facilitate agents to understand natural language better (with assumptions from contact linguistics).
 
-In the following sections, we would first introduce background knowledge from evolutionary linguistics and GLL respectively. Then, we would propose the key questions we need to answer in this project as well as the corresponding potential solutions to these questions. Finally, we would give a preliminary timetable of this project.
+In the following sections, we would first introduce background knowledge from evolutionary linguistics and GLL respectively. Then, in Section \ref{sec:3questions} we would introduce the architecture of this project and . Finally, we would give a preliminary timetable of this project.
 
 
 \section{Background}
@@ -136,7 +136,7 @@ The games mentioned above derive from the language games first introduced by \ci
 
 As for the multi-agent games themselves, they are mainly designed to explore the conditions for the emergence and development of natural-language-like communication protocols, in which agents are quite like the primitive human who create natural languages during production, or to say, survival games. To be specific, \cite{mordatch2018emergence} observes that demonstrative pronouns emerge when there exist more than two agents in their game. Meanwhile, it is shown in \cite{jaques2018intrinsic} that collaboration between different agents is a crucial motivation for the development of cooperative communication, especially when each agent holds partial information about the environment.
 
-However, instead of aiming to make DRL models generalise better, this project targets at proposing a systematic methodology of facilitating the emergence and evolution of numeral systems in a multi-agent autonomous communication system.
+However, instead of aiming to make DRL models generalise better, this project targets at proposing a systematic methodology of facilitating the emergence of numeral systems in a multi-agent autonomous communication system.
 
 \section{Architecture and Proposed Language Games}
 \label{sec:3questions}
@@ -211,8 +211,18 @@ Unlike cardinal numerals and ordinal numerals, the emergence of numeral grammars
 %    \item State the limitations of your research.
 %\end{itemize}
 
+\section{Evaluation}
+\label{sec:4evaluaion}
+
+Key problems here:
+
+\begin{itemize}
+  \item How to evaluate the effectiveness of proposed method? (Rewards gained during the game.)
+  \item How to evaluate the emergent numeral system? How to decipher the communication protocol?
+\end{itemize}
+
 \section{Expected Outcomes}
-\label{sec:4outcomes}
+\label{sec:5outcomes}
 
 As an interdisciplinary project, the expected outcomes of our project are various.
 
@@ -230,6 +240,7 @@ Meanwhile, as we follow the reinforcement learning framework, we would also cont
 
 
 \section{Research Plan, Milestones and Deliverables}
+\label{sec:6plan}
 
 \definecolor{barblue}{RGB}{153,204,254}
 \definecolor{groupblue}{RGB}{51,102,254}
@@ -259,24 +270,34 @@ Meanwhile, as we follow the reinforcement learning framework, we would also cont
    ]{2018-06-01}{2018-08-16}
    \gantttitlecalendar{month=name}\\
    \ganttbar[
-    progress=100,
     bar progress label font=\small\color{barblue},
     bar progress label node/.append style={right=4pt},
-    bar label font=\normalsize\color{barblue},
+    bar label font=\bfseries\normalsize\color{black},
     name=pp
-   ]{Background Reading}{2018-06-01}{2018-06-14} \\
+   ]{Background Reading}{2018-06-01}{2018-06-30} \\
 \ganttset{progress label text={}, link/.style={black, -to}}
-\ganttgroup{Objective 1}{2018-06-14}{2018-06-30} \\
-\ganttbar[progress=4, name=T1A]{Task A}{2018-06-14}{2018-06-21} \\
-\ganttlinkedbar[progress=0]{Task B}{2018-06-21}{2018-06-30} \\
-\ganttgroup{Objective 2}{2018-07-01}{2018-07-14} \\
-\ganttbar[progress=15, name=T2A]{Task A}{2018-07-01}{2018-07-07} \\
-\ganttlinkedbar[progress=0]{Task B}{2018-07-07}{2018-07-14} \\
-\ganttgroup{Dissertation    }{2018-07-14}{2018-08-16} \\
-  \ganttbar[progress=0]{Task A}{2018-07-14}{2018-08-16}
+
+\ganttbar[bar label font=\bfseries\normalsize\color{black}]{Game Design}{2018-06-01}{2018-06-07} \\
+
+\ganttgroup{Implementation}{2018-06-07}{2018-06-28} \\
+    \ganttbar[progress=0, name=T2A]{Environment}{2018-06-07}{2018-06-12} \\
+    \ganttbar[progress=0]{Agent}{2018-06-10}{2018-06-28} \\
+
+\ganttgroup{Experiment}{2018-06-21}{2018-07-21} \\
+    \ganttbar[progress=0]{Baselines}{2018-06-21}{2018-06-28} \\
+    \ganttbar[progress=0]{Proposed Method}{2018-06-28}{2018-07-21} \\
+    
+\ganttgroup{Analysis}{2018-06-28}{2018-07-31} \\
+    \ganttbar[progress=0]{Performance}{2018-06-28}{2018-07-14} \\
+    \ganttbar[progress=0]{Decipher}{2018-07-07}{2018-07-31} \\
+
+\ganttgroup{Dissertation}{2018-06-07}{2018-08-16} \\
+  \ganttbar[progress=0]{Intro \& Background}{2018-06-07}{2018-06-21} \\
+  \ganttbar[progress=0]{Game \& Method}{2018-07-01}{2018-07-14} \\
+  \ganttbar[progress=0]{Results \& Analysis}{2018-07-21}{2018-08-07} \\
+  \ganttbar[progress=0]{Conclusion}{2018-08-07}{2018-08-10} \\
+  \ganttbar[progress=0]{Revise}{2018-08-06}{2018-08-16}
   \ganttset{link/.style={green}}
-  \ganttlink[link mid=.4]{pp}{T1A}
-  \ganttlink[link mid=.159]{pp}{T2A}
 \end{ganttchart}
 \caption{Gantt Chart of the activities defined for this project.}
 \label{fig:gantt}
@@ -315,7 +336,7 @@ Meanwhile, as we follow the reinforcement learning framework, we would also cont
     \label{fig:deliverables}
 \end{table}
 
-\pagebreak
+\clearpage
 %                Now build the reference list
 \bibliographystyle{unsrt}   % The reference style
 %                This is plain and unsorted, so in the order
