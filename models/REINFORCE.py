@@ -8,7 +8,7 @@ from utils.ReplayMemory import Transition
 
 class REINFORCE(nn.Module):
     def __init__(self, input_dim, output_dim, hidden_dim=60):
-        super(QNet, self).__init__()
+        super(REINFORCE, self).__init__()
 
         self.input_dim = input_dim
         self.output_dim = output_dim
