@@ -112,3 +112,6 @@ out
 *main.log
 *.synctex
 
+# added by Shawn
+.idea/
+.vscode/
