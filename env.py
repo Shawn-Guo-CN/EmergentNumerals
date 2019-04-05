@@ -9,7 +9,7 @@ import configparser
 import torch
 import torch.nn as nn
 
-torch.manual_seed(1234)
+# torch.manual_seed(1234)
 
 
 class FoodGatherEnv(object):
@@ -59,11 +59,13 @@ class FoodGatherEnv_GPU(nn.Module):
     def __init__(self, num_food_types=3, max_capacity=5):
         """
         This is the game environment.
+        :param num_food_types: int, the number of food types
         :param max_capacity: int, the maximum capacity for specific kind of food
         """
         super(FoodGatherEnv_GPU, self).__init__()
         self.max_capacity = max_capacity
         self.num_food_types = num_food_types
+
 
         warehouse_num = torch.randint(0, self.max_capacity + 1, (self.num_food_types,), dtype=torch.int64)
         knapsack_num = torch.zeros((self.num_food_types,), dtype=torch.int64)
@@ -88,7 +90,7 @@ class FoodGatherEnv_GPU(nn.Module):
         self.knapsack_num += self.action2shift[action]
         self.knapsack_num.clamp_(max=self.knapsack_max)
         reward = -1 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
-        if action == self.num_food_types:
+        if action == self.num_food_types:knapsack_num
             if torch.equal(self.expected_num, self.knapsack_num + self.warehouse_num):
                 reward = 100 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
             else:
@@ -97,14 +99,28 @@ class FoodGatherEnv_GPU(nn.Module):
         else:
             return self.knapsack_num, reward, False
 
-    def reset(self):
-        self.warehouse_num = torch.randint(0, self.max_capacity + 1, (self.num_food_types,),
-                                           dtype=torch.int64, device=self.knapsack_num.device)
+    def reset(self, perdue_states=2, train=True):
+        """
+        :param perdue_states: int, the states that are hided during traing.
+        """
+        if train:
+            self.warehouse_num = torch.zeros((self.num_food_types,), dtype=torch.int64, device=self.knapsack_num.device)
+            for i in range(self.num_food_types):
+                self.warehouse_num[i] = int(np.random.randint(i, self.num_food_types + 2 + i - perdue_states))
+        else:
+            self.warehouse_num = torch.zeros((self.num_food_types,), dtype=torch.int64, device=self.knapsack_num.device)
+            for i in range(self.num_food_types):
+                snip = list(range(0, i)) + \
+                    list(range(self.num_food_types + 2 + i - perdue_states, self.num_food_types + 2))
+                self.warehouse_num[i] = int(np.random.choice(snip))
+                del snip
+
         self.knapsack_num = torch.zeros((self.num_food_types,), dtype=torch.int64, device=self.knapsack_num.device)
         return self.knapsack_num
 
 
 def test_food_gather_env_by_hand(env):
+    env.reset()
     print(env.warehouse_num)
     terminate = False
     while not terminate:
@@ -121,5 +137,5 @@ if __name__ == '__main__':
     #                     int(cf.defaults()['max_capacity']))
     env = FoodGatherEnv_GPU(int(cf.defaults()['num_food_types']),
                             int(cf.defaults()['max_capacity']))
-    env.to(torch.device("cuda"))
+    env.to(torch.device("cpu"))
     test_food_gather_env_by_hand(env)
