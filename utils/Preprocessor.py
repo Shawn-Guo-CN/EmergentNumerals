@@ -18,7 +18,7 @@ class Preprocessor(object):
         return state_one_hot
     
     def env_state_process_ones(self, state):
-        ret = torch.zeros((self.num_types, self.max_capacity), dtype=torch.int64, device=state.device)
+        ret = torch.zeros((self.num_types, self.max_capacity), device=state.device)
         for i, s in enumerate(state):
             ret[i, :s] = 1.
         
@@ -26,7 +26,7 @@ class Preprocessor(object):
         # a judgement in the code
         # ret = torch.stack([torch.arange(self.max_capacity, device=state.device, dtype=torch.int64) \
         #     < a_ for a_ in state]).view(-1)
-        return ret.view(-1)
+        return ret.view(1, -1)
 
 
 if __name__ == '__main__':

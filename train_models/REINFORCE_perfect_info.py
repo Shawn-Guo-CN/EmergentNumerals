@@ -13,7 +13,7 @@ from utils.Preprocessor import Preprocessor
 device = torch.device("cpu")
 lr = 1e-3
 test_interval = 20
-decay_interval = 50
+decay_interval = 500
 replay_pool = ReplayMemory(5000)
 torch.manual_seed(1234)
 epsilon = 0.1
@@ -33,7 +33,7 @@ def test(model, env):
         rewards = 0
         
         while not terminate:
-            state = preprocessor.env_state_process_one_hot(state, env.max_capacity)
+            state = preprocessor.env_state_process_one_hot(state, env.max_capacity + 1)
             state = torch.cat(state, info)
             action = model.get_action(state)
             next_state, reward, terminate = env.step(action[0])
@@ -47,7 +47,7 @@ def test(model, env):
 
 
 def train(env):
-    state_dim = env.num_food_types * env.max_capacity
+    state_dim = 2 * env.num_food_types * env.max_capacity + env.num_food_types
     model = REINFORCE(state_dim, env.num_actions)
     model.to(device)
     model.reset()
@@ -67,10 +67,11 @@ def train(env):
         terminate = False
 
         while not terminate:
-            state = preprocessor.env_state_process_one_hot(state, env.max_capacity)
-            state = torch.cat(state, info)
+            # max_cap + 1 is due to we need to take 0 into consideration
+            state = preprocessor.env_state_process_one_hot(state, env.max_capacity + 1)
+            state = torch.cat((state, info), 1)
             action = model.get_action(state)
-            next_state, reward, terminate = env.step(action[0])
+            next_state, reward, terminate = env.step(action)
             model.rewards.append(reward)
             state = next_state
         
