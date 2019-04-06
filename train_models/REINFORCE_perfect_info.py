@@ -49,7 +49,11 @@ def test(model, env):
 def train(env):
     # state_dim consists of number of foods in warehouse and knapsack
     state_dim = env.num_food_types * env.max_capacity + env.num_food_types * (env.knapsack_max + 1)
-    model = REINFORCE(state_dim, env.num_actions)
+
+    # load model configure
+    cf = configparser.ConfigParser()
+    cf.read('./game.conf')
+    model = REINFORCE(state_dim, env.num_actions, int(cf['MODEL']['hidden_dim']))
     model.to(device)
     model.train()
 
