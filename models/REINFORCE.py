@@ -35,7 +35,7 @@ class REINFORCE(nn.Module):
         return self.policy_network(x)
 
     def get_action(self, state, epsilon=0.1):
-        if random.random() > epsilon:
+        if random.random() >= epsilon:
             probs = self.forward(state)
             # for debugging
             # print('PROBS', probs.unsqueeze(0).detach().numpy()[0])
@@ -109,8 +109,11 @@ class REINFORCE_BASELINE(nn.Module):
 
     def get_action(self, state):
         probs, value = self.forward(state)
-        print('PROBS', probs.unsqueeze(0).detach().numpy()[0])
-        print('VALUES', value.unsqueeze(0).detach().numpy()[0])
+
+        # for debugging
+        # print('PROBS', probs.unsqueeze(0).detach().numpy()[0])
+        # print('VALUES', value.unsqueeze(0).detach().numpy()[0])
+        
         m = Categorical(probs)
         action = m.sample()
         self.saved_log_probs.append(m.log_prob(action))

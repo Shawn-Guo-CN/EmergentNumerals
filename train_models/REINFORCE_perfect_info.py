@@ -35,7 +35,7 @@ def test(model, env):
         while not terminate:
             state = preprocessor.env_state_process_one_hot(state, env.knapsack_max + 1)
             state = torch.cat((state, info), 1)
-            action = model.get_action(state)
+            action = model.get_action(state, epsilon=0.)
             next_state, reward, terminate = env.step(action)
             rewards += reward
             state = next_state
@@ -61,7 +61,6 @@ def train(env):
     preprocessor = Preprocessor()
 
     for e in range(1, episode_num+1):
-        
         state = env.reset()
         # TODO: may need to try other encoding methods later
         info = preprocessor.env_state_process_ones(env.warehouse_num)
