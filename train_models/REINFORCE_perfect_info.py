@@ -16,7 +16,7 @@ test_interval = 20
 decay_interval = 500
 replay_pool = ReplayMemory(5000)
 torch.manual_seed(1234)
-epsilon = 0.1
+np.random.seed(1234)
 gamma = 0.9
 episode_num = 6000
 
@@ -33,10 +33,10 @@ def test(model, env):
         rewards = 0
         
         while not terminate:
-            state = preprocessor.env_state_process_one_hot(state, env.max_capacity + 1)
-            state = torch.cat(state, info)
+            state = preprocessor.env_state_process_one_hot(state, env.knapsack_max + 1)
+            state = torch.cat((state, info), 1)
             action = model.get_action(state)
-            next_state, reward, terminate = env.step(action[0])
+            next_state, reward, terminate = env.step(action)
             rewards += reward
             state = next_state
         
@@ -47,18 +47,16 @@ def test(model, env):
 
 
 def train(env):
-    state_dim = 2 * env.num_food_types * env.max_capacity + env.num_food_types
+    # state_dim consists of number of foods in warehouse and knapsack
+    state_dim = env.num_food_types * env.max_capacity + env.num_food_types * (env.knapsack_max + 1)
     model = REINFORCE(state_dim, env.num_actions)
     model.to(device)
-    model.reset()
     model.train()
 
     optimiser = optim.Adam(model.parameters(), lr=lr)
     preprocessor = Preprocessor()
 
     for e in range(1, episode_num+1):
-        if e % decay_interval == 0:
-            epsilon *= 0.1
         
         state = env.reset()
         # TODO: may need to try other encoding methods later
@@ -68,7 +66,7 @@ def train(env):
 
         while not terminate:
             # max_cap + 1 is due to we need to take 0 into consideration
-            state = preprocessor.env_state_process_one_hot(state, env.max_capacity + 1)
+            state = preprocessor.env_state_process_one_hot(state, env.knapsack_max + 1)
             state = torch.cat((state, info), 1)
             action = model.get_action(state)
             next_state, reward, terminate = env.step(action)
@@ -82,9 +80,6 @@ def train(env):
 
 
 if __name__ == '__main__':
-    cf = configparser.ConfigParser()
-    cf.read('./game.conf')
-    env = FoodGatherEnv_GPU(int(cf.defaults()['num_food_types']),
-                            int(cf.defaults()['max_capacity']))
+    env = FoodGatherEnv_GPU()
     env.to(device)
     train(env)

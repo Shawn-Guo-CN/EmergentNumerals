@@ -13,6 +13,10 @@ class Preprocessor(object):
         self.max_capacity = int(cf.defaults()['max_capacity'])
 
     def env_state_process_one_hot(self, state, state_dim):
+        # comments are for debugging
+        # print('--------------------------------------------------------')
+        # print('state', state)
+        # print('state_dim', state_dim)
         state_one_hot = torch.zeros((len(state), state_dim),
                                     device=state.device).scatter_(1, state.view(-1, 1), 1).view(1,-1)
         return state_one_hot
