@@ -1,0 +1,10 @@
+2019-04-06
+What is done:
+1. Built up REINFORCE model w/o BASELINE
+2. Created util script for handling state representation
+
+Problem
+Neither of REINFORCE w/o BASELINE works
+
+Plan
+Try A2C tomorrow

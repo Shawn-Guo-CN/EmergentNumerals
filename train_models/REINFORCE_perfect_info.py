@@ -36,6 +36,7 @@ def test(model, env):
             state = preprocessor.env_state_process_one_hot(state, env.knapsack_max + 1)
             state = torch.cat((state, info), 1)
             action = model.get_action(state, epsilon=0.)
+            # action = model.get_action(state) # for REINFORCE_BASELINE
             next_state, reward, terminate = env.step(action)
             rewards += reward
             state = next_state
@@ -54,6 +55,7 @@ def train(env):
     cf = configparser.ConfigParser()
     cf.read('./game.conf')
     model = REINFORCE(state_dim, env.num_actions, int(cf['MODEL']['hidden_dim']))
+    # model = REINFORCE_BASELINE(state_dim, env.num_actions, int(cf['MODEL']['hidden_dim']))
     model.to(device)
     model.train()
 
