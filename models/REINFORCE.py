@@ -40,7 +40,7 @@ class REINFORCE(nn.Module):
         self.saved_log_probs.append(m.log_prob(action))
         return action.item()
 
-    def train(self, optimiser, gamma=0.9):
+    def train_episode(self, optimiser, gamma=0.9, verbose=False):
         R = 0
         policy_loss = []
 
@@ -54,8 +54,14 @@ class REINFORCE(nn.Module):
             policy_loss.append(-log_prob * R)
         optimiser.zero_grad()
         policy_loss = torch.cat(policy_loss).sum()
+        if verbose:
+            print('[REINFORCE train loss]', policy_loss)
         policy_loss.backward()
         optimiser.step()
         del self.rewards[:]
         del self.saved_log_probs[:]
+
+    def reset(self):
+        self.saved_log_probs = []
+        self.rewards = []
 

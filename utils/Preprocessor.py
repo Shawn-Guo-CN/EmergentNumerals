@@ -11,6 +11,11 @@ class Preprocessor(object):
         cf.read('./game.conf')
         self.num_types = int(cf.defaults()['num_food_types'])
         self.max_capacity = int(cf.defaults()['max_capacity'])
+
+    def env_state_process_one_hot(self, state, state_dim):
+        state_one_hot = torch.zeros((len(state), state_dim),
+                                    device=state.device).scatter_(1, state.view(-1, 1), 1).view(1,-1)
+        return state_one_hot
     
     def env_state_process_ones(self, state):
         ret = torch.zeros((self.num_types, self.max_capacity), dtype=torch.int64, device=state.device)
