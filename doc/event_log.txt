@@ -13,9 +13,12 @@ Try A2C tomorrow
 [done]:
 1. tried REINFORCE with small lr and more hidden layers;
 2. changed reward to be partial;
+3. built up A2C model but didn't find good hyper params that can converge
 
 [problem]:
 1. although performance of REINFORCE is better than yesterday's
    divergence, it still doesn't works
+2. A2C doesn't converge either
 
 [plan]
+tune hyper params
