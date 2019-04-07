@@ -5,19 +5,17 @@ import numpy as np
 
 import configparser
 
-from utils.ReplayMemory import *
 from models.A2C import AdvantageActorCritic
 from env import FoodGatherEnv_GPU
 from utils.Preprocessor import Preprocessor
 
 device = torch.device("cpu")
-lr = 1e-6
+lr = 1e-4
 test_interval = 50
 decay_interval = 500
-replay_pool = ReplayMemory(5000)
 torch.manual_seed(1234)
 np.random.seed(1234)
-gamma = 0.99
+gamma = 0.9
 episode_num = 6000
 update_steps = 5
 
@@ -88,9 +86,7 @@ def train(env):
             model.add_saved_reward(reward)
             state = next_state
         
-        state = preprocessor.env_state_process_one_hot(state, env.knapsack_max + 1)
-        state = torch.cat((state, info), 1)
-        model.train_trajectory(state, optimiser, gamma=gamma, verbose=True)
+        model.train_trajectory('done', optimiser, gamma=gamma, verbose=True)
         
         if e % test_interval == 0:
             test(model, env)

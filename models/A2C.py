@@ -69,7 +69,10 @@ class AdvantageActorCritic(nn.Module):
 
     def train_trajectory(self, last_state, optimiser, gamma=0.9, verbose=False):
         # calculate returns
-        R = self.critic_network(last_state)
+        if type(last_state) is str:
+            R = 0
+        else:
+            R = self.critic_network(last_state)
         returns = []
         for r in self.saved_rewards[::-1]:
             R = r + gamma * R
@@ -81,12 +84,12 @@ class AdvantageActorCritic(nn.Module):
         # returns     = torch.cat(returns).detach()
         values      = torch.cat(self.saved_values)
         entropy     = torch.cat(self.saved_entropy).sum()
-        advantage   = returns - values
+        advantage   = returns - values[0]
         actor_loss  = -(log_probs * advantage.detach()).mean()
         critic_loss = advantage.pow(2).mean()
         loss        = actor_loss + 0.5 * critic_loss - 0.001 * entropy
         if verbose:
-            print('[REINFORCE train loss]', loss.to(torch.device("cpu")).unsqueeze(0).detach().numpy()[0])
+            print('[A2C train loss]', loss.to(torch.device("cpu")).unsqueeze(0).detach().numpy()[0])
 
         # back propogate loss
         optimiser.zero_grad()

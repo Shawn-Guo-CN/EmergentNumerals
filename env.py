@@ -92,8 +92,8 @@ class FoodGatherEnv_GPU(nn.Module):
         reward = -1 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
         if action == self.num_food_types:
             if torch.eq(self.expected_num, self.knapsack_num + self.warehouse_num).sum() > 0:
-                reward = 100 / self.num_food_types * \
-                        torch.eq(self.expected_num, self.knapsack_num + self.warehouse_num).sum()
+                reward = 100. / self.num_food_types * \
+                    torch.eq(self.expected_num, self.knapsack_num + self.warehouse_num).sum().type(torch.FloatTensor)
             else:
                 reward = -100 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
             return self.knapsack_num, reward, True
