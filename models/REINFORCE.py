@@ -21,7 +21,7 @@ class REINFORCE(nn.Module):
             nn.Dropout(p=0.8),
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
-            nn.Dropout(0.8),
+            nn.Dropout(p=0.8),
             nn.Linear(hidden_dim, self.output_dim),
             nn.Softmax(dim=-1))
 

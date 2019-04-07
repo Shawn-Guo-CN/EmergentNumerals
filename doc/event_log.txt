@@ -1,10 +1,21 @@
 2019-04-06
-What is done:
-1. Built up REINFORCE model w/o BASELINE
-2. Created util script for handling state representation
+[done]:
+1. Built up REINFORCE model w/o BASELINE;
+2. Created util script for handling state representation;
 
-Problem
+[problem]
 Neither of REINFORCE w/o BASELINE works
 
-Plan
+[plan]
 Try A2C tomorrow
+
+2019-04-07
+[done]:
+1. tried REINFORCE with small lr and more hidden layers;
+2. changed reward to be partial;
+
+[problem]:
+1. although performance of REINFORCE is better than yesterday's
+   divergence, it still doesn't works
+
+[plan]

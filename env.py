@@ -91,8 +91,9 @@ class FoodGatherEnv_GPU(nn.Module):
         self.knapsack_num.clamp_(max=self.knapsack_max)
         reward = -1 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
         if action == self.num_food_types:
-            if torch.equal(self.expected_num, self.knapsack_num + self.warehouse_num):
-                reward = 100 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
+            if torch.eq(self.expected_num, self.knapsack_num + self.warehouse_num).sum() > 0:
+                reward = 100 / self.num_food_types * \
+                        torch.eq(self.expected_num, self.knapsack_num + self.warehouse_num).sum()
             else:
                 reward = -100 * torch.ones((1,), dtype=torch.float, device=self.knapsack_num.device)
             return self.knapsack_num, reward, True
@@ -104,11 +105,13 @@ class FoodGatherEnv_GPU(nn.Module):
         :param perdue_states: int, the states that are hided during traing.
         """
         if train:
-            self.warehouse_num = torch.zeros((self.num_food_types,), dtype=torch.int64, device=self.knapsack_num.device)
+            self.warehouse_num = torch.zeros((self.num_food_types,), dtype=torch.int64, \
+                                                device=self.knapsack_num.device)
             for i in range(self.num_food_types):
                 self.warehouse_num[i] = int(np.random.randint(i, self.num_food_types + 2 + i - perdue_states))
         else:
-            self.warehouse_num = torch.zeros((self.num_food_types,), dtype=torch.int64, device=self.knapsack_num.device)
+            self.warehouse_num = torch.zeros((self.num_food_types,), dtype=torch.int64, \
+                                                device=self.knapsack_num.device)
             for i in range(self.num_food_types):
                 snip = list(range(0, i)) + \
                     list(range(self.num_food_types + 2 + i - perdue_states, self.num_food_types + 2))
