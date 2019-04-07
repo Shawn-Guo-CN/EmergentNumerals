@@ -10,13 +10,13 @@ from env import FoodGatherEnv_GPU
 from utils.Preprocessor import Preprocessor
 
 device = torch.device("cpu")
-lr = 1e-4
+lr = 2.5e-5
 test_interval = 50
 decay_interval = 500
 torch.manual_seed(1234)
 np.random.seed(1234)
 gamma = 0.9
-episode_num = 6000
+episode_num = 30000
 update_steps = 5
 
 
