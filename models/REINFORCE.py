@@ -19,6 +19,9 @@ class REINFORCE(nn.Module):
             nn.Linear(self.input_dim, hidden_dim), 
             nn.ReLU(),
             nn.Dropout(p=0.8),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(0.8),
             nn.Linear(hidden_dim, self.output_dim),
             nn.Softmax(dim=-1))
 
@@ -35,21 +38,14 @@ class REINFORCE(nn.Module):
         return self.policy_network(x)
 
     def get_action(self, state, epsilon=0.1):
-        if random.random() >= epsilon:
-            probs = self.forward(state)
-            # for debugging
-            # print('PROBS', probs.unsqueeze(0).detach().numpy()[0])
-            m = Categorical(probs)
-            action = m.sample()
-            self.saved_log_probs.append(m.log_prob(action))
-            return action.item()
-        else:
-            probs = self.forward(state)
-            action = random.randint(0, self.output_dim - 1)
-            log_prob = torch.log(probs[0, action]).view(-1)
-            self.saved_log_probs.append(log_prob)
-            return action
-
+        probs = self.forward(state)
+        # for debugging
+        # print('PROBS', probs.unsqueeze(0).detach().numpy()[0])
+        m = Categorical(probs)
+        action = m.sample()
+        self.saved_log_probs.append(m.log_prob(action))
+        return action.item()
+        
     def train_episode(self, optimiser, gamma=0.9, verbose=False):
         R = 0
         returns = []

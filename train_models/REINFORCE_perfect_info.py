@@ -11,13 +11,13 @@ from env import FoodGatherEnv_GPU
 from utils.Preprocessor import Preprocessor
 
 device = torch.device("cpu")
-lr = 1e-3
+lr = 1e-5
 test_interval = 20
 decay_interval = 500
 replay_pool = ReplayMemory(5000)
 torch.manual_seed(1234)
 np.random.seed(1234)
-gamma = 0.9
+gamma = 0.8
 episode_num = 6000
 
 
@@ -35,7 +35,7 @@ def test(model, env):
         while not terminate:
             state = preprocessor.env_state_process_one_hot(state, env.knapsack_max + 1)
             state = torch.cat((state, info), 1)
-            action = model.get_action(state, epsilon=0.)
+            action = model.get_action(state)
             # action = model.get_action(state) # for REINFORCE_BASELINE
             next_state, reward, terminate = env.step(action)
             rewards += reward

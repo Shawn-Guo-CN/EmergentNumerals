@@ -18,9 +18,27 @@ class ActorCritic(nn.Module):
 
         self.input_dim = input_dim
         self.output_dim = output_dim
-
-        self.fc_hidden = nn.Linear(input_dim, hidden_dim)
-        self.fc_actor = nn.Linear(hidden_dim, output_dim)
+policy, _ = self.forward(state)
+        m = Categorical(policy)
+        if np.random.rand() > epsilon:
+            action = m.sample()
+        else:
+            action = torch.randint(high=self.output_dim, size=(1,), device=state.device)
+        return action
+        self.fc_hidden = policy, _ = self.forward(state)
+        m = Categorical(policy)
+        if np.random.rand() > epsilon:
+            action = m.sample()
+        else:
+            action = torch.randint(high=self.output_dim, size=(1,), device=state.device)
+        return actionnn.Linear(input_dim, hidden_dim)
+        self.fc_actor = npolicy, _ = self.forward(state)
+        m = Categorical(policy)
+        if np.random.rand() > epsilon:
+            action = m.sample()
+        else:
+            action = torch.randint(high=self.output_dim, size=(1,), device=state.device)
+        return actionn.Linear(hidden_dim, output_dim)
         self.fc_critic = nn.Linear(hidden_dim, 1)
         self.fc_critic_target = nn.Linear(hidden_dim, 1)
 
@@ -28,11 +46,41 @@ class ActorCritic(nn.Module):
             # in case add more modules later
             if isinstance(m, nn.Linear):
                 nn.init.xavier_uniform_(m.weight)
-
-        self.update_counter = 0
-        self.update_interval = 1
-
-    def forward(self, x):
+policy, _ = self.forward(state)
+        m = Categorical(policy)
+        if np.random.rand() > epsilon:
+            action = m.sample()
+        else:
+            action = torch.randint(high=self.output_dim, size=(1,), device=state.device)
+        return action
+        self.update_countpolicy, _ = self.forward(state)
+        m = Categorical(policy)
+        if np.random.rand() > epsilon:
+            action = m.sample()
+        else:
+            action = torch.randint(high=self.output_dim, size=(1,), device=state.device)
+        return actioner = 0
+        self.update_interpolicy, _ = self.forward(state)
+        m = Categorical(policy)
+        if np.random.rand() > epsilon:
+            action = m.sample()
+        else:
+            action = torch.randint(high=self.output_dim, size=(1,), device=state.device)
+        return actionval = 1
+policy, _ = self.forward(state)
+        m = Categorical(policy)
+        if np.random.rand() > epsilon:
+            action = m.sample()
+        else:
+            action = torch.randint(high=self.output_dim, size=(1,), device=state.device)
+        return action
+    def forward(self, x):policy, _ = self.forward(state)
+        m = Categorical(policy)
+        if np.random.rand() > epsilon:
+            action = m.sample()
+        else:
+            action = torch.randint(high=self.output_dim, size=(1,), device=state.device)
+        return action
         x = F.relu(self.fc_hidden(x))
         policy = F.softmax(self.fc_actor(x), dim=-1)
         value = self.fc_critic(x)
