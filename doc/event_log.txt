@@ -21,4 +21,16 @@ Try A2C tomorrow
 2. A2C doesn't converge either
 
 [plan]
+try one hot representation
 tune hyper params
+
+2019-04-08
+[done]:
+1. built up one_hot representation method in preprocessor;
+2. tried one_hot representation with REINFORCE and A2C;
+
+[problem]:
+1. although the message is perfect, neither A2C or REINFORCE could solve
+   the game;
+
+[plan]
