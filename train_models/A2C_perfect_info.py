@@ -28,15 +28,14 @@ def test(model, env):
     for e in range(100):
         # TODO: turn on the test mode in the future
         state = env.reset()
-        info = preprocessor.env_state_process_ones(env.warehouse_num)
+        info = preprocessor.env_warehouse2message_nhot(env.warehouse_num)
         terminate = False
         rewards = 0
         
         while not terminate:
-            state = preprocessor.env_state_process_one_hot(state, env.knapsack_max + 1)
+            state = preprocessor.env_state_process_one_hot(state)
             state = torch.cat((state, info), 1)
             action = model.get_action(state)
-            # action = model.get_action(state) # for REINFORCE_BASELINE
             next_state, reward, terminate = env.step(action)
             rewards += reward
             state = next_state
@@ -65,15 +64,14 @@ def train(env):
     for e in range(1, episode_num+1):
         state = env.reset()
         # TODO: may need to try other encoding methods later
-        info = preprocessor.env_state_process_ones(env.warehouse_num)
+        info = preprocessor.env_warehouse2message_nhot(env.warehouse_num)
 
         terminate = False
         step = 0
 
         while not terminate:
             step += 1
-            # max_cap + 1 is due to we need to take 0 into consideration
-            state = preprocessor.env_state_process_one_hot(state, env.knapsack_max + 1)
+            state = preprocessor.env_state_process_one_hot(state)
             state = torch.cat((state, info), 1)
 
             # note that current state is actually the next_state for last loop step

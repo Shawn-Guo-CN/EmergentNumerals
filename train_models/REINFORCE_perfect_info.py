@@ -18,7 +18,8 @@ replay_pool = ReplayMemory(5000)
 torch.manual_seed(1234)
 np.random.seed(1234)
 gamma = 0.99
-episode_num = 6000
+episode_num = 30000
+verbose = False
 
 
 def test(model, env):
@@ -28,12 +29,12 @@ def test(model, env):
     for e in range(100):
         # TODO: turn on the test mode in the future
         state = env.reset()
-        info = preprocessor.env_state_process_ones(env.warehouse_num)
+        info = preprocessor.env_warehouse2message_nhot(env.warehouse_num)
         terminate = False
         rewards = 0
         
         while not terminate:
-            state = preprocessor.env_state_process_one_hot(state, env.knapsack_max + 1)
+            state = preprocessor.env_state_process_one_hot(state)
             state = torch.cat((state, info), 1)
             action = model.get_action(state)
             # action = model.get_action(state) # for REINFORCE_BASELINE
@@ -65,20 +66,19 @@ def train(env):
     for e in range(1, episode_num+1):
         state = env.reset()
         # TODO: may need to try other encoding methods later
-        info = preprocessor.env_state_process_ones(env.warehouse_num)
+        info = preprocessor.env_warehouse2message_nhot(env.warehouse_num)
 
         terminate = False
 
         while not terminate:
-            # max_cap + 1 is due to we need to take 0 into consideration
-            state = preprocessor.env_state_process_one_hot(state, env.knapsack_max + 1)
+            state = preprocessor.env_state_process_one_hot(state)
             state = torch.cat((state, info), 1)
             action = model.get_action(state)
             next_state, reward, terminate = env.step(action)
             model.rewards.append(reward)
             state = next_state
         
-        model.train_episode(optimiser, gamma=gamma, verbose=True)
+        model.train_episode(optimiser, gamma=gamma, verbose=verbose)
         
         if e % test_interval == 0:
             test(model, env)
