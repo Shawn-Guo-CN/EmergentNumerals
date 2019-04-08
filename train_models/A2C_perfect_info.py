@@ -10,14 +10,14 @@ from env import FoodGatherEnv_GPU
 from utils.Preprocessor import Preprocessor
 
 device = torch.device("cpu")
-lr = 2.5e-5
+lr = 1e-8
 test_interval = 50
-decay_interval = 500
 torch.manual_seed(1234)
 np.random.seed(1234)
 gamma = 0.9
 episode_num = 30000
 update_steps = 5
+verbose = False
 
 
 def test(model, env):
@@ -79,14 +79,14 @@ def train(env):
             # note that current state is actually the next_state for last loop step
             if step % update_steps == 0:
                 step = 0
-                model.train_trajectory(state, optimiser, gamma=gamma, verbose=True)
+                model.train_trajectory(state, optimiser, gamma=gamma, verbose=verbose)
             
             action = model.get_action(state)
             next_state, reward, terminate = env.step(action)
             model.add_saved_reward(reward)
             state = next_state
         
-        model.train_trajectory('done', optimiser, gamma=gamma, verbose=True)
+        model.train_trajectory('done', optimiser, gamma=gamma, verbose=verbose)
         
         if e % test_interval == 0:
             test(model, env)

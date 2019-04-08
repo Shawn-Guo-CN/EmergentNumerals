@@ -12,25 +12,20 @@ class AdvantageActorCritic(nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
 
-        # TODO: try use same hidden layers later
-        self.actor_network = nn.Sequential(
+        self.hidden_layer = nn.Sequential(
             nn.Linear(self.input_dim, hidden_dim), 
             nn.ReLU(),
             nn.Dropout(p=0.8),
             nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(p=0.8),
+            nn.ReLU()
+        )
+
+        self.actor_network = nn.Sequential(
             nn.Linear(hidden_dim, self.output_dim),
             nn.Softmax(dim=-1)
         )
 
         self.critic_network = nn.Sequential(
-            nn.Linear(self.input_dim, hidden_dim), 
-            nn.ReLU(),
-            nn.Dropout(p=0.8),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
-            nn.Dropout(p=0.8),
             nn.Linear(hidden_dim, 1)
         )
 
@@ -45,6 +40,7 @@ class AdvantageActorCritic(nn.Module):
         self.saved_entropy = []
 
     def forward(self, x):
+        x = self.hidden_layer(x)
         policy = self.actor_network(x)
         value = self.critic_network(x)
         return policy, value
@@ -67,12 +63,12 @@ class AdvantageActorCritic(nn.Module):
         del self.saved_values[:]
         del self.saved_entropy[:]
 
-    def train_trajectory(self, last_state, optimiser, gamma=0.9, verbose=False):
+    def train_trajectory(self, next_state, optimiser, gamma=0.9, verbose=False):
         # calculate returns
-        if type(last_state) is str:
+        if type(next_state) is str:
             R = 0
         else:
-            R = self.critic_network(last_state)
+            R = self.critic_network(self.hidden_layer(next_state))
         returns = []
         for r in self.saved_rewards[::-1]:
             R = r + gamma * R
