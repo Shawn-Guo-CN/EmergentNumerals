@@ -112,3 +112,5 @@ out
 *main.log
 *.synctex
 
+# vscode
+.vscode

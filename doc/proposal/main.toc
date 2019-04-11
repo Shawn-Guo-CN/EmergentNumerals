@@ -1,0 +1,10 @@
+\contentsline {section}{\numberline {1}Motivation}{1}
+\contentsline {section}{\numberline {2}Background}{2}
+\contentsline {subsection}{\numberline {2.1}Computer Simulation Methods in Evolutionary Linguistics}{2}
+\contentsline {subsection}{\numberline {2.2}Grounded Language Learning}{3}
+\contentsline {section}{\numberline {3}Architecture and Proposed Language Games}{3}
+\contentsline {subsection}{\numberline {3.1}Architecture of Proposed Simulation Method}{4}
+\contentsline {subsection}{\numberline {3.2}Game for Cardinal Numeral: Food-Gathering Bandit Game}{5}
+\contentsline {section}{\numberline {4}Evaluation}{6}
+\contentsline {section}{\numberline {5}Expected Outcomes}{7}
+\contentsline {section}{\numberline {6}Research Plan, Milestones and Deliverables}{7}
