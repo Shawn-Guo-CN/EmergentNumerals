@@ -1,0 +1,36 @@
+2019-04-06
+[done]:
+1. Built up REINFORCE model w/o BASELINE;
+2. Created util script for handling state representation;
+
+[problem]
+Neither of REINFORCE w/o BASELINE works
+
+[plan]
+Try A2C tomorrow
+
+2019-04-07
+[done]:
+1. tried REINFORCE with small lr and more hidden layers;
+2. changed reward to be partial;
+3. built up A2C model but didn't find good hyper params that can converge
+
+[problem]:
+1. although performance of REINFORCE is better than yesterday's
+   divergence, it still doesn't works
+2. A2C doesn't converge either
+
+[plan]
+try one hot representation
+tune hyper params
+
+2019-04-08
+[done]:
+1. built up one_hot representation method in preprocessor;
+2. tried one_hot representation with REINFORCE and A2C;
+
+[problem]:
+1. although the message is perfect, neither A2C or REINFORCE could solve
+   the game;
+
+[plan]
