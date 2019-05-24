@@ -33,8 +33,8 @@ def generate_target_data(out_file='./data/', max_len=15, num_types=3):
 if __name__ == '__main__':
     cf = configparser.ConfigParser()
     cf.read('./game.conf')
-    # generate_target_data(out_file=cf['DATA']['out_path'], 
-    #     max_len=int(cf['DATA']['max_len']),
-    #     num_types=int(cf.defaults()['num_food_types'])
-    # )
+    generate_target_data(out_file=cf['DATA']['out_path'], 
+        max_len=int(cf['DATA']['max_len']),
+        num_types=int(cf.defaults()['num_food_types'])
+    )
     generate_input_data()
