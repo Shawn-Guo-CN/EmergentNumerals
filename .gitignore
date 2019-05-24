@@ -115,3 +115,4 @@ out
 # added by Shawn
 .idea/
 .vscode/
+*.code-workspace
