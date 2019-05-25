@@ -30,11 +30,22 @@ def generate_target_data(out_file='./data/', max_len=15, num_types=3):
                 # print(file=out_file+'all.txt')
                 print('A' * a + 'B' * b + 'C' * c, file=open(out_file + 'all_targets.txt', mode='a'))
 
+
+def generate_fixed_len_data(prefix='', length=15, out_file=open('./data/fix_len_data.txt', mode='a')):
+    if length == 1:
+        for c in ['A', 'B', 'C']:
+            print(prefix+c, file=out_file)
+    else:
+        for c in ['A', 'B', 'C']:
+            generate_fixed_len_data(prefix=prefix+c, length=length-1)
+
+
 if __name__ == '__main__':
-    cf = configparser.ConfigParser()
-    cf.read('./game.conf')
-    generate_target_data(out_file=cf['DATA']['out_path'], 
-        max_len=int(cf['DATA']['max_len']),
-        num_types=int(cf.defaults()['num_food_types'])
-    )
-    generate_input_data()
+    # cf = configparser.ConfigParser()
+    # cf.read('./game.conf')
+    # generate_target_data(out_file=cf['DATA']['out_path'], 
+    #     max_len=int(cf['DATA']['max_len']),
+    #     num_types=int(cf.defaults()['num_food_types'])
+    # )
+    # generate_input_data()
+    generate_fixed_len_data('', 3)
