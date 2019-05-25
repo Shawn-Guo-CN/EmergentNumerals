@@ -34,6 +34,7 @@ def generate_target_data(out_file='./data/', max_len=15, num_types=3):
 def generate_fixed_len_data(prefix='', length=15, out_file=open('./data/fix_len_data.txt', mode='a')):
     if length == 1:
         for c in ['A', 'B', 'C']:
+            print(prefix+c)
             print(prefix+c, file=out_file)
     else:
         for c in ['A', 'B', 'C']:
