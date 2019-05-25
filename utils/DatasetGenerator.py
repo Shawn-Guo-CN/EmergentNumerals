@@ -35,7 +35,7 @@ def generate_fixed_len_data(prefix='', length=15, out_file=open('./data/fix_len_
     if length == 1:
         for c in ['A', 'B', 'C']:
             print(prefix+c)
-            print(prefix+c, file=out_file)
+            print(prefix+c+'\t'+prefix+c, file=out_file)
     else:
         for c in ['A', 'B', 'C']:
             generate_fixed_len_data(prefix=prefix+c, length=length-1)
