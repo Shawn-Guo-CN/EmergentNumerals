@@ -12,7 +12,7 @@ def load_sequences(file_path):
     f = open(file_path, 'r')
 
     pair_set = []
-    for line in f.readlines:
+    for line in f.readlines():
         items = line.strip().split('\t')
         pair_set.append([items[0], items[1]])
     
