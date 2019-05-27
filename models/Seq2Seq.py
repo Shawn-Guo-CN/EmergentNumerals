@@ -2,11 +2,11 @@ from utils.conf import *
 
 
 class EncoderGRU(nn.Module):
-    def __init__(self, input_size, hidden_size):
+    def __init__(self, input_size, hidden_size, embedding):
         super(EncoderGRU, self).__init__()
         self.hidden_size = hidden_size
 
-        self.embedding = nn.Embedding(input_size, hidden_size)
+        self.embedding = embedding
         self.gru = nn.GRU(hidden_size, hidden_size)
 
     def forward(self, input):
@@ -19,11 +19,11 @@ class EncoderGRU(nn.Module):
 
 
 class DecoderGRU(nn.Module):
-    def __init__(self, hidden_size, output_size):
+    def __init__(self, hidden_size, output_size, embedding):
         super(DecoderGRU, self).__init__()
         self.hidden_size = hidden_size
 
-        self.embedding = nn.Embedding(output_size, hidden_size)
+        self.embedding = embedding
         self.gru = nn.GRU(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
         self.softmax = nn.LogSoftmax(dim=1)

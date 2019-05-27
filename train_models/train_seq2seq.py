@@ -4,8 +4,8 @@ from utils.DatasetLoader import *
 from utils.Preprocesses import *
 
 
-def train_epoch(input_variable, target_variable, encoder, decoder, embedding,
-          encoder_optimizer, decoder_optimizer, batch_size, clip, max_length=MAX_LENGTH):
+def train_epoch(input_variable, target_variable, encoder, decoder, 
+          encoder_optimizer, decoder_optimizer, batch_size=BATCH_SIZE, clip=CLIP, max_length=MAX_LENGTH):
 
     # Zero gradients
     encoder_optimizer.zero_grad()
@@ -91,8 +91,9 @@ def train():
     print('done')
     
     print('building model...')
-    encoder = EncoderGRU(voc.num_words, HIDDEN_SIZE)
-    decoder = DecoderGRU(HIDDEN_SIZE, voc.num_words)
+    embedding = nn.Embedding(voc.num_words, HIDDEN_SIZE)
+    encoder = EncoderGRU(voc.num_words, HIDDEN_SIZE, embedding)
+    decoder = DecoderGRU(HIDDEN_SIZE, voc.num_words, embedding)
     encoder_optimizer = OPTIMISER(encoder.parameters(), lr=LEARNING_RATE)
     decoder_optimizer = OPTIMISER(decoder.parameters(), lr=LEARNING_RATE * DECODER_LEARING_RATIO)
     print('done')
@@ -104,10 +105,17 @@ def train():
 
     print('training...')
     for iter in range(start_iteration, NUM_ITERS+1):
-        input_batch = train_input_batches[iter]
-        target_batch = train_target_batches[iter]
-        
+        input_batch = train_input_batches[iter - 1]
+        target_batch = train_target_batches[iter - 1]
 
+        loss = train_epoch(input_batch, target_batch, encoder, decoder, encoder_optimizer, decoder_optimizer)
+        print_loss += loss
+
+        if iter % PRINT_EVERY == 0:
+            print_loss_avg = print_loss / PRINT_EVERY
+            print("Iteration: {}; Percent complete: {:.1f}%; Average loss: {:.4f}".format(
+                iter, iter / NUM_ITERS * 100, print_loss_avg))
+            print_loss = 0
 
 
 if __name__ == '__main__':
