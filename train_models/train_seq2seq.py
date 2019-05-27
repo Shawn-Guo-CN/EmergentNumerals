@@ -11,10 +11,6 @@ def train_epoch(input_variable, target_variable, encoder, decoder,
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
-    # Set device options
-    input_variable = input_variable.to(DEVICE)
-    target_variable = target_variable.to(DEVICE)
-
     # Initialize variables
     loss = 0
     print_losses = []
@@ -23,39 +19,15 @@ def train_epoch(input_variable, target_variable, encoder, decoder,
     encoder_outputs, encoder_hidden = encoder(input_variable)
 
     # Create initial decoder input (start with SOS tokens for each sentence)
-    decoder_input = torch.LongTensor([[SOS_TOKEN for _ in range(batch_size)]])
-    decoder_input = decoder_input.to(DEVICE)
+    decoder_input = torch.LongTensor([[SOS_TOKEN for _ in range(batch_size)]]).to(DEVICE)
 
     # Set initial decoder hidden state to the encoder's final hidden state
-    decoder_hidden = encoder_hidden[:decoder.n_layers]
+    decoder_hidden = encoder_hidden
 
     # Determine if we are using teacher forcing this iteration
     use_teacher_forcing = True if random.random() < TEACHER_FORCING_RATIO else False
 
-    # Forward batch of sequences through decoder one time step at a time
-    if use_teacher_forcing:
-        for t in range(max_length):
-            decoder_output, decoder_hidden = decoder(
-                decoder_input, decoder_hidden, encoder_outputs
-            )
-            # Teacher forcing: next input is current target
-            decoder_input = target_variable[t].view(1, -1)
-            # Calculate and accumulate loss
-            loss += -torch.log(torch.gather(decoder_output, 1, target_variable[t].view(-1, 1)).squeeze(1))
-            print_losses.append(loss)
-    else:
-        for t in range(max_length):
-            decoder_output, decoder_hidden = decoder(
-                decoder_input, decoder_hidden, encoder_outputs
-            )
-            # No teacher forcing: next input is decoder's own current output
-            _, topi = decoder_output.topk(1)
-            decoder_input = torch.LongTensor([[topi[i][0] for i in range(batch_size)]])
-            decoder_input = decoder_input.to(DEVICE)
-            # Calculate and accumulate loss
-            loss += -torch.log(torch.gather(decoder_output, 1, target_variable[t].view(-1, 1)).squeeze(1))
-            print_losses.append(loss)
-
+    # TODO: need to fill in the seq2seq model
     # Perform backpropatation
     loss.backward()
 
@@ -94,6 +66,7 @@ def train():
     embedding = nn.Embedding(voc.num_words, HIDDEN_SIZE)
     encoder = EncoderGRU(voc.num_words, HIDDEN_SIZE, embedding)
     decoder = DecoderGRU(HIDDEN_SIZE, voc.num_words, embedding)
+    # TODO: need to fill in the seq2seq model
     encoder_optimizer = OPTIMISER(encoder.parameters(), lr=LEARNING_RATE)
     decoder_optimizer = OPTIMISER(decoder.parameters(), lr=LEARNING_RATE * DECODER_LEARING_RATIO)
     print('done')

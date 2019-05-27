@@ -10,8 +10,10 @@ class EncoderGRU(nn.Module):
         self.gru = nn.GRU(hidden_size, hidden_size)
 
     def forward(self, input):
-        embedded = self.embedding(input).view(1, 1, -1)
+        embedded = self.embedding(input)
         output, hidden = self.gru(embedded)
+        # shape of output is [length * batch_size * hidden_size]
+        # shape of hidden is [1 * batch_size * hidden_size] (only contains h_n)
         return output, hidden
 
     def init_hidden(self):
@@ -28,15 +30,67 @@ class DecoderGRU(nn.Module):
         self.out = nn.Linear(hidden_size, output_size)
         self.softmax = nn.LogSoftmax(dim=1)
 
-    def forward(self, input, hidden):
-        output = self.embedding(input).view(1, 1, -1)
-        output = F.relu(output)
-        output, hidden = self.gru(output, hidden)
-        output = self.softmax(self.out(output[0]))
-        return output, hidden
+    def forward(self, input, init_hidden):
+        embedded = self.dropout(self.embedding(input))
+        
+        #embedded = [1, batch size, emb dim]
+                
+        output, (hidden, cell) = self.gru(embedded, init_hidden)
+        
+        #output = [sent len, batch size, hid dim * n directions]
+        #hidden = [n layers * n directions, batch size, hid dim]
+        #cell = [n layers * n directions, batch size, hid dim]
+        
+        #sent len and n directions will always be 1 in the decoder, therefore:
+        #output = [1, batch size, hid dim]
+        #hidden = [n layers, batch size, hid dim]
+        #cell = [n layers, batch size, hid dim]
+        
+        prediction = self.out(output.squeeze(0))
+        #prediction = [batch size, output dim]
+        
+        return prediction, hidden
 
     def init_hidden(self):
         return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
+
+
+class Seq2Seq(nn.Module):
+    def __init__(self, encoder, decoder, device=DEVICE):
+        super().__init__()
+        
+        self.encoder = encoder
+        self.decoder = decoder
+        self.device = device
+        
+        assert encoder.hid_dim == decoder.hid_dim, \
+            "Hidden dimensions of encoder and decoder must be equal!"
+        assert encoder.n_layers == decoder.n_layers, \
+            "Encoder and decoder must have equal number of layers!"
+        
+    def forward(self, input, target, voc_size, teacher_forcing_ratio=TEACHER_FORCING_RATIO):
+        #input = [src sent len, batch size]
+        #target = [trg sent len, batch size]
+        #teacher_forcing_ratio is probability to use teacher forcing
+        #e.g. if teacher_forcing_ratio is 0.75 we use ground-truth inputs 75% of the time
+        
+        #tensor to store decoder outputs
+        outputs = torch.zeros(MAX_LENGTH, BATCH_SIZE, voc_size).to(self.device)
+        
+        #last hidden state of the encoder is used as the initial hidden state of the decoder
+        _, hidden = self.encoder(input)
+        
+        #first input to the decoder is the <sos> tokens
+        input = target[0,:]
+        
+        for t in range(1, MAX_LENGTH):
+            output, hidden = self.decoder(input, hidden)
+            outputs[t] = output
+            teacher_force = random.random() < teacher_forcing_ratio
+            top1 = output.max(1)[1]
+            input = (target[t] if teacher_force else top1)
+        
+        return outputs
 
 
 class GreedySearchDecoder(nn.Module):

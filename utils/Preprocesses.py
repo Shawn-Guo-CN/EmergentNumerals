@@ -34,10 +34,14 @@ def indices_set2data_batches(in_set, batch_size=BATCH_SIZE):
     num_batches = math.ceil(len(input_indices) / batch_size)
     for i in range(0, num_batches):
         input_batches.append(
-            np.asarray(input_indices[i*batch_size:min((i+1)*batch_size, len(input_indices))]).transpose()
+           torch.LongTensor(
+               np.asarray(input_indices[i*batch_size:min((i+1)*batch_size, 
+               len(input_indices))]).transpose()).to(DEVICE)
         )
         target_batches.append(
-            np.asarray(target_indices[i*batch_size:min((i+1)*batch_size, len(input_indices))]).transpose()
+            torch.LongTensor(
+                np.asarray(target_indices[i*batch_size:min((i+1)*batch_size, 
+                len(input_indices))]).transpose()).to(DEVICE)
         )
     
     return input_batches, target_batches

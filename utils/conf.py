@@ -31,4 +31,4 @@ MAX_LENGTH = 15
 
 # hyperparameters for model
 HIDDEN_SIZE = 32
-BATCH_SIZE = 64
+BATCH_SIZE = 5
