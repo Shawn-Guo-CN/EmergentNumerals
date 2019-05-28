@@ -26,9 +26,9 @@ SAVE_DIR = './params/'
 
 # for generating and loading data
 DATA_FILE_PATH = './data/fix_len_data.txt'
-TRAIN_FILE_PATH = './data/train.txt'
-DEV_FILE_PATH = './data/dev.txt'
-TEST_FILE_PATH = './data/test.txt'
+TRAIN_FILE_PATH = './data/sample_train.txt'
+DEV_FILE_PATH = './data/sample_dev.txt'
+TEST_FILE_PATH = './data/sample_test.txt'
 
 # for preprocessing sequences
 SOS_TOKEN = 0  # Start-of-sequence token
