@@ -5,69 +5,62 @@ from utils.Preprocesses import *
 
 
 def train_epoch(input_variable, target_variable, encoder, decoder, 
-          encoder_optimizer, decoder_optimizer, batch_size=BATCH_SIZE, clip=CLIP, max_length=MAX_LENGTH):
+          encoder_optimizer, decoder_optimizer, clip=CLIP, max_length=MAX_LENGTH):
+
+    batch_size = input_variable.shape[1]
 
     # Zero gradients
     encoder_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
-    # Set device options
-    input_variable = input_variable.to(DEVICE)
-    target_variable = target_variable.to(DEVICE)
-
     # Initialize variables
     loss = 0
-    print_losses = []
 
     # Forward pass through encoder
     encoder_outputs, encoder_hidden = encoder(input_variable)
 
     # Create initial decoder input (start with SOS tokens for each sentence)
-    decoder_input = torch.LongTensor([[SOS_TOKEN for _ in range(batch_size)]])
-    decoder_input = decoder_input.to(DEVICE)
-
+    decoder_input = torch.LongTensor([[SOS_TOKEN for _ in range(batch_size)]]).to(DEVICE)
     # Set initial decoder hidden state to the encoder's final hidden state
-    decoder_hidden = encoder_hidden[:decoder.n_layers]
+    decoder_hidden = encoder_hidden
+    # Initilise the output tensor of decoder, where the EOS_TOKEN+1 is actually the size of voc
+    decoder_outputs = torch.zeros(MAX_LENGTH+2, batch_size, EOS_TOKEN+1).to(DEVICE)
+    
+    #first input to the decoder is the <sos> tokens
+    decoder_input = target_variable[0,:]
+    
+    # MAXLENGTH+1 caused by the fact that both SOS and EOS are contained
+    for t in range(1, MAX_LENGTH+1):
+        output, decoder_hidden = decoder(decoder_input, decoder_hidden)
+        decoder_outputs[t] = output
+        # Determine if we are using teacher forcing this iteration
+        use_teacher_forcing = True if random.random() < TEACHER_FORCING_RATIO else False
+        top1 = output.max(1)[1]
+        decoder_input = (target_variable[t] if use_teacher_forcing else top1)
 
-    # Determine if we are using teacher forcing this iteration
-    use_teacher_forcing = True if random.random() < TEACHER_FORCING_RATIO else False
+    #target_variable = [trg sent len, batch size]
+    #decoder_outputs = [trg sent len, batch size, output dim]
+    
+    decoder_outputs = decoder_outputs[1:].view(-1, decoder_outputs.shape[-1])
+    target_variable = target_variable[1:].contiguous().view(-1)
+    
+    #trg = [(trg sent len - 1) * batch size]
+    #output = [(trg sent len - 1) * batch size, output dim]
 
-    # Forward batch of sequences through decoder one time step at a time
-    if use_teacher_forcing:
-        for t in range(max_length):
-            decoder_output, decoder_hidden = decoder(
-                decoder_input, decoder_hidden, encoder_outputs
-            )
-            # Teacher forcing: next input is current target
-            decoder_input = target_variable[t].view(1, -1)
-            # Calculate and accumulate loss
-            loss += -torch.log(torch.gather(decoder_output, 1, target_variable[t].view(-1, 1)).squeeze(1))
-            print_losses.append(loss)
-    else:
-        for t in range(max_length):
-            decoder_output, decoder_hidden = decoder(
-                decoder_input, decoder_hidden, encoder_outputs
-            )
-            # No teacher forcing: next input is decoder's own current output
-            _, topi = decoder_output.topk(1)
-            decoder_input = torch.LongTensor([[topi[i][0] for i in range(batch_size)]])
-            decoder_input = decoder_input.to(DEVICE)
-            # Calculate and accumulate loss
-            loss += -torch.log(torch.gather(decoder_output, 1, target_variable[t].view(-1, 1)).squeeze(1))
-            print_losses.append(loss)
-
+    # Calculate loss 
+    loss = LOSS_FUNCTION(decoder_outputs, target_variable)
     # Perform backpropatation
     loss.backward()
 
     # Clip gradients: gradients are modified in place
-    _ = nn.utils.clip_grad_norm_(encoder.parameters(), CLIP)
-    _ = nn.utils.clip_grad_norm_(decoder.parameters(), CLIP)
+    nn.utils.clip_grad_norm_(encoder.parameters(), CLIP)
+    nn.utils.clip_grad_norm_(decoder.parameters(), CLIP)
 
     # Adjust model weights
     encoder_optimizer.step()
     decoder_optimizer.step()
 
-    return sum(print_losses)
+    return loss.item()
 
 
 def train():
@@ -98,18 +91,19 @@ def train():
     decoder_optimizer = OPTIMISER(decoder.parameters(), lr=LEARNING_RATE * DECODER_LEARING_RATIO)
     print('done')
     
-    print('initialising...')
+    print('initiprint_lossesalising...')
     start_iteration = 1
     print_loss = 0
     print('done')
 
     print('training...')
     for iter in range(start_iteration, NUM_ITERS+1):
-        input_batch = train_input_batches[iter - 1]
-        target_batch = train_target_batches[iter - 1]
+        for batch_index in range(0, len(train_input_batches)):
+            input_batch = train_input_batches[batch_index]
+            target_batch = train_target_batches[batch_index]
 
-        loss = train_epoch(input_batch, target_batch, encoder, decoder, encoder_optimizer, decoder_optimizer)
-        print_loss += loss
+            loss = train_epoch(input_batch, target_batch, encoder, decoder, encoder_optimizer,  decoder_optimizer)
+            print_loss += loss
 
         if iter % PRINT_EVERY == 0:
             print_loss_avg = print_loss / PRINT_EVERY
