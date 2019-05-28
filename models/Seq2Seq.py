@@ -21,7 +21,7 @@ class EncoderGRU(nn.Module):
 
 
 class DecoderGRU(nn.Module):
-    def __init__(self, hidden_size, output_size, embedding):
+    def __init__(self, hidden_size, output_size, embedding, dropout=DROPOUT_RATIO):
         super(DecoderGRU, self).__init__()
         self.hidden_size = hidden_size
 
@@ -29,26 +29,23 @@ class DecoderGRU(nn.Module):
         self.gru = nn.GRU(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
         self.softmax = nn.LogSoftmax(dim=1)
+        self.dropout = nn.Dropout(dropout)
 
-    def forward(self, input, init_hidden):
+    def forward(self, input, hidden):
+        input = input.unsqueeze(0)
+        #embedded size = [1, batch size, emb dim]
         embedded = self.dropout(self.embedding(input))
-        
-        #embedded = [1, batch size, emb dim]
-                
-        output, (hidden, cell) = self.gru(embedded, init_hidden)
         
         #output = [sent len, batch size, hid dim * n directions]
         #hidden = [n layers * n directions, batch size, hid dim]
-        #cell = [n layers * n directions, batch size, hid dim]
-        
+        output, hidden = self.gru(embedded, hidden)
         #sent len and n directions will always be 1 in the decoder, therefore:
         #output = [1, batch size, hid dim]
         #hidden = [n layers, batch size, hid dim]
         #cell = [n layers, batch size, hid dim]
         
+        #prediction size = [batch size, output dim]
         prediction = self.out(output.squeeze(0))
-        #prediction = [batch size, output dim]
-        
         return prediction, hidden
 
     def init_hidden(self):

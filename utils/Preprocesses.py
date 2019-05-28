@@ -26,8 +26,9 @@ def indices_set2data_batches(in_set, batch_size=BATCH_SIZE):
     target_indices = []
 
     for pair in in_set:
-        input_indices.append(pair[0][1:-1])
-        target_indices.append(pair[1][1:])
+        # keep SOS and EOS
+        input_indices.append(pair[0])
+        target_indices.append(pair[1])
 
     input_batches = []
     target_batches = []
@@ -51,6 +52,6 @@ if __name__ == '__main__':
     voc = Voc()
     str_set = [['AAA', 'BBB'], ['BBB', 'CCC']]
     indices_set = string_set2indices_set(voc, str_set)
-    input_batches, target_batches = indices_set2data_batches(indices_set, batch_size=1)
+    input_batches, target_batches = indices_set2data_batches(indices_set, batch_size=2)
     print(input_batches)
     print(target_batches)

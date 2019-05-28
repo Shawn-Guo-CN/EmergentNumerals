@@ -10,6 +10,7 @@ import torch.nn.functional as F
 # parameters for training model
 DEVICE = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 LEARNING_RATE = 1e-4 # learning rate
+DROPOUT_RATIO = 0.1
 CLIP = 50.0 # max after clipping gradients
 TEACHER_FORCING_RATIO = 1.0
 DECODER_LEARING_RATIO = 5.0
@@ -17,6 +18,7 @@ NUM_ITERS = 4000
 PRINT_EVERY = 1
 SAVE_EVERY = 500
 OPTIMISER = optim.Adam
+LOSS_FUNCTION = nn.CrossEntropyLoss()
 
 # for generating and loading data
 DATA_FILE_PATH = './data/fix_len_data.txt'
@@ -31,4 +33,4 @@ MAX_LENGTH = 15
 
 # hyperparameters for model
 HIDDEN_SIZE = 32
-BATCH_SIZE = 5
+BATCH_SIZE = 6
