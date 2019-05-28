@@ -17,12 +17,14 @@ TEACHER_FORCING_RATIO = 0.3
 DECODER_LEARING_RATIO = 5.0
 NUM_ITERS = 4000
 PRINT_EVERY = 1
-SAVE_EVERY = 100
+SAVE_EVERY = 10
+EVAL_EVERY = 10
 OPTIMISER = optim.Adam
 LOSS_FUNCTION = nn.CrossEntropyLoss()
 
 # for saving and loading params of models
 SAVE_DIR = './params/'
+PARAM_FILE = './params/standard_seq2seq_32/100_checkpoint.tar'
 
 # for generating and loading data
 DATA_FILE_PATH = './data/fix_len_data.txt'
