@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import math
+import os
 
 import torch
 import torch.nn as nn
@@ -20,11 +21,14 @@ SAVE_EVERY = 100
 OPTIMISER = optim.Adam
 LOSS_FUNCTION = nn.CrossEntropyLoss()
 
+# for saving and loading params of models
+SAVE_DIR = './params/'
+
 # for generating and loading data
 DATA_FILE_PATH = './data/fix_len_data.txt'
-TRAIN_FILE_PATH = './data/sample_train.txt'
-DEV_FILE_PATH = './data/sample_dev.txt'
-TEST_FILE_PATH = './data/sample_test.txt'
+TRAIN_FILE_PATH = './data/train.txt'
+DEV_FILE_PATH = './data/dev.txt'
+TEST_FILE_PATH = './data/test.txt'
 
 # for preprocessing sequences
 SOS_TOKEN = 0  # Start-of-sequence token
