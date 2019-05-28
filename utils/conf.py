@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import math
+import os
 
 import torch
 import torch.nn as nn
@@ -19,6 +20,9 @@ PRINT_EVERY = 1
 SAVE_EVERY = 100
 OPTIMISER = optim.Adam
 LOSS_FUNCTION = nn.CrossEntropyLoss()
+
+# for saving and loading params of models
+SAVE_DIR = './params/'
 
 # for generating and loading data
 DATA_FILE_PATH = './data/fix_len_data.txt'

@@ -117,6 +117,21 @@ def train():
                 iter, iter / NUM_ITERS * 100, print_loss_avg))
             print_loss = 0
 
+        if iter % SAVE_EVERY == 0:
+            directory = os.path.join(SAVE_DIR, 'standard_seq2seq', str(HIDDEN_SIZE))
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+            torch.save({
+                'iteration': iter,
+                'en': encoder.state_dict(),
+                'de': decoder.state_dict(),
+                'en_opt': encoder_optimizer.state_dict(),
+                'de_opt': decoder_optimizer.state_dict(),
+                'loss': loss,
+                'voc_dict': voc.__dict__,
+                'embedding': embedding.state_dict()
+            }, os.path.join(directory, '{}_{}.tar'.format(iter, 'checkpoint')))
+
 
 if __name__ == '__main__':
     train()
