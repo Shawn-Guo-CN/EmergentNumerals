@@ -131,6 +131,16 @@ def train():
     decoder = DecoderGRU(HIDDEN_SIZE, voc.num_words, embedding).to(DEVICE)
     encoder_optimizer = OPTIMISER(encoder.parameters(), lr=LEARNING_RATE)
     decoder_optimizer = OPTIMISER(decoder.parameters(), lr=LEARNING_RATE * DECODER_LEARING_RATIO)
+    if PARAM_FILE is not None:
+        print('\tloading saved parameters from ' + PARAM_FILE + '...')
+        checkpoint = torch.load(PARAM_FILE)
+        encoder.load_state_dict(checkpoint['encoder'])
+        decoder.load_state_dict(checkpoint['decoder'])
+        encoder_optimizer.load_state_dict(checkpoint['en_opt'])
+        decoder_optimizer.load_state_dict(checkpoint['de_opt'])
+        embedding.load_state_dict(checkpoint['embedding'])
+        voc = checkpoint['voc']
+        print('\tdone')
     print('done')
     
     print('initiprint_lossesalising...')
@@ -154,17 +164,17 @@ def train():
             print_loss = 0
 
         if iter % SAVE_EVERY == 0:
-            directory = os.path.join(SAVE_DIR, 'standard_seq2seq', str(HIDDEN_SIZE))
+            directory = os.path.join(SAVE_DIR, 'standard_seq2seq_' + str(HIDDEN_SIZE))
             if not os.path.exists(directory):
                 os.makedirs(directory)
             torch.save({
                 'iteration': iter,
-                'en': encoder.state_dict(),
-                'de': decoder.state_dict(),
+                'encoder': encoder.state_dict(),
+                'decoder': decoder.state_dict(),
                 'en_opt': encoder_optimizer.state_dict(),
                 'de_opt': decoder_optimizer.state_dict(),
                 'loss': loss,
-                'voc_dict': voc.__dict__,
+                'voc': voc,
                 'embedding': embedding.state_dict()
             }, os.path.join(directory, '{}_{}.tar'.format(iter, 'checkpoint')))
 
