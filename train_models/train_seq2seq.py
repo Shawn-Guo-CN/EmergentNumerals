@@ -85,8 +85,8 @@ def train():
     
     print('building model...')
     embedding = nn.Embedding(voc.num_words, HIDDEN_SIZE)
-    encoder = EncoderGRU(voc.num_words, HIDDEN_SIZE, embedding)
-    decoder = DecoderGRU(HIDDEN_SIZE, voc.num_words, embedding)
+    encoder = EncoderGRU(voc.num_words, HIDDEN_SIZE, embedding).to(DEVICE)
+    decoder = DecoderGRU(HIDDEN_SIZE, voc.num_words, embedding).to(DEVICE)
     encoder_optimizer = OPTIMISER(encoder.parameters(), lr=LEARNING_RATE)
     decoder_optimizer = OPTIMISER(decoder.parameters(), lr=LEARNING_RATE * DECODER_LEARING_RATIO)
     print('done')
