@@ -8,7 +8,7 @@ from torch import optim
 import torch.nn.functional as F
 
 # parameters for training model
-DEVICE = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 LEARNING_RATE = 1e-4 # learning rate
 DROPOUT_RATIO = 0.2
 CLIP = 50.0 # max after clipping gradients
