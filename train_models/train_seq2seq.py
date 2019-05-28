@@ -63,6 +63,48 @@ def train_epoch(input_variable, target_variable, encoder, decoder,
     return loss.item()
 
 
+def dev_epoch(input_variable, target_variable, encoder, decoder, max_length=MAX_LENGTH):
+
+    batch_size = input_variable.shape[1]
+
+    # Initialize variables
+    loss = 0
+
+    # Forward pass through encoder
+    encoder_outputs, encoder_hidden = encoder(input_variable)
+
+    # Create initial decoder input (start with SOS tokens for each sentence)
+    decoder_input = torch.LongTensor([[SOS_TOKEN for _ in range(batch_size)]]).to(DEVICE)
+    # Set initial decoder hidden state to the encoder's final hidden state
+    decoder_hidden = encoder_hidden
+    # Initilise the output tensor of decoder, where the EOS_TOKEN+1 is actually the size of voc
+    decoder_outputs = torch.zeros(MAX_LENGTH+2, batch_size, EOS_TOKEN+1).to(DEVICE)
+    
+    #first input to the decoder is the <sos> tokens
+    decoder_input = target_variable[0,:]
+    
+    # MAXLENGTH+1 caused by the fact that both SOS and EOS are contained
+    for t in range(1, MAX_LENGTH+1):
+        output, decoder_hidden = decoder(decoder_input, decoder_hidden)
+        decoder_outputs[t] = output
+        top1 = output.max(1)[1]
+        decoder_input = top1
+
+    #target_variable = [trg sent len, batch size]
+    #decoder_outputs = [trg sent len, batch size, output dim]
+    
+    decoder_outputs = decoder_outputs[1:].view(-1, decoder_outputs.shape[-1])
+    target_variable = target_variable[1:].contiguous().view(-1)
+    
+    #trg = [(trg sent len - 1) * batch size]
+    #output = [(trg sent len - 1) * batch size, output dim]
+
+    # Calculate loss 
+    loss = LOSS_FUNCTION(decoder_outputs, target_variable)
+
+    return loss.item()
+
+
 def train():
     print('loading datasets...')
     train_set, dev_set, test_set = load_train_dev_test()
@@ -125,6 +167,20 @@ def train():
                 'voc_dict': voc.__dict__,
                 'embedding': embedding.state_dict()
             }, os.path.join(directory, '{}_{}.tar'.format(iter, 'checkpoint')))
+
+        if iter % EVAL_EVERY == 0:
+            encoder.eval()
+            decoder.eval()
+            loss = 0
+            for batch_index in range(0, len(dev_input_batches)):
+                input_batch = dev_input_batches[batch_index]
+                target_batch = dev_target_batches[batch_index]
+                
+                loss += dev_epoch(input_batch, target_batch, encoder, decoder)
+
+            print("[EVAL]Iteration: {}; Loss: {:.4f}".format(iter, loss/len(dev_input_batches)))
+            encoder.train()
+            decoder.train()
 
 
 if __name__ == '__main__':
