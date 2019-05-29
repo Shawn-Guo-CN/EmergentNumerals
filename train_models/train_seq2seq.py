@@ -136,8 +136,8 @@ def train():
     
     print('building model...')
     embedding = nn.Embedding(voc.num_words, HIDDEN_SIZE)
-    encoder = EncoderLSTM(voc.num_words, HIDDEN_SIZE, embedding).to(DEVICE)
-    decoder = DecoderLSTM(HIDDEN_SIZE, voc.num_words, embedding).to(DEVICE)
+    encoder = EncoderLSTM(embedding).to(DEVICE)
+    decoder = DecoderLSTM(voc.num_words, embedding).to(DEVICE)
     encoder_optimizer = OPTIMISER(encoder.parameters(), lr=LEARNING_RATE)
     decoder_optimizer = OPTIMISER(decoder.parameters(), lr=LEARNING_RATE * DECODER_LEARING_RATIO)
     if PARAM_FILE is not None:

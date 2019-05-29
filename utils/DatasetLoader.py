@@ -4,12 +4,11 @@ from utils.conf import *
 def load_sequences(file_path):
     f = open(file_path, 'r')
 
-    pair_set = []
+    string_set = []
     for line in f.readlines():
-        items = line.strip().split('\t')
-        pair_set.append([items[0], items[1]])
+        string_set.append(line.strip())
     
-    return pair_set
+    return string_set
 
 
 def load_train_dev_test(train_file_path=TRAIN_FILE_PATH,
