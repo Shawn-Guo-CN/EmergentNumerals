@@ -81,5 +81,5 @@ def generate_train_dev_test_files_bak(in_file=open(DATA_FILE_PATH, 'r'),
 
 
 if __name__ == '__main__':
-    # generate_all_combinations()
+    generate_all_combinations()
     generate_train_dev_test_files()
