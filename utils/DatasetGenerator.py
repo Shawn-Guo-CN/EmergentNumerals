@@ -4,12 +4,12 @@ from utils.conf import *
 
 def generate_all_combinations(prefix='', type_idx=1, out_file=open(DATA_FILE_PATH, 'a')):
     if type_idx == NUM_WORD:
-        for i in range(0, MAX_LEN_WORD):
+        for i in range(0, MAX_LEN_WORD+1):
             target_str = chr(64+type_idx) * i
             print(prefix+target_str)
             print(prefix+target_str, file=out_file)
     else:
-        for i in range(0, MAX_LEN_WORD):
+        for i in range(0, MAX_LEN_WORD+1):
             target_str = chr(64+type_idx) * i
             generate_all_combinations(prefix+target_str, type_idx+1, out_file=out_file)
 
@@ -82,4 +82,4 @@ def generate_train_dev_test_files_bak(in_file=open(DATA_FILE_PATH, 'r'),
 
 if __name__ == '__main__':
     generate_all_combinations()
-    generate_train_dev_test_files()
+    # generate_train_dev_test_files()
