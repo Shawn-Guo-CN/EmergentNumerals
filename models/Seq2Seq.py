@@ -22,7 +22,7 @@ class EncoderLSTM(nn.Module):
         self.init_hidden = self.init_hidden_and_cell()
         self.init_cell = self.init_hidden_and_cell()
 
-    def forward(self, input_seq, input_lengths, hidden=None):
+    def forward(self, input_seq, input_lengths):
         # Convert word indexes to embeddings
         embedded = self.embedding(input_seq)
         # Pack padded batch of sequences for RNN module
@@ -34,14 +34,14 @@ class EncoderLSTM(nn.Module):
         # Unpack padding
         outputs, _ = nn.utils.rnn.pad_packed_sequence(outputs)
         # Return output and final hidden state
-        return outputs, hidden
+        return outputs, hidden, cell
 
     def init_hidden_and_cell(self):
         return nn.Parameter(torch.zeros(1, 1, self.hidden_size, device=DEVICE))
 
 
 class DecoderLSTM(nn.Module):
-    def __init__(self, hidden_size, output_size, embedding, dropout=DROPOUT_RATIO):
+    def __init__(self, output_size, embedding, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
         super(DecoderLSTM, self).__init__()
         self.hidden_size = hidden_size
 
@@ -51,23 +51,23 @@ class DecoderLSTM(nn.Module):
         self.softmax = nn.LogSoftmax(dim=1)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, input, last_hidden):
-        input = input.unsqueeze(0)
+    def forward(self, input, last_hidden, last_cell):
         # embedded size = [1, batch size, emb dim]
         embedded = self.dropout(self.embedding(input))
         
         # output = [sent len, batch size, hid dim * n directions]
-        # hidden = [batch size, hid dim]
-        # cell = [batch size, hid dim]
-        output, (hidden, cell) = self.lstm(embedded, last_hidden)
+        # hidden = [1, batch size, hid dim]
+        # cell = [1, batch size, hid dim]
+        output, (hidden, cell) = self.lstm(embedded, (last_hidden, last_cell))
         # sent len and n directions will always be 1 in the decoder, therefore:
         # output = [1, batch size, hid dim]
         # hidden = [batch size, hid dim]
         # cell = [batch size, hid dim]
+        output = output.squeeze(0)
         
         #prediction size = [batch size, output dim]
-        prediction = self.out(output.squeeze(0))
-        return prediction, hidden
+        prediction = F.softmax(self.out(output), dim=1)
+        return prediction, hidden, cell
 
     def init_hidden(self):
         return torch.zeros(1, 1, self.hidden_size, device=DEVICE)

@@ -29,7 +29,7 @@ LOSS_FUNCTION = nn.CrossEntropyLoss()
 for saving and loading params of models
 '''
 SAVE_DIR = './params/'
-PARAM_FILE = './params/standard_seq2seq_32/100_checkpoint.tar'
+PARAM_FILE = None
 
 '''
 for generating and loading data

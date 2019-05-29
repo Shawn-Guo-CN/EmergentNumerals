@@ -116,11 +116,12 @@ if __name__ == '__main__':
     
     str_set = ['ABCDEFF', 'ABBCDEEF']
     indices_pair_set = string_set2indices_pair_set(voc, str_set)
-    inputs, input_lens, targets, target_masks, target_lens = \
+    inputs, input_lens, targets, target_masks, target_max_lens = \
         indices_pair_set2data_batches(indices_pair_set, batch_size=2)
 
     embedding = nn.Embedding(voc.num_words, HIDDEN_SIZE)
     encoder = EncoderLSTM(embedding)
+    decoder = DecoderLSTM(voc.num_words, embedding)
 
     for i in range(0, len(inputs)):
         # print('input:', inputs[i])
@@ -128,6 +129,27 @@ if __name__ == '__main__':
         # print('targets:', targets[i])
         # print('target mask:', target_masks[i])
         # print('target max len:', target_lens[i])
-        encoder_outputs, encoder_hidden = encoder(inputs[i], input_lens[i])
-        print(encoder_hidden.shape)
+        encoder_outputs, encoder_hidden, encoder_cell = encoder(inputs[i], input_lens[i])
+        decoder_input = torch.LongTensor([[SOS_INDEX for _ in range(2)]])
+        decoder_hidden = encoder_hidden
+        decoder_cell = encoder_cell
+
+        print_losses = []
+        n_totals = 0
+        loss = 0
+        # decode
+        for t in range(target_max_lens[i]):
+            decoder_output, decoder_hidden, decoder_cell = \
+                decoder(decoder_input, decoder_hidden, decoder_cell)
+            # No teacher forcing: next input is decoder's own current output
+            _, topi = decoder_output.topk(1)
+            decoder_input = torch.LongTensor([[topi[j][0] for j in range(2)]], device=DEVICE)
+            decoder_input = decoder_input.to(DEVICE)
+            # Calculate and accumulate loss
+            mask_loss, n_total = mask_NLL_loss(decoder_output, targets[i][t], target_masks[i][t])
+            loss += mask_loss
+            print_losses.append(mask_loss.item() * n_total)
+            n_totals += n_total
+
+        print(sum(print_losses) / n_totals)
     
