@@ -30,7 +30,7 @@ def generate_train_dev_test_files(in_file=open(DATA_FILE_PATH, 'r'),
 
     def _print_set_(s, out_file):
         for string in s:
-            print(string)
+            print(string, file=out_file)
 
     _print_set_(train_set, train_file)
     _print_set_(dev_set, dev_file)
@@ -81,5 +81,5 @@ def generate_train_dev_test_files_bak(in_file=open(DATA_FILE_PATH, 'r'),
 
 
 if __name__ == '__main__':
-    generate_all_combinations()
-    # generate_train_dev_test_files()
+    # generate_all_combinations()
+    generate_train_dev_test_files()
