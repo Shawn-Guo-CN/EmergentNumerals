@@ -8,7 +8,9 @@ import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
 
-# parameters for training model
+'''
+for training model
+'''
 DEVICE = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 LEARNING_RATE = 1e-4 # learning rate
 DROPOUT_RATIO = 0.1
@@ -22,21 +24,31 @@ EVAL_EVERY = 10
 OPTIMISER = optim.Adam
 LOSS_FUNCTION = nn.CrossEntropyLoss()
 
-# for saving and loading params of models
+'''
+for saving and loading params of models
+'''
 SAVE_DIR = './params/'
 PARAM_FILE = './params/standard_seq2seq_32/100_checkpoint.tar'
 
-# for generating and loading data
-DATA_FILE_PATH = './data/fix_len_data.txt'
-TRAIN_FILE_PATH = './data/sample_train.txt'
-DEV_FILE_PATH = './data/sample_dev.txt'
-TEST_FILE_PATH = './data/sample_test.txt'
+'''
+for generating and loading data
+'''
+DATA_FILE_PATH = './data/all_data.txt'
+TRAIN_FILE_PATH = './data/train.txt'
+DEV_FILE_PATH = './data/dev.txt'
+TEST_FILE_PATH = './data/test.txt'
 
-# for preprocessing sequences
+'''
+for preprocessing sequences
+'''
 SOS_TOKEN = 0  # Start-of-sequence token
+NUM_WORD = 6 # Number of different characters
 EOS_TOKEN = 4  # End-of-sequence token
-MAX_LENGTH = 15
+MAX_LEN_WORD = 9 # Maximum length of a single kind of word
+MAX_LENGTH = NUM_WORD * MAX_LEN_WORD # Max length of whole sequence
 
-# hyperparameters for model
-HIDDEN_SIZE = 32
-BATCH_SIZE = 6
+'''
+hyperparameters of model
+'''
+HIDDEN_SIZE = 256
+BATCH_SIZE = 64
