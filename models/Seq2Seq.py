@@ -1,23 +1,35 @@
 from utils.conf import *
 
 
-class EncoderGRU(nn.Module):
-    def __init__(self, input_size, hidden_size, embedding):
-        super(EncoderGRU, self).__init__()
+class EncoderLSTM(nn.Module):
+    def __init__(self, embedding, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
+        super(EncoderLSTM, self).__init__()
         self.hidden_size = hidden_size
-
         self.embedding = embedding
-        self.gru = nn.GRU(hidden_size, hidden_size)
+        self.dropout = dropout
 
-    def forward(self, input):
-        embedded = self.embedding(input)
-        output, hidden = self.gru(embedded)
-        # shape of output is [length * batch_size * hidden_size]
-        # shape of hidden is [1 * batch_size * hidden_size] (only contains h_n)
-        return output, hidden
+        # Initialize LSTM; the input_size and hidden_size params are both set to 'hidden_size'
+        #   because our input size is a word embedding with number of features == hidden_size
+        self.lstm = nn.LSTM(hidden_size, hidden_size)
+        self.init_hidden = self.init_hidden_and_cell()
+        self.init_cell = self.init_hidden_and_cell()
 
-    def init_hidden(self):
-        return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
+    def forward(self, input_seq, input_lengths, hidden=None):
+        # Convert word indexes to embeddings
+        embedded = self.embedding(input_seq)
+        # Pack padded batch of sequences for RNN module
+        packed = nn.utils.rnn.pack_padded_sequence(embedded, input_lengths)
+        # Forward pass through LSTM
+        h0 = self.init_hidden.repeat(1, input_seq.shape[1], 1)
+        c0 = self.init_cell.repeat(1, input_seq.shape[1], 1)
+        outputs, (hidden, cell) = self.lstm(packed, (h0, c0))
+        # Unpack padding
+        outputs, _ = nn.utils.rnn.pad_packed_sequence(outputs)
+        # Return output and final hidden state
+        return outputs, hidden
+
+    def init_hidden_and_cell(self):
+        return nn.Parameter(torch.zeros(1, 1, self.hidden_size, device=DEVICE))
 
 
 class DecoderGRU(nn.Module):

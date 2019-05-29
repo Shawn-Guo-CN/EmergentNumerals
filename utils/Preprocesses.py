@@ -1,4 +1,6 @@
 from utils.conf import *
+# for testing modules of standard Seq2Seq model
+from models.Seq2Seq import *
 
 
 class Voc:
@@ -16,7 +18,7 @@ class Voc:
             self.word2index[chr(64+i)] = EOS_INDEX + i
             self.index2word[EOS_INDEX + i] = chr(64+i)
         
-        self.num_words = NUM_WORD + 2  # include SOS, EOS
+        self.num_words = NUM_WORD + 3  # include SOS, EOS and PAD
 
 
 def string2indices(voc, sequence):
@@ -88,13 +90,16 @@ def indices_pair_set2data_batches(in_set, batch_size=BATCH_SIZE):
 
     num_batches = math.ceil(len(input_indices) / batch_size)
     for i in range(0, num_batches):
-        input_var, input_lengths = \
-            _input_var_(input_indices[i*batch_size:min((i+1)*batch_size, len(input_indices))])
+        input_indices_batch = input_indices[i*batch_size:min((i+1)*batch_size, len(input_indices))]
+        target_indices_batch = target_indices[i*batch_size:min((i+1)*batch_size, len(input_indices))]
+        input_indices_batch.sort(key=len, reverse=True)
+        target_indices_batch.sort(key=len, reverse=True)
+
+        input_var, input_lengths = _input_var_(input_indices_batch)
         input_batches.append(input_var)
         input_length_batches.append(input_lengths)
         
-        target_var, target_mask, target_max_len = \
-            _target_var_(target_indices[i*batch_size:min((i+1)*batch_size, len(input_indices))])
+        target_var, target_mask, target_max_len = _target_var_(target_indices_batch)
         
         target_batches.append(target_var)
         target_mask_batches.append(target_mask)
@@ -114,9 +119,15 @@ if __name__ == '__main__':
     inputs, input_lens, targets, target_masks, target_lens = \
         indices_pair_set2data_batches(indices_pair_set, batch_size=2)
 
+    embedding = nn.Embedding(voc.num_words, HIDDEN_SIZE)
+    encoder = EncoderLSTM(embedding)
+
     for i in range(0, len(inputs)):
-        print('input:', inputs[i])
-        print('input lengths:', input_lens[i])
-        print('targets:', targets[i])
-        print('target mask:', target_masks[i])
-        print('target max len:', target_lens[i])
+        # print('input:', inputs[i])
+        # print('input lengths:', input_lens[i])
+        # print('targets:', targets[i])
+        # print('target mask:', target_masks[i])
+        # print('target max len:', target_lens[i])
+        encoder_outputs, encoder_hidden = encoder(inputs[i], input_lens[i])
+        print(encoder_hidden.shape)
+    
