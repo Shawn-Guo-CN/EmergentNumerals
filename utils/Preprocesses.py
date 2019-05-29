@@ -58,9 +58,9 @@ def indices_pair_set2data_batches(in_set, batch_size=BATCH_SIZE):
         target_indices.append(pair[1])
 
     def _input_var_(input_indices):
-        lengths = torch.tensor([len(indexes) for indexes in input_indices])
+        lengths = torch.tensor([len(indexes) for indexes in input_indices], device=DEVICE)
         paadded_input = pad(input_indices)
-        padded_input = torch.LongTensor(paadded_input).to(DEVICE)
+        padded_input = torch.LongTensor(paadded_input, device=DEVICE)
         return padded_input, lengths
     
     def _binary_matrix_(l, value=PAD_INDEX):
@@ -78,8 +78,8 @@ def indices_pair_set2data_batches(in_set, batch_size=BATCH_SIZE):
         max_target_len = max([len(indexes) for indexes in target_indices])
         padded_target = pad(target_indices)
         mask = _binary_matrix_(padded_target)
-        mask = torch.ByteTensor(mask).to(DEVICE)
-        padded_target = torch.LongTensor(padded_target).to(DEVICE)
+        mask = torch.ByteTensor(mask, device=DEVICE)
+        padded_target = torch.LongTensor(padded_target, device=DEVICE)
         return padded_target, mask, max_target_len
 
     input_batches = []
