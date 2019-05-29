@@ -1,6 +1,14 @@
 from utils.conf import *
 
 
+def mask_NLL_loss(prediction, golden_standard, mask):
+    n_total = mask.sum()
+    crossEntropy = -torch.log(torch.gather(prediction, 1, golden_standard.view(-1, 1)).squeeze(1))
+    loss = crossEntropy.masked_select(mask).mean()
+    loss = loss.to(DEVICE)
+    return loss, n_total.item()
+
+
 class EncoderLSTM(nn.Module):
     def __init__(self, embedding, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
         super(EncoderLSTM, self).__init__()
@@ -32,29 +40,30 @@ class EncoderLSTM(nn.Module):
         return nn.Parameter(torch.zeros(1, 1, self.hidden_size, device=DEVICE))
 
 
-class DecoderGRU(nn.Module):
+class DecoderLSTM(nn.Module):
     def __init__(self, hidden_size, output_size, embedding, dropout=DROPOUT_RATIO):
-        super(DecoderGRU, self).__init__()
+        super(DecoderLSTM, self).__init__()
         self.hidden_size = hidden_size
 
         self.embedding = embedding
-        self.gru = nn.GRU(hidden_size, hidden_size)
+        self.lstm = nn.LSTM(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
         self.softmax = nn.LogSoftmax(dim=1)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, input, hidden):
+    def forward(self, input, last_hidden):
         input = input.unsqueeze(0)
-        #embedded size = [1, batch size, emb dim]
+        # embedded size = [1, batch size, emb dim]
         embedded = self.dropout(self.embedding(input))
         
-        #output = [sent len, batch size, hid dim * n directions]
-        #hidden = [n layers * n directions, batch size, hid dim]
-        output, hidden = self.gru(embedded, hidden)
-        #sent len and n directions will always be 1 in the decoder, therefore:
-        #output = [1, batch size, hid dim]
-        #hidden = [n layers, batch size, hid dim]
-        #cell = [n layers, batch size, hid dim]
+        # output = [sent len, batch size, hid dim * n directions]
+        # hidden = [batch size, hid dim]
+        # cell = [batch size, hid dim]
+        output, (hidden, cell) = self.lstm(embedded, last_hidden)
+        # sent len and n directions will always be 1 in the decoder, therefore:
+        # output = [1, batch size, hid dim]
+        # hidden = [batch size, hid dim]
+        # cell = [batch size, hid dim]
         
         #prediction size = [batch size, output dim]
         prediction = self.out(output.squeeze(0))
@@ -62,44 +71,6 @@ class DecoderGRU(nn.Module):
 
     def init_hidden(self):
         return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
-
-
-class Seq2Seq(nn.Module):
-    def __init__(self, encoder, decoder, device=DEVICE):
-        super().__init__()
-        
-        self.encoder = encoder
-        self.decoder = decoder
-        self.device = device
-        
-        assert encoder.hid_dim == decoder.hid_dim, \
-            "Hidden dimensions of encoder and decoder must be equal!"
-        assert encoder.n_layers == decoder.n_layers, \
-            "Encoder and decoder must have equal number of layers!"
-        
-    def forward(self, input, target, voc_size, teacher_forcing_ratio=TEACHER_FORCING_RATIO):
-        #input = [src sent len, batch size]
-        #target = [trg sent len, batch size]
-        #teacher_forcing_ratio is probability to use teacher forcing
-        #e.g. if teacher_forcing_ratio is 0.75 we use ground-truth inputs 75% of the time
-        
-        #tensor to store decoder outputs
-        outputs = torch.zeros(MAX_LENGTH, BATCH_SIZE, voc_size).to(self.device)
-        
-        #last hidden state of the encoder is used as the initial hidden state of the decoder
-        _, hidden = self.encoder(input)
-        
-        #first input to the decoder is the <sos> tokens
-        input = target[0,:]
-        
-        for t in range(1, MAX_LENGTH):
-            output, hidden = self.decoder(input, hidden)
-            outputs[t] = output
-            teacher_force = random.random() < teacher_forcing_ratio
-            top1 = output.max(1)[1]
-            input = (target[t] if teacher_force else top1)
-        
-        return outputs
 
 
 class GreedySearchDecoder(nn.Module):
@@ -116,8 +87,8 @@ class GreedySearchDecoder(nn.Module):
         # Initialize decoder input with SOS_token
         decoder_input = torch.ones(1, 1, device=DEVICE, dtype=torch.long) * SOS_TOKEN
         # Initialize tensors to append decoded words to
-        all_tokens = torch.zeros([0], device=DEVICE, dtype=torch.long)
-        all_scores = torch.zeros([0], device=DEVICE)
+        all_tokens = torch.zeros([SOS_TOKEN], device=DEVICE, dtype=torch.long)
+        all_scores = torch.zeros([SOS_TOKEN], device=DEVICE)
         # Iteratively decode one word token at a time
         for _ in range(max_length):
             # Forward pass through decoder
