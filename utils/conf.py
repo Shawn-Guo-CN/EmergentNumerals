@@ -2,6 +2,7 @@ import random
 import numpy as np
 import math
 import os
+import itertools
 
 import torch
 import torch.nn as nn
@@ -41,9 +42,13 @@ TEST_FILE_PATH = './data/test.txt'
 '''
 for preprocessing sequences
 '''
-SOS_TOKEN = 0  # Start-of-sequence token
+PAD_TOKEN = 'PAD' # Padding token
+PAD_INDEX = 0 # PAD token index
+SOS_TOKEN = 'SOS' # Start-of-sequence token
+SOS_INDEX = 1  # SOS token index
+EOS_TOKEN = 'EOS' # End-of-sequence token
+EOS_INDEX = 2 # EOS token index
 NUM_WORD = 6 # Number of different characters
-EOS_TOKEN = 4  # End-of-sequence token
 MAX_LEN_WORD = 9 # Maximum length of a single kind of word
 MAX_LENGTH = NUM_WORD * MAX_LEN_WORD # Max length of whole sequence
 
