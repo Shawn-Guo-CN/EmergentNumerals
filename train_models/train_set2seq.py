@@ -181,7 +181,7 @@ def train():
                 target_max_len_batch,
                 encoder,
                 decoder,
-                encoder_optimizer,
+                encoder_optimizer, 
                 decoder_optimizer
             )
             print_loss += loss

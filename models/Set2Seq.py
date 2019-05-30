@@ -51,7 +51,6 @@ class EncoderLSTM(nn.Module):
         self.embedding = embedding
         self.memorising = nn.Linear(self.hidden_size, self.hidden_size)
         self.attn = Attn(ATTN_METHOD, hidden_size)
-        self.attn_combine = nn.Linear(self.hidden_size * 2, self.hidden_size)
         self.dropout = nn.Dropout(DROPOUT_RATIO)
         self.lstm = nn.LSTM(hidden_size, hidden_size)
         
