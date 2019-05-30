@@ -58,9 +58,9 @@ def indices_pair_set2data_batches(in_set, batch_size=BATCH_SIZE):
         target_indices.append(pair[1])
 
     def _input_var_(input_indices):
-        lengths = torch.tensor([len(indexes) for indexes in input_indices], device=DEVICE)
+        lengths = torch.tensor([len(indexes) for indexes in input_indices]).to(DEVICE)
         paadded_input = pad(input_indices)
-        padded_input = torch.LongTensor(paadded_input, device=DEVICE)
+        padded_input = torch.LongTensor(paadded_input).to(DEVICE)
         return padded_input, lengths
     
     def _binary_matrix_(l, value=PAD_INDEX):
@@ -78,8 +78,8 @@ def indices_pair_set2data_batches(in_set, batch_size=BATCH_SIZE):
         max_target_len = max([len(indexes) for indexes in target_indices])
         padded_target = pad(target_indices)
         mask = _binary_matrix_(padded_target)
-        mask = torch.ByteTensor(mask, device=DEVICE)
-        padded_target = torch.LongTensor(padded_target, device=DEVICE)
+        mask = torch.ByteTensor(mask).to(DEVICE)
+        padded_target = torch.LongTensor(padded_target).to(DEVICE)
         return padded_target, mask, max_target_len
 
     input_batches = []
@@ -143,7 +143,7 @@ if __name__ == '__main__':
                 decoder(decoder_input, decoder_hidden, decoder_cell)
             # No teacher forcing: next input is decoder's own current output
             _, topi = decoder_output.topk(1)
-            decoder_input = torch.LongTensor([[topi[j][0] for j in range(2)]], device=DEVICE)
+            decoder_input = torch.LongTensor([[topi[j][0] for j in range(2)]])
             decoder_input = decoder_input.to(DEVICE)
             # Calculate and accumulate loss
             mask_loss, n_total = mask_NLL_loss(decoder_output, targets[i][t], target_masks[i][t])

@@ -21,7 +21,8 @@ def train_epoch(input_variable, lengths, target_variable, mask, max_target_len, 
     encoder_outputs, encoder_hidden, encoder_cell = encoder(input_variable, lengths)
 
     # Create initial decoder input (start with SOS tokens for each sentence)
-    decoder_input = torch.LongTensor([[SOS_INDEX for _ in range(batch_size)]], device=DEVICE)
+    decoder_input = torch.LongTensor([[SOS_INDEX for _ in range(batch_size)]])
+    decoder_input.to(DEVICE)
 
     # Set initial decoder hidden state to the encoder's final hidden state
     decoder_hidden = encoder_hidden
@@ -51,7 +52,7 @@ def train_epoch(input_variable, lengths, target_variable, mask, max_target_len, 
             
             # No teacher forcing: next input is decoder's own current output
             _, topi = decoder_output.topk(1)
-            decoder_input = torch.LongTensor([[topi[i][0] for i in range(batch_size)]], device=DEVICE)
+            decoder_input = torch.LongTensor([[topi[i][0] for i in range(batch_size)]])
             decoder_input = decoder_input.to(DEVICE)
 
             # Calculate and accumulate loss
@@ -86,7 +87,8 @@ def dev_epoch(input_variable, lengths, target_variable, mask, max_target_len, en
     encoder_outputs, encoder_hidden, encoder_cell = encoder(input_variable, lengths)
 
     # Create initial decoder input (start with SOS tokens for each sentence)
-    decoder_input = torch.LongTensor([[SOS_INDEX for _ in range(batch_size)]], device=DEVICE)
+    decoder_input = torch.LongTensor([[SOS_INDEX for _ in range(batch_size)]])
+    decoder_input.to(DEVICE)
 
     # Set initial decoder hidden state to the encoder's final hidden state
     decoder_hidden = encoder_hidden
@@ -98,7 +100,7 @@ def dev_epoch(input_variable, lengths, target_variable, mask, max_target_len, en
         
         # No teacher forcing: next input is decoder's own current output
         _, topi = decoder_output.topk(1)
-        decoder_input = torch.LongTensor([[topi[i][0] for i in range(batch_size)]], device=DEVICE)
+        decoder_input = torch.LongTensor([[topi[i][0] for i in range(batch_size)]])
         decoder_input = decoder_input.to(DEVICE)
 
         # Calculate and accumulate loss
