@@ -1,6 +1,6 @@
 from utils.conf import *
 # for testing modules of standard Seq2Seq model
-from models.Seq2Seq import *
+# from models.Seq2Seq import *
 
 
 class Voc:
