@@ -21,8 +21,7 @@ def train_epoch(input_variable, lengths, target_variable, mask, max_target_len, 
     encoder_outputs, encoder_hidden, encoder_cell = encoder(input_variable, lengths)
 
     # Create initial decoder input (start with SOS tokens for each sentence)
-    decoder_input = torch.LongTensor([[SOS_INDEX for _ in range(batch_size)]])
-    decoder_input.to(DEVICE)
+    decoder_input = torch.LongTensor([[SOS_INDEX for _ in range(batch_size)]]).to(DEVICE)
 
     # Set initial decoder hidden state to the encoder's final hidden state
     decoder_hidden = encoder_hidden
@@ -33,10 +32,6 @@ def train_epoch(input_variable, lengths, target_variable, mask, max_target_len, 
 
     # Forward batch of sequences through decoder one time step at a time
     for t in range(max_target_len):
-        print('decoder_input is cuda:', decoder_input.is_cuda)
-        print('decoder_hidden is cuda:', decoder_hidden.is_cuda)
-        print('decoder_cell is cuda:', decoder_cell.is_cuda)
-
         decoder_output, decoder_hidden, decoder_cell = \
             decoder(decoder_input, decoder_hidden, decoder_cell)
 
