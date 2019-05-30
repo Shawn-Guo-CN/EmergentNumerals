@@ -193,7 +193,7 @@ def train():
             print_loss = 0
 
         if iter % SAVE_EVERY == 0:
-            directory = os.path.join(SAVE_DIR, 'standard_seq2seq_' + str(HIDDEN_SIZE))
+            directory = os.path.join(SAVE_DIR, 'set2seq_' + str(HIDDEN_SIZE))
             if not os.path.exists(directory):
                 os.makedirs(directory)
             torch.save({
