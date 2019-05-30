@@ -32,31 +32,22 @@ def train_epoch(input_variable, lengths, target_variable, mask, max_target_len, 
     use_teacher_forcing = True if random.random() < TEACHER_FORCING_RATIO else False
 
     # Forward batch of sequences through decoder one time step at a time
-    if use_teacher_forcing:
-        for t in range(max_target_len):
-            decoder_output, decoder_hidden, decoder_cell = \
-                decoder(decoder_input, decoder_hidden, decoder_cell)
-            
-            # Teacher forcing: next input is current target
-            decoder_input = target_variable[t].view(1, -1).to(DEVICE)
+    for t in range(max_target_len):
+        print('decoder_input is cuda:', decoder_input.is_cuda)
+        print('decoder_hidden is cuda:', decoder_hidden.is_cuda)
+        print('decoder_cell is cuda:', decoder_cell.is_cuda)
 
-            # Calculate and accumulate loss
-            mask_loss, n_total = mask_NLL_loss(decoder_output, target_variable[t], mask[t])
-            loss += mask_loss
-            print_losses.append(mask_loss.item() * n_total)
-            n_totals += n_total
-    else:
-        for t in range(max_target_len):
-            decoder_output, decoder_hidden, decoder_cell = \
-                decoder(decoder_input, decoder_hidden, decoder_cell)
-            
-            # No teacher forcing: next input is decoder's own current output
+        decoder_output, decoder_hidden, decoder_cell = \
+            decoder(decoder_input, decoder_hidden, decoder_cell)
+
+        if use_teacher_forcing:
+            decoder_input = target_variable[t].view(1, -1)
+        else:
             _, topi = decoder_output.topk(1)
             decoder_input = torch.LongTensor([[topi[i][0] for i in range(batch_size)]])
             decoder_input = decoder_input.to(DEVICE)
-
-            # Calculate and accumulate loss
-            mask_loss, n_total = mask_NLL_loss(decoder_output, target_variable[t], mask[t])
+        
+        mask_loss, n_total = mask_NLL_loss(decoder_output, target_variable[t], mask[t])
             loss += mask_loss
             print_losses.append(mask_loss.item() * n_total)
             n_totals += n_total

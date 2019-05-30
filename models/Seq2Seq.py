@@ -51,9 +51,9 @@ class DecoderLSTM(nn.Module):
         self.softmax = nn.LogSoftmax(dim=1)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, input, last_hidden, last_cell):
+    def forward(self, last_input, last_hidden, last_cell):
         # embedded size = [1, batch size, emb dim]
-        embedded = self.dropout(self.embedding(input))
+        embedded = self.dropout(self.embedding(last_input))
         
         # output = [sent len, batch size, hid dim * n directions]
         # hidden = [1, batch size, hid dim]
