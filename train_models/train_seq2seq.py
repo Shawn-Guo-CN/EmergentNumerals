@@ -110,13 +110,12 @@ def train():
     print('done')
 
     print('generating batches...')
-    train_input_batches, train_input_lens_batches, \
-        train_target_batches, train_target_mask_batches, \
-            train_target_max_len_batches = indices_pair_set2data_batches(train_set)
-    dev_input_batches, dev_input_lens_batches, \
-        dev_target_batches, dev_target_mask_batches, \
-            dev_target_max_len_batches = indices_pair_set2data_batches(dev_set)
-    # test_input_batches, test_target_batches = indices_set2data_batches(test_set)
+    train_input_batches, train_input_mask_batches, train_input_lens_batches, \
+        train_target_batches, train_target_mask_batches, train_target_max_len_batches \
+            = indices_pair_set2data_batches(train_set)
+    dev_input_batches, dev_input_mask_batches, dev_input_lens_batches, \
+        dev_target_batches, dev_target_mask_batches, dev_target_max_len_batches \
+            = indices_pair_set2data_batches(dev_set)
     print('done')
     
     print('building model...')

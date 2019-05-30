@@ -60,8 +60,10 @@ def indices_pair_set2data_batches(in_set, batch_size=BATCH_SIZE):
     def _input_var_(input_indices):
         lengths = torch.tensor([len(indexes) for indexes in input_indices]).to(DEVICE)
         paadded_input = pad(input_indices)
+        mask = _binary_matrix_(paadded_input)
+        mask = torch.ByteTensor(mask).to(DEVICE)
         padded_input = torch.LongTensor(paadded_input).to(DEVICE)
-        return padded_input, lengths
+        return padded_input, mask, lengths
     
     def _binary_matrix_(l, value=PAD_INDEX):
         m = []
@@ -83,6 +85,7 @@ def indices_pair_set2data_batches(in_set, batch_size=BATCH_SIZE):
         return padded_target, mask, max_target_len
 
     input_batches = []
+    input_mask_batches = []
     input_length_batches = []
     target_batches = []
     target_mask_batches = []
@@ -95,18 +98,18 @@ def indices_pair_set2data_batches(in_set, batch_size=BATCH_SIZE):
         input_indices_batch.sort(key=len, reverse=True)
         target_indices_batch.sort(key=len, reverse=True)
 
-        input_var, input_lengths = _input_var_(input_indices_batch)
+        input_var, input_mask, input_lengths = _input_var_(input_indices_batch)
         input_batches.append(input_var)
+        input_mask_batches.append(input_mask)
         input_length_batches.append(input_lengths)
         
         target_var, target_mask, target_max_len = _target_var_(target_indices_batch)
-        
         target_batches.append(target_var)
         target_mask_batches.append(target_mask)
         target_max_len_batches.append(target_max_len)
 
-    return input_batches, input_length_batches, target_batches, \
-                target_mask_batches, target_max_len_batches
+    return input_batches, input_mask_batches, input_length_batches, \
+            target_batches, target_mask_batches, target_max_len_batches
 
 
 if __name__ == '__main__':
@@ -116,7 +119,7 @@ if __name__ == '__main__':
     
     str_set = ['ABCDEFF', 'ABBCDEEF']
     indices_pair_set = string_set2indices_pair_set(voc, str_set)
-    inputs, input_lens, targets, target_masks, target_max_lens = \
+    inputs, input_masks, input_lens, targets, target_masks, target_max_lens = \
         indices_pair_set2data_batches(indices_pair_set, batch_size=2)
 
     embedding = nn.Embedding(voc.num_words, HIDDEN_SIZE)
