@@ -12,7 +12,7 @@ import torch.nn.functional as F
 '''
 for training model
 '''
-DEVICE = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
 LEARNING_RATE = 1e-4 # learning rate
 DROPOUT_RATIO = 0.2
 CLIP = 50.0 # max after clipping gradients
@@ -56,4 +56,5 @@ MAX_LENGTH = NUM_WORD * MAX_LEN_WORD # Max length of whole sequence
 hyperparameters of model
 '''
 HIDDEN_SIZE = 256
-BATCH_SIZE = 64
+BATCH_SIZE = 1024
+ATTN_METHOD = 'concat'

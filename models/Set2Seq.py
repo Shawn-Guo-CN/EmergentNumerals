@@ -1,41 +1,45 @@
 from utils.conf import *
 
 
-class AttnDecoderRNN(nn.Module):
-    def __init__(self, hidden_size, output_size, dropout_p=0.1, max_length=MAX_LENGTH):
-        super(AttnDecoderRNN, self).__init__()
+# Luong attention layer
+class Attn(nn.Module):
+    def __init__(self, method=ATTN_METHOD, hidden_size=HIDDEN_SIZE):
+        super(Attn, self).__init__()
+        self.method = method
+        if self.method not in ['dot', 'general', 'concat']:
+            raise ValueError(self.method, "is not an appropriate attention method.")
         self.hidden_size = hidden_size
-        self.output_size = output_size
-        self.dropout_p = dropout_p
-        self.max_length = max_length
+        if self.method == 'general':
+            self.attn = nn.Linear(self.hidden_size, hidden_size)
+        elif self.method == 'concat':
+            self.attn = nn.Linear(self.hidden_size * 2, hidden_size)
+            self.v = nn.Parameter(torch.FloatTensor(hidden_size))
 
-        self.embedding = nn.Embedding(self.output_size, self.hidden_size)
-        self.attn = nn.Linear(self.hidden_size * 2, self.max_length)
-        self.attn_combine = nn.Linear(self.hidden_size * 2, self.hidden_size)
-        self.dropout = nn.Dropout(self.dropout_p)
-        self.gru = nn.GRU(self.hidden_size, self.hidden_size)
-        self.out = nn.Linear(self.hidden_size, self.output_size)
+    def dot_score(self, hidden, whole_input):
+        return torch.sum(hidden * whole_input, dim=2)
 
-    def forward(self, input, hidden, encoder_outputs):
-        embedded = self.embedding(input).view(1, 1, -1)
-        embedded = self.dropout(embedded)
+    def general_score(self, hidden, whole_input):
+        energy = self.attn(whole_input)
+        return torch.sum(hidden * energy, dim=2)
 
-        attn_weights = F.softmax(
-            self.attn(torch.cat((embedded[0], hidden[0]), 1)), dim=1)
-        attn_applied = torch.bmm(attn_weights.unsqueeze(0),
-                                 encoder_outputs.unsqueeze(0))
+    def concat_score(self, hidden, whole_input):
+        energy = self.attn(torch.cat((hidden.expand(whole_input.size(0), -1, -1), whole_input), 2)).tanh()
+        return torch.sum(self.v * energy, dim=2)
 
-        output = torch.cat((embedded[0], attn_applied[0]), 1)
-        output = self.attn_combine(output).unsqueeze(0)
+    def forward(self, hidden, encoder_outputs):
+        # Calculate the attention weights (energies) based on the given method
+        if self.method == 'general':
+            attn_energies = self.general_score(hidden, encoder_outputs)
+        elif self.method == 'concat':
+            attn_energies = self.concat_score(hidden, encoder_outputs)
+        elif self.method == 'dot':
+            attn_energies = self.dot_score(hidden, encoder_outputs)
 
-        output = F.relu(output)
-        output, hidden = self.gru(output, hidden)
+        # Transpose max_length and batch_size dimensions
+        attn_energies = attn_energies.t()
 
-        output = F.log_softmax(self.out(output[0]), dim=1)
-        return output, hidden, attn_weights
-
-    def initHidden(self):
-        return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
+        # Return the softmax normalized probability scores (with added dimension)
+        return F.softmax(attn_energies, dim=1).unsqueeze(1)
 
 
 class EncoderLSTM(nn.Module):
@@ -46,54 +50,65 @@ class EncoderLSTM(nn.Module):
         self.max_length = max_length
 
         self.embedding = nn.Embedding(self.input_size, self.hidden_size)
+        self.memorising = nn.Linear(self.hidden_size, self.hidden_size)
         self.attn = nn.Linear(self.hidden_size * 2, self.max_length)
         self.attn_combine = nn.Linear(self.hidden_size * 2, self.hidden_size)
         self.dropout = nn.Dropout(DROPOUT_RATIO)
         self.lstm = nn.LSTM(hidden_size, hidden_size)
+        
+        self.init_hidden = self.init_hidden_and_cell()
+        self.init_cell = self.init_hidden_and_cell()
 
-    def forward(self, input):
-        embedded = self.dropout(self.embedding(input))
+    def forward(self, whole_input, current_input, last_hidden, last_cell):
+        # Embed the current input element
+        embedded = self.dropout(self.embedding(current_input))
 
-        attn_weights = F.softmax(
-            self.attn(torch.cat((embedded, embedded), 1)), dim=1)
-        attn_applied = torch.bmm(attn_weights.unsqueeze(0),
-                                 encoder_outputs.unsqueeze(0))
-        output, hidden = self.gru(embedded)
-        # shape of output is [length * batch_size * hidden_size]
-        # shape of hidden is [1 * batch_size * hidden_size] (only contains h_n)
-        return output, hidden
+        # Calculate the memory vectors for the whole input sequence
+        memoryised = self.dropout(self.memorising(self.embedding(whole_input)))
+        # Calculate attention weights from the current LSTM input
+        attn_weights = self.attn(embedded, memoryised)
+        # Multiply attention weights to the memory vector to get new "weighted sum" memory vector
+        r = attn_weights.bmm(memoryised.transpose(0, 1))
+        # Forward through unidirectional LSTM
+        lstm_output, (lstm_hidden, lstm_cell) = self.lstm(r, (last_hidden, last_cell))
+        # Concatenate weighted context vector and LSTM output using Luong eq. 5
 
-    def init_hidden(self):
-        return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
+        # Return hidden and cell state of LSTM
+        return lstm_hidden, lstm_cell
+
+    def init_hidden_and_cell(self):
+        return nn.Parameter(torch.zeros(1, 1, self.hidden_size, device=DEVICE))
 
 
-class DecoderGRU(nn.Module):
-    def __init__(self, hidden_size, output_size, embedding, dropout=DROPOUT_RATIO):
-        super(DecoderGRU, self).__init__()
+class DecoderLSTM(nn.Module):
+    def __init__(self, output_size, embedding, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
+        super(DecoderLSTM, self).__init__()
         self.hidden_size = hidden_size
 
         self.embedding = embedding
-        self.gru = nn.GRU(hidden_size, hidden_size)
+        self.lstm = nn.LSTM(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
         self.softmax = nn.LogSoftmax(dim=1)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, input, hidden):
-        input = input.unsqueeze(0)
-        #embedded size = [1, batch size, emb dim]
-        embedded = self.dropout(self.embedding(input))
+    def forward(self, last_input, last_hidden, last_cell):
+        # embedded size = [1, batch size, emb dim]
+        embedded = self.dropout(self.embedding(last_input))
         
-        #output = [sent len, batch size, hid dim * n directions]
-        #hidden = [n layers * n directions, batch size, hid dim]
-        output, hidden = self.gru(embedded, hidden)
-        #sent len and n directions will always be 1 in the decoder, therefore:
-        #output = [1, batch size, hid dim]
-        #hidden = [n layers, batch size, hid dim]
-        #cell = [n layers, batch size, hid dim]
+        # output = [sent len, batch size, hid dim * n directions]
+        # hidden = [1, batch size, hid dim]
+        # cell = [1, batch size, hid dim]
+        output, (hidden, cell) = self.lstm(embedded, (last_hidden, last_cell))
+        # sent len and n directions will always be 1 in the decoder, therefore:
+        # output = [1, batch size, hid dim]
+        # hidden = [batch size, hid dim]
+        # cell = [batch size, hid dim]
+        output = output.squeeze(0)
         
         #prediction size = [batch size, output dim]
-        prediction = self.out(output.squeeze(0))
-        return prediction, hidden
+        prediction = F.softmax(self.out(output), dim=1)
+        return prediction, hidden, cell
 
     def init_hidden(self):
         return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
+
