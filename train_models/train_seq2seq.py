@@ -48,9 +48,9 @@ def train_epoch(input_variable, lengths, target_variable, mask, max_target_len, 
             decoder_input = decoder_input.to(DEVICE)
         
         mask_loss, n_total = mask_NLL_loss(decoder_output, target_variable[t], mask[t])
-            loss += mask_loss
-            print_losses.append(mask_loss.item() * n_total)
-            n_totals += n_total
+        loss += mask_loss
+        print_losses.append(mask_loss.item() * n_total)
+        n_totals += n_total
 
     # Perform backpropatation
     loss.backward()
