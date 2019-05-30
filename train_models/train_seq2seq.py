@@ -38,7 +38,7 @@ def train_epoch(input_variable, lengths, target_variable, mask, max_target_len, 
                 decoder(decoder_input, decoder_hidden, decoder_cell)
             
             # Teacher forcing: next input is current target
-            decoder_input = target_variable[t].view(1, -1)
+            decoder_input = target_variable[t].view(1, -1).to(DEVICE)
 
             # Calculate and accumulate loss
             mask_loss, n_total = mask_NLL_loss(decoder_output, target_variable[t], mask[t])
