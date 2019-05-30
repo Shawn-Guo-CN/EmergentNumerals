@@ -26,14 +26,14 @@ class Attn(nn.Module):
         energy = self.attn(torch.cat((hidden.expand(whole_input.size(0), -1, -1), whole_input), 2)).tanh()
         return torch.sum(self.v * energy, dim=2)
 
-    def forward(self, hidden, encoder_outputs):
+    def forward(self, hidden, whole_input):
         # Calculate the attention weights (energies) based on the given method
         if self.method == 'general':
-            attn_energies = self.general_score(hidden, encoder_outputs)
+            attn_energies = self.general_score(hidden, whole_input)
         elif self.method == 'concat':
-            attn_energies = self.concat_score(hidden, encoder_outputs)
+            attn_energies = self.concat_score(hidden, whole_input)
         elif self.method == 'dot':
-            attn_energies = self.dot_score(hidden, encoder_outputs)
+            attn_energies = self.dot_score(hidden, whole_input)
 
         # Transpose max_length and batch_size dimensions
         attn_energies = attn_energies.t()
@@ -43,15 +43,14 @@ class Attn(nn.Module):
 
 
 class EncoderLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, embedding, max_length=MAX_LENGTH+2):
+    def __init__(self, embedding, hidden_size=HIDDEN_SIZE, max_length=MAX_LENGTH+2):
         super(EncoderLSTM, self).__init__()
-        self.input_size = input_size
         self.hidden_size = hidden_size
         self.max_length = max_length
 
-        self.embedding = nn.Embedding(self.input_size, self.hidden_size)
+        self.embedding = embedding
         self.memorising = nn.Linear(self.hidden_size, self.hidden_size)
-        self.attn = nn.Linear(self.hidden_size * 2, self.max_length)
+        self.attn = Attn(ATTN_METHOD, hidden_size)
         self.attn_combine = nn.Linear(self.hidden_size * 2, self.hidden_size)
         self.dropout = nn.Dropout(DROPOUT_RATIO)
         self.lstm = nn.LSTM(hidden_size, hidden_size)
