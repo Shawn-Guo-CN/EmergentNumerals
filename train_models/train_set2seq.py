@@ -4,6 +4,27 @@ from utils.DatasetLoader import *
 from utils.Preprocesses import *
 
 
+def encoder_forward(encoder, input_variable, input_mask):
+    batch_size = input_variable.shape[1]
+    batch_length = input_variable.shape[0]
+
+    # initialise the initial hidden and cell states for encoder
+    encoder_hidden = encoder.init_hidden.repeat(1, batch_size, 1)
+    encoder_cell = encoder.init_cell.repeat(1, batch_size, 1)
+
+    # Forward pass through encoder
+    for t in range(batch_length):
+        encoder_input = input_variable[t]
+        cur_hidden, cur_cell = \
+            encoder(input_variable, encoder_input, encoder_hidden, encoder_cell)
+        cur_weights = input_mask[t].reshape(1, -1, 1).to(encoder_hidden.dtype)
+        last_weights = (1 - input_mask[t]).reshape(1, -1, 1).to(encoder_hidden.dtype)
+        encoder_hidden = last_weights * encoder_hidden + cur_weights * cur_hidden
+        encoder_cell = last_weights * encoder_cell + cur_weights * cur_cell
+
+    return encoder_hidden, encoder_cell
+
+
 def train_epoch(input_variable, input_mask, target_variable, target_mask, target_max_len, 
                     encoder, decoder, encoder_optimizer, decoder_optimizer, clip=CLIP):
     batch_size = input_variable.shape[1]
@@ -18,18 +39,7 @@ def train_epoch(input_variable, input_mask, target_variable, target_mask, target
     print_losses = []
     n_totals = 0
 
-    # initialise the initial hidden and cell states for encoder
-    encoder_hidden = encoder.init_hidden.repeat(1, batch_size, 1)
-    encoder_cell = encoder.init_cell.repeat(1, batch_size, 1)
-    
-    # Forward pass through encoder
-    for t in range(batch_length):
-        encoder_input = input_variable[t]
-        cur_hidden, cur_cell = \
-            encoder(input_variable, encoder_input, encoder_hidden, encoder_cell)
-        encoder_hidden = (1 - input_mask[t]) * encoder_hidden + input_mask[t] * cur_hidden
-        encoder_cell = (1 - input_mask[t]) * encoder_cell + input_mask[t] * cur_cell
-
+    encoder_hidden, encoder_cell = encoder_forward(encoder, input_variable, input_mask)
 
     # Create initial decoder input (start with SOS tokens for each sentence)
     decoder_input = torch.LongTensor([[SOS_INDEX for _ in range(batch_size)]]).to(DEVICE)
@@ -80,18 +90,9 @@ def dev_epoch(input_variable, input_mask, target_variable, target_mask, target_m
     loss = 0
     print_losses = []
     n_totals = 0
-
-    # initialise the initial hidden and cell states for encoder
-    encoder_hidden = encoder.init_hidden.repeat(1, batch_size, 1)
-    encoder_cell = encoder.init_cell.repeat(1, batch_size, 1)
     
     # Forward pass through encoder
-    for t in range(batch_length):
-        encoder_input = input_variable[t]
-        cur_hidden, cur_cell = \
-            encoder(input_variable, encoder_input, encoder_hidden, encoder_cell)
-        encoder_hidden = (1 - input_mask[t]) * encoder_hidden + input_mask[t] * cur_hidden
-        encoder_cell = (1 - input_mask[t]) * encoder_cell + input_mask[t] * cur_cell
+    encoder_hidden, encoder_cell = encoder_forward(encoder, input_variable, input_mask)
 
     # Create initial decoder input (start with SOS tokens for each sentence)
     decoder_input = torch.LongTensor([[SOS_INDEX for _ in range(batch_size)]]).to(DEVICE)

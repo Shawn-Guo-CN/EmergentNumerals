@@ -57,4 +57,3 @@ hyperparameters of model
 '''
 HIDDEN_SIZE = 256
 BATCH_SIZE = 1024
-ATTN_METHOD = 'concat'
