@@ -1,5 +1,5 @@
 from utils.conf import *
-from models.Seq2Seq import *
+from models.Seq2Seq import Seq2Seq
 from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
 

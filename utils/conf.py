@@ -20,8 +20,8 @@ TEACHER_FORCING_RATIO = 0.3
 DECODER_LEARING_RATIO = 5.0
 NUM_ITERS = 400
 PRINT_EVERY = 1
-SAVE_EVERY = 5
-EVAL_EVERY = 5
+SAVE_EVERY = 2
+EVAL_EVERY = 2
 OPTIMISER = optim.Adam
 LOSS_FUNCTION = nn.CrossEntropyLoss()
 
@@ -35,9 +35,9 @@ PARAM_FILE = None
 for generating and loading data
 '''
 DATA_FILE_PATH = './data/all_data.txt'
-TRAIN_FILE_PATH = './data/sample_train.txt'
-DEV_FILE_PATH = './data/sample_dev.txt'
-TEST_FILE_PATH = './data/sample_test.txt'
+TRAIN_FILE_PATH = './data/train.txt'
+DEV_FILE_PATH = './data/dev.txt'
+TEST_FILE_PATH = './data/test.txt'
 
 '''
 for preprocessing sequences
