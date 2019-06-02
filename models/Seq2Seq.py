@@ -72,7 +72,7 @@ class Seq2Seq(nn.Module):
         self.hidden_size=hidden_size
 
         # universal modules
-        self.embedding = nn.Embedding(self.voc_size, HIDDEN_SIZE).to(DEVICE)
+        self.embedding = nn.Embedding(self.voc_size, HIDDEN_SIZE)
         self.dropout = nn.Dropout(dropout)
 
         # encoder and decoder
