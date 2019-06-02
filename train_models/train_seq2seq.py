@@ -25,18 +25,18 @@ def train_epoch(data_batch, model, param_optimiser, decoder_optimiser, clip=CLIP
     return sum(print_losses) / n_totals
 
 def train():
-    print('building vocabulary...', end='')
+    print('building vocabulary...')
     voc = Voc()
     print('done')
 
-    print('loading data and building batches...', end='')
+    print('loading data and building batches...')
     train_set = FruitSeqDataset(voc, dataset_file_path=TRAIN_FILE_PATH)
     dev_set = FruitSeqDataset(voc, dataset_file_path=DEV_FILE_PATH)
     # test_set = FruitSeqDataset(voc, dataset_file_path=TEST_FILE_PATH)
     print('done')
     
     print('building model...')
-    seq2seq = Seq2Seq(voc.num_words)
+    seq2seq = Seq2Seq(voc.num_words).to(DEVICE)
     param_optimizer = OPTIMISER(seq2seq.parameters(), lr=LEARNING_RATE)
     decoder_optimizer = OPTIMISER(seq2seq.decoder.parameters(), \
                                     lr=LEARNING_RATE * DECODER_LEARING_RATIO)
