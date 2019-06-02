@@ -21,6 +21,8 @@ def generate_train_dev_test_files(in_file=open(DATA_FILE_PATH, 'r'),
 ):
     string_set = []
     for line in in_file.readlines():
+        if len(line.strip()) == 0:
+            continue
         string_set.append(line.strip())
     
     random.shuffle(string_set)
