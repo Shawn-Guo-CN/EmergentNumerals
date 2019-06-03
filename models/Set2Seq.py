@@ -45,8 +45,8 @@ class EncoderLSTM(nn.Module):
         batch_size = embedded_input_var.shape[0]
 
         # Initialise the initial hidden and cell states for encoder
-        last_hidden = self.init_hidden.expand(-1, batch_size, -1)
-        last_cell = self.init_cell.expand(-1, batch_size, -1)
+        last_hidden = self.init_hidden.expand(-1, batch_size, -1).contiguous()
+        last_cell = self.init_cell.expand(-1, batch_size, -1).contiguous()
         
         # Forward pass through LSTM
         for t in range(NUM_WORD):
