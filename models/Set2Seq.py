@@ -20,12 +20,12 @@ class Attn(nn.Module):
     def forward(self, hidden, whole_input):
         # Calculate the attention weights (energies) based on the given method
         attn_weights = self.attn(
-            torch.cat((hidden.expand(whole_input.size(0), -1, -1), whole_input), 2)
+            torch.cat((hidden.transpose(0, 1).expand(-1, whole_input.size(1), -1), whole_input), 2)
         ).sigmoid()
         #  .tanh() is another feasible function
 
-        # transpose the attention weights and return
-        return attn_weights.transpose(0, 1).transpose(1, 2)
+        # Transpose the attention weights and return
+        return attn_weights.transpose(1, 2)
 
 class EncoderLSTM(nn.Module):
     def __init__(self, voc_size, hidden_size=HIDDEN_SIZE, max_length=MAX_LENGTH+2):
@@ -41,16 +41,21 @@ class EncoderLSTM(nn.Module):
         self.init_hidden = self.init_hidden_and_cell()
         self.init_cell = self.init_hidden_and_cell()
 
-    def forward(self, whole_input, cur_input_embbeded, last_hidden, last_cell):
-        # Calculate the memory vectors for the whole input sequence
-        memorised = self.memorising(whole_input)
-        # Calculate attention weights from the current LSTM input
-        attn_weights = self.attn(cur_input_embbeded, memorised)
-        # Multiply attention weights to the memory vector to get new "weighted sum" memory vector
-        r = attn_weights.bmm(memorised.transpose(0, 1)).transpose(0, 1)
-        # Forward through unidirectional LSTM
-        lstm_output, (lstm_hidden, lstm_cell) = self.lstm(r, (last_hidden, last_cell))
-        # Concatenate weighted context vector and LSTM output using Luong eq. 5
+    def forward(self, embedded_input_var):
+        batch_size = embedded_input_var.shape[0]
+
+        # Initialise the initial hidden and cell states for encoder
+        last_hidden = self.init_hidden.expand(-1, batch_size, -1)
+        last_cell = self.init_cell.expand(-1, batch_size, -1)
+        
+        # Forward pass through LSTM
+        for t in range(NUM_WORD):
+            # Calculate attention weights from the current LSTM input
+            attn_weights = self.attn(last_hidden, embedded_input_var)
+            # Calculate the attention weighted representation
+            r = attn_weights.bmm(embedded_input_var).transpose(0, 1)
+            # Forward through unidirectional LSTM
+            lstm_output, (lstm_hidden, lstm_cell) = self.lstm(r, (last_hidden, last_cell))
 
         # Return hidden and cell state of LSTM
         return lstm_hidden, lstm_cell
@@ -79,7 +84,7 @@ class DecoderLSTM(nn.Module):
         # cell = [batch size, hid dim]
         output = output.squeeze(0)
         
-        #prediction size = [batch size, output dim]
+        # prediction size = [batch size, output dim]
         prediction = F.softmax(self.out(output), dim=1)
         return prediction, hidden, cell
 
@@ -101,32 +106,19 @@ class Set2Seq(nn.Module):
 
     def forward(self, data_batch):
         input_var = data_batch['input']
-        input_mask = data_batch['input_mask']
         target_var = data_batch['target']
         target_mask = data_batch['target_mask']
         target_max_len = data_batch['target_max_len']
 
         batch_size = input_var.shape[1]
-        batch_length = input_var.shape[0]
 
         # Initialize variables
         loss = 0
         print_losses = []
         n_totals = 0
 
-        # initialise the initial hidden and cell states for encoder
-        encoder_hidden = self.encoder.init_hidden.expand(-1, batch_size, -1)
-        encoder_cell = self.encoder.init_cell.expand(-1, batch_size, -1)
-
-        # Forward pass through encoder
-        for t in range(batch_length):
-            encoder_input = self.embedding(input_var[t])
-            cur_hidden, cur_cell = \
-                self.encoder(input_var, encoder_input, encoder_hidden, encoder_cell)
-            cur_weights = input_mask[t].unsqueeze(0).view(1, -1, 1).to(encoder_hidden.dtype)
-            last_weights = (1 - input_mask[t]).unsqueeze(0).view(1, -1, 1).to(encoder_hidden.dtype)
-            encoder_hidden = last_weights * encoder_hidden + cur_weights * cur_hidden
-            encoder_cell = last_weights * encoder_cell + cur_weights * cur_cell
+        encoder_input = self.embedding(input_var.t())
+        encoder_hidden, encoder_cell = self.encoder(encoder_input)
 
         # Create initial decoder input (start with SOS tokens for each sentence)
         decoder_input = self.embedding(
