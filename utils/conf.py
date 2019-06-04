@@ -12,7 +12,7 @@ import torch.nn.functional as F
 '''
 for training model
 '''
-DEVICE = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
+DEVICE = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 LEARNING_RATE = 1e-4 # learning rate
 DROPOUT_RATIO = 0.2
 CLIP = 50.0 # max after clipping gradients
@@ -26,6 +26,12 @@ OPTIMISER = optim.Adam
 LOSS_FUNCTION = nn.CrossEntropyLoss()
 
 '''
+for testing model
+'''
+TEST_MODE = False
+
+
+'''
 for saving and loading params of models
 '''
 SAVE_DIR = './params/'
@@ -35,9 +41,9 @@ PARAM_FILE = None
 for generating and loading data
 '''
 DATA_FILE_PATH = './data/all_data.txt'
-TRAIN_FILE_PATH = './data/train.txt'
-DEV_FILE_PATH = './data/dev.txt'
-TEST_FILE_PATH = './data/test.txt'
+TRAIN_FILE_PATH = './data/sample_train.txt'
+DEV_FILE_PATH = './data/sample_dev.txt'
+TEST_FILE_PATH = './data/sample_test.txt'
 
 '''
 for preprocessing sequences

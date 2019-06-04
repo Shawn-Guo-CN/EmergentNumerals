@@ -26,6 +26,24 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=CLIP
     return acc, sum(print_losses) / n_totals
 
 
+def eval_model(model, dataset):
+    model.eval()
+            
+    loss = 0.
+    acc = 0.
+    for idx, data_batch in enumerate(dataset):
+        _, print_losses, n_corrects, n_totals = model(data_batch)
+        loss += sum(print_losses) / n_totals
+        acc += float(n_corrects) / float(n_totals)
+
+    loss /= len(dataset)
+    acc /= len(dataset)
+
+    model.train()
+
+    return acc, loss
+
+
 def train():
     print('building vocabulary...')
     voc = Voc()
@@ -80,24 +98,12 @@ def train():
             print_acc = 0.
 
         if iter % EVAL_EVERY == 0:
-            set2seq.eval()
-            
-            dev_loss = 0.
-            dev_acc = 0.
-            for idx, data_batch in enumerate(dev_set):
-                _, print_losses, n_corrects, n_totals = set2seq(data_batch)
-                dev_loss += sum(print_losses) / n_totals
-                dev_acc += float(n_corrects) / float(n_totals)
-
-            dev_loss /= len(dev_set)
-            dev_acc /= len(dev_set)
+            dev_acc, dev_loss = eval_model(set2seq, dev_set)
             if dev_acc > max_dev_acc:
                 max_dev_acc = dev_acc
 
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Acc: {:.4f}; Best Acc: {:.4f}".format(
                 iter, dev_loss, dev_acc, max_dev_acc))
-
-            set2seq.train()
 
         if iter % SAVE_EVERY == 0:
             directory = os.path.join(SAVE_DIR, 'set2seq_' + str(HIDDEN_SIZE))
@@ -113,5 +119,38 @@ def train():
             }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_acc, 'checkpoint')))
 
 
+def test():
+    print('building model...')
+    voc = Voc()
+    set2seq = Set2Seq(voc.num_words)
+    param_optimizer = OPTIMISER(set2seq.parameters(), lr=LEARNING_RATE)
+    decoder_optimizer = OPTIMISER(set2seq.decoder.parameters(), 
+                                    lr=LEARNING_RATE * DECODER_LEARING_RATIO)
+    print('done')
+
+    if PARAM_FILE is None:
+        print('please specify the saved param file.')
+        exit(-1)
+    else:
+        print('loading saved parameters from ' + PARAM_FILE + '...')
+        checkpoint = torch.load(PARAM_FILE)
+        set2seq.load_state_dict(checkpoint['model'])
+        param_optimizer.load_state_dict(checkpoint['opt'])
+        decoder_optimizer.load_state_dict(checkpoint['de_opt'])
+        voc = checkpoint['voc']
+        print('done')
+
+    print('loading test data...')
+    test_set = FruitSeqDataset(voc, dataset_file_path=TEST_FILE_PATH)
+    print('done')
+    
+    test_acc, test_loss = eval_model(set2seq, test_set)
+    print("[TEST]Loss: {:.4f}; Accuracy: {:.4f}".format(
+                test_loss, test_acc * 100))
+
+
 if __name__ == '__main__':
-    train()
+    if TEST_MODE:
+        test()
+    else:
+        train()
