@@ -4,9 +4,9 @@ from utils.conf import *
 def mask_NLL_loss(prediction, golden_standard, mask):
     n_total = mask.sum()
     crossEntropy = -torch.log(torch.gather(prediction, 1, golden_standard.view(-1, 1)).squeeze(1))
-    loss = crossEntropy.masked_select(mask).mean()
-    loss = loss.to(DEVICE)
-    return loss, n_total.item()
+    loss = crossEntropy.masked_select(mask).mean().to(DEVICE)
+    n_correct = prediction.topk(1)[1].squeeze(1).eq(golden_standard).masked_select(mask).sum()
+    return loss, n_correct.item(), n_total.item()
 
 
 # Attention layer
@@ -115,6 +115,7 @@ class Set2Seq(nn.Module):
         # Initialize variables
         loss = 0
         print_losses = []
+        n_corrects = 0
         n_totals = 0
 
         encoder_input = self.embedding(input_var.t())
@@ -146,9 +147,10 @@ class Set2Seq(nn.Module):
                     torch.LongTensor([[topi[i][0] for i in range(batch_size)]]).to(DEVICE)
                 )
                 
-            mask_loss, n_total = mask_NLL_loss(decoder_output, target_var[t], target_mask[t])
+            mask_loss, n_correct, n_total = mask_NLL_loss(decoder_output, target_var[t], target_mask[t])
             loss += mask_loss
             print_losses.append(mask_loss.item() * n_total)
+            n_corrects += n_correct
             n_totals += n_total
 
-        return loss, print_losses, n_totals
+        return loss, print_losses, n_corrects, n_totals
