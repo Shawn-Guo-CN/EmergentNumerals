@@ -120,7 +120,7 @@ def train():
 def test():
     print('building model...')
     voc = Voc()
-    seq2seq = Seq2Seq(voc.num_words)
+    seq2seq = Seq2Seq(voc.num_words).to(DEVICE)
     param_optimizer = OPTIMISER(seq2seq.parameters(), lr=LEARNING_RATE)
     decoder_optimizer = OPTIMISER(seq2seq.decoder.parameters(), 
                                     lr=LEARNING_RATE * DECODER_LEARING_RATIO)
