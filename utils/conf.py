@@ -41,9 +41,9 @@ PARAM_FILE = None
 for generating and loading data
 '''
 DATA_FILE_PATH = './data/all_data.txt'
-TRAIN_FILE_PATH = './data/sample_train.txt'
-DEV_FILE_PATH = './data/sample_dev.txt'
-TEST_FILE_PATH = './data/sample_test.txt'
+TRAIN_FILE_PATH = './data/train.txt'
+DEV_FILE_PATH = './data/dev.txt'
+TEST_FILE_PATH = './data/test.txt'
 
 '''
 for preprocessing sequences
