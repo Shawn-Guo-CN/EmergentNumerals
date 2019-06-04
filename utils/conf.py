@@ -63,3 +63,6 @@ hyperparameters of model
 '''
 HIDDEN_SIZE = 256
 BATCH_SIZE = 1024
+MESSAGE_LENGTH = NUM_WORD
+# Size of vocabulary this is available for communication
+VOCAB_SIZE = 10
