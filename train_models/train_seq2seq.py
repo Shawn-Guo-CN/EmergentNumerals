@@ -10,10 +10,12 @@ def train_epoch(data_batch, model, param_optimiser, decoder_optimiser, clip=CLIP
     decoder_optimiser.zero_grad()
 
     # Forward pass through model
-    loss, print_losses, n_totals = model(data_batch)
+    loss, print_losses, n_corrects, n_totals = model(data_batch)
 
     # Perform backpropatation
     loss.backward()
+    # Calculate accuracy
+    acc = round(float(n_corrects) / float(n_totals), 6)
 
     # Clip gradients: gradients are modified in place
     nn.utils.clip_grad_norm_(model.parameters(), clip)
@@ -22,7 +24,7 @@ def train_epoch(data_batch, model, param_optimiser, decoder_optimiser, clip=CLIP
     param_optimiser.step()
     decoder_optimiser.step()
 
-    return sum(print_losses) / n_totals
+    return acc, sum(print_losses) / n_totals
 
 def train():
     print('building vocabulary...')
@@ -53,22 +55,45 @@ def train():
     print('initiprint_lossesalising...')
     start_iteration = 1
     print_loss = 0
+    print_acc = 0.
+    max_dev_acc = 0.
     print('done')
 
     print('training...')
     for iter in range(start_iteration, NUM_ITERS+1):
         for idx, data_batch in enumerate(train_set):
-            loss = train_epoch(data_batch, seq2seq, param_optimizer, decoder_optimizer)
+            acc, loss = train_epoch(data_batch, seq2seq, param_optimizer, decoder_optimizer)
             print_loss += loss
+            print_acc += acc
 
         if iter % PRINT_EVERY == 0:
-            print_loss_avg = print_loss / PRINT_EVERY
-            print("Iteration: {}; Percent complete: {:.1f}%; Average loss: {:.4f}".format(
-                iter, iter / NUM_ITERS * 100, print_loss_avg))
-            print_loss = 0
+            print_loss_avg = print_loss / (PRINT_EVERY * len(train_set))
+            print_acc_avg = print_acc / (PRINT_EVERY * len(train_set))
+            print("Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg acc: {:.4f}".format(
+                iter, iter / NUM_ITERS * 100, print_loss_avg, print_acc_avg
+                ))
+            print_loss = 0.
+            print_acc = 0.
+
+        if iter % EVAL_EVERY == 0:
+            seq2seq.eval()
+
+            dev_loss = 0.
+            dev_acc = 0.
+            for idx, data_batch in enumerate(dev_set):
+                _, print_losses, n_corrects, n_totals = seq2seq(data_batch)
+                dev_loss += sum(print_losses) / n_totals
+                dev_acc += float(n_corrects) / float(n_totals)
+            dev_loss /= len(dev_set)
+            dev_acc /= len(dev_set)
+            if dev_acc > max_dev_acc:
+                max_dev_acc = dev_acc
+
+            print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Acc: {:.4f}; Best Acc: {:.4f}".format(iter, dev_loss, dev_acc, max_dev_acc))
+            seq2seq.train()
 
         if iter % SAVE_EVERY == 0:
-            directory = os.path.join(SAVE_DIR, 'standard_seq2seq_' + str(HIDDEN_SIZE))
+            directory = os.path.join(SAVE_DIR, 'seq2seq_' + str(HIDDEN_SIZE))
             if not os.path.exists(directory):
                 os.makedirs(directory)
             torch.save({
@@ -76,20 +101,12 @@ def train():
                 'model': seq2seq.state_dict(),
                 'opt': param_optimizer.state_dict(),
                 'de_opt': decoder_optimizer.state_dict(),
-                'loss': loss,
+                'loss': dev_loss,
+                'acc': dev_acc,
                 'voc': voc
-            }, os.path.join(directory, '{}_{}.tar'.format(iter, 'checkpoint')))
+            }, os.path.join(directory, '{}_{:4f}_{}.tar'.format(iter, dev_acc, 'checkpoint')))
 
-        if iter % EVAL_EVERY == 0:
-            seq2seq.eval()
-
-            loss = 0
-            for idx, data_batch in enumerate(dev_set):
-                _, print_losses, n_totals = seq2seq(data_batch)
-                loss += sum(print_losses) / n_totals
-
-            print("[EVAL]Iteration: {}; Loss: {:.4f}".format(iter, loss))
-            seq2seq.train()
+        
 
 
 if __name__ == '__main__':
