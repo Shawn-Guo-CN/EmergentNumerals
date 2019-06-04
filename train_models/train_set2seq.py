@@ -71,13 +71,13 @@ def train():
             print_acc += acc
 
         if iter % PRINT_EVERY == 0:
-            print_loss_avg = print_loss / PRINT_EVERY
-            print_acc_avg = print_acc / PRINT_EVERY
+            print_loss_avg = print_loss / (PRINT_EVERY * len(train_set))
+            print_acc_avg = print_acc / (PRINT_EVERY * len(train_set))
             print("Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg acc: {:.4f}".format(
                 iter, iter / NUM_ITERS * 100, print_loss_avg, print_acc_avg
                 ))
-            print_loss = 0
-            print_acc = 0
+            print_loss = 0.
+            print_acc = 0.
 
         if iter % EVAL_EVERY == 0:
             set2seq.eval()
@@ -110,9 +110,7 @@ def train():
                 'de_opt': decoder_optimizer.state_dict(),
                 'loss': loss,
                 'voc': voc
-            }, os.path.join(directory, '{}_{}_{}.tar'.format(iter, round(dev_acc, 4), 'checkpoint')))
-
-        
+            }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_acc, 'checkpoint')))
 
 
 if __name__ == '__main__':
