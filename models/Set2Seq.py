@@ -6,7 +6,7 @@ def mask_NLL_loss(prediction, golden_standard, mask):
     crossEntropy = -torch.log(torch.gather(prediction, 1, golden_standard.view(-1, 1)).squeeze(1))
     loss = crossEntropy.masked_select(mask).mean().to(DEVICE)
     n_correct = prediction.topk(1)[1].squeeze(1).eq(golden_standard).masked_select(mask).sum()
-    return loss, n_correct, n_total.item()
+    return loss, n_correct.item(), n_total.item()
 
 
 # Attention layer
