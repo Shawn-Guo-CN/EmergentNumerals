@@ -12,7 +12,7 @@ def mask_NLL_loss(prediction, golden_standard, mask):
 # Attention layer
 class Attn(nn.Module):
     def __init__(self, hidden_size=HIDDEN_SIZE):
-        super(Attn, self).__init__()
+        super().__init__()
         self.hidden_size = hidden_size
 
         self.attn = nn.Linear(self.hidden_size * 2, 1)
@@ -32,7 +32,7 @@ class SetEncoderLSTM(nn.Module):
     This class is used to encode an input set.
     """
     def __init__(self, voc_size, hidden_size=HIDDEN_SIZE, max_length=MAX_LENGTH+2):
-        super(SetEncoderLSTM, self).__init__()
+        super().__init__()
         self.hidden_size = hidden_size
         self.max_length = max_length
 
@@ -72,7 +72,7 @@ class MSGGeneratorLSTM(nn.Module):
     This class is used to generate messages.
     """
     def __init__(self, input_size, output_size, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
-        super(MSGGeneratorLSTM, self).__init__()
+        super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
@@ -104,7 +104,7 @@ class MSGGeneratorLSTM(nn.Module):
 
 class SpeakingAgent(nn.Module):
     def __init__(self, embedding, voc_size, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
-        super(SpeakingAgent, self).__init__()
+        super().__init__()
         self.voc_size = voc_size
         self.hidden_size = hidden_size
 
@@ -113,23 +113,22 @@ class SpeakingAgent(nn.Module):
 
         self.encoder = SetEncoderLSTM(self.voc_size, self.hidden_size)
         # The output size of decoder is the size of vocabulary for communication
-        self.decoder = MSGGeneratorLSTM(VOCAB_SIZE, self.hidden_size)
+        self.decoder = MSGGeneratorLSTM(MSG_VOCSIZE, self.hidden_size)
 
         # the init input for decoder
         self.init_decoder_input = nn.Parameter(self.decoder.init_input())
 
-    def forward(self, input_var):
-        batch_size = input_var.shape[1]
+    def forward(self, embedded_input_var):
+        batch_size = embedded_input_var.shape[0]
 
-        encoder_input = self.embedding(input_var.t())
-        encoder_hidden, encoder_cell = self.encoder(encoder_input)
+        encoder_hidden, encoder_cell = self.encoder(embedded_input_var)
 
-        message = torch.zeros(MESSAGE_LENGTH, batch_size, VOCAB_SIZE, device=DEVICE)
+        message = torch.zeros(MSG_LENGTH, batch_size, MSG_VOCSIZE, device=DEVICE)
 
         # Create initial decoder input (start with SOS tokens for each sentence)
         decoder_input = self.init_decoder_input.expand(-1, batch_size, -1)
 
-        for t in range(MESSAGE_LENGTH):
+        for t in range(MSG_LENGTH):
             decoder_output, decoder_hidden, decoder_cell = \
                 self.decoder(decoder_input, decoder_hidden, decoder_cell)            
             message[t] = decoder_output
@@ -139,24 +138,22 @@ class SpeakingAgent(nn.Module):
 
 
 class MSGEncoderLSTM(nn.Module):
-    def __init__(self, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
-        super(MSGEncoderLSTM, self).__init__()
+    def __init__(self, input_size=MSG_VOCSIZE, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
+        super().__init__()
         self.hidden_size = hidden_size
+        self.input_size = input_size
 
         # Initialize LSTM; the input_size and hidden_size params are both set to 'hidden_size'
         #   because our input size is a word embedding with number of features == hidden_size
-        self.lstm = nn.LSTM(hidden_size, hidden_size)
+        self.lstm = nn.LSTM(self.input_size, self.hidden_size)
         self.init_hidden = self.init_hidden_and_cell()
         self.init_cell = self.init_hidden_and_cell()
 
-    def forward(self, input_var, input_lengths):
+    def forward(self, input_var):
         h0 = self.init_hidden.expand(1, input_var.shape[1], 1)
         c0 = self.init_cell.expand(1, input_var.shape[1], 1)
         outputs, (hidden, cell) = self.lstm(input_var, (h0, c0))
 
-        # Unpack padding
-        outputs, _ = nn.utils.rnn.pad_packed_sequence(outputs)
-        # Return output and final hidden state
         return outputs, hidden, cell
 
     def init_hidden_and_cell(self):
@@ -165,11 +162,12 @@ class MSGEncoderLSTM(nn.Module):
 
 class DecoderLSTM(nn.Module):
     def __init__(self, output_size, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
-        super(DecoderLSTM, self).__init__()
+        super().__init__()
         self.hidden_size = hidden_size
+        self.output_size = output_size
 
-        self.lstm = nn.LSTM(hidden_size, hidden_size)
-        self.out = nn.Linear(hidden_size, output_size)
+        self.lstm = nn.LSTM(self.hidden_size, self.hidden_size)
+        self.out = nn.Linear(self.hidden_size, self.output_size)
 
     def forward(self, last_input, last_hidden, last_cell):
         # output = [sent len, batch size, hid dim * n directions]
@@ -190,9 +188,9 @@ class DecoderLSTM(nn.Module):
         return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
 
 
-class LinsteningAgent(nn.Module):
+class ListeningAgent(nn.Module):
     def __init__(self, voc_size, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
-        super(LinsteningAgent, self).__init__()
+        super().__init__()
         self.voc_size = voc_size
         self.hidden_size=hidden_size
 
@@ -204,12 +202,17 @@ class LinsteningAgent(nn.Module):
         self.encoder = MSGEncoderLSTM(self.hidden_size)
         self.decoder = DecoderLSTM(self.voc_size, self.hidden_size)
 
-    def forward(self, message):
+    def forward(self, message, target_var, target_mask, target_max_len):
         batch_size = message.shape[1]
+
+        # Initialize return variables
+        loss = 0
+        print_losses = []
+        n_corrects = 0
+        n_totals = 0
         
         # forward pass through message encoder
-        encoder_outputs, encoder_hidden, encoder_cell = \
-            self.encoder(input_var, input_embedded, input_lens)
+        encoder_outputs, encoder_hidden, encoder_cell = self.encoder(message)
 
         # Create initial decoder input (start with SOS tokens for each sentence)
         decoder_input = \
@@ -242,4 +245,41 @@ class LinsteningAgent(nn.Module):
             n_totals += n_total
             n_corrects += n_correct
 
+        return loss, print_losses, n_corrects, n_totals
+
+
+class Set2Seq_Seq2Seq(nn.Module):
+    def __init__(self, voc_size, msg_length=MSG_LENGTH, msg_vocsize=MSG_VOCSIZE, 
+                    hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
+        super().__init__()
+        self.voc_size = voc_size
+        self.msg_length = msg_length
+        self.msg_vocsize = msg_vocsize
+        self.hidden_size = hidden_size
+        self.dropout = dropout
+
+        # For embedding inputs
+        self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
+
+        # Speaking agent
+        self.speaker = SpeakingAgent(self.embedding, self.voc_size, 
+                                        self.hidden_size, self.dropout)
+        # Listening agent
+        self.listener = ListeningAgent(self.voc_size, self.hidden_size, self.dropout)
+        
+
+    def forward(self, data_batch):
+        input_var = data_batch['input']
+        target_var = data_batch['target']
+        target_mask = data_batch['target_mask']
+        target_max_len = data_batch['target_max_len']
+
+        batch_size = input_var.shape[1]
+
+        speaker_input = self.embedding(input_var.t())
+        message = self.speaker(speaker_input)
+
+        loss, print_losses, n_corrects, n_totals = \
+            self.listener(message, target_var, target_mask, target_max_len)
+        
         return loss, print_losses, n_corrects, n_totals
