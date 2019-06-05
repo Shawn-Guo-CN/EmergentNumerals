@@ -86,6 +86,8 @@ class MSGGeneratorLSTM(nn.Module):
         # output = [1, batch size, hid dim]
         # hidden = [batch size, hid dim]
         # cell = [batch size, hid dim]
+        last_hidden.contiguous()
+        last_cell.contiguous()
         output, (hidden, cell) = self.lstm(last_input, (last_hidden, last_cell))
         
         output = output.squeeze(0)
@@ -175,6 +177,8 @@ class DecoderLSTM(nn.Module):
         # output = [sent len, batch size, hid dim * n directions]
         # hidden = [1, batch size, hid dim]
         # cell = [1, batch size, hid dim]
+        last_hidden.contiguous()
+        last_cell.contiguous()
         output, (hidden, cell) = self.lstm(last_input, (last_hidden, last_cell))
         # sent len and n directions will always be 1 in the decoder, therefore:
         # output = [1, batch size, hid dim]
