@@ -71,11 +71,11 @@ class MSGGeneratorLSTM(nn.Module):
     """
     This class is used to generate messages.
     """
-    def __init__(self, input_size, output_size, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
+    def __init__(self, io_size=MSG_VOCSIZE, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
         super().__init__()
-        self.input_size = input_size
+        self.input_size = io_size
         self.hidden_size = hidden_size
-        self.output_size = output_size
+        self.output_size = io_size
 
         self.lstm = nn.LSTM(self.input_size, self.hidden_size)
         self.out = nn.Linear(self.hidden_size, self.output_size)
@@ -152,8 +152,8 @@ class MSGEncoderLSTM(nn.Module):
         self.init_cell = self.init_hidden_and_cell()
 
     def forward(self, input_var):
-        h0 = self.init_hidden.expand(1, input_var.shape[1], 1)
-        c0 = self.init_cell.expand(1, input_var.shape[1], 1)
+        h0 = self.init_hidden.expand(-1, input_var.shape[1], -1)
+        c0 = self.init_cell.expand(-1, input_var.shape[1], -1)
         outputs, (hidden, cell) = self.lstm(input_var, (h0, c0))
 
         return outputs, hidden, cell
@@ -201,7 +201,7 @@ class ListeningAgent(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         # encoder and decoder
-        self.encoder = MSGEncoderLSTM(self.hidden_size)
+        self.encoder = MSGEncoderLSTM()
         self.decoder = DecoderLSTM(self.voc_size, self.hidden_size)
 
     def forward(self, message, target_var, target_mask, target_max_len):
