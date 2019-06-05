@@ -58,7 +58,7 @@ def train():
     print('building model...')
     model = Set2Seq_Seq2Seq(voc.num_words).to(DEVICE)
     param_optimizer = OPTIMISER(model.parameters(), lr=LEARNING_RATE)
-    decoder_optimizer = OPTIMISER(model.decoder.parameters(), 
+    decoder_optimizer = OPTIMISER(model.speaker.decoder.parameters(), 
                                     lr=LEARNING_RATE * DECODER_LEARING_RATIO)
     if PARAM_FILE is not None:
         print('\tloading saved parameters from ' + PARAM_FILE + '...')

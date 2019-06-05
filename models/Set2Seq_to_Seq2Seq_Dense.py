@@ -125,9 +125,11 @@ class SpeakingAgent(nn.Module):
 
         message = torch.zeros(MSG_LENGTH, batch_size, MSG_VOCSIZE, device=DEVICE)
 
-        # Create initial decoder input (start with SOS tokens for each sentence)
+        # Create initial decoder variables
         decoder_input = self.init_decoder_input.expand(-1, batch_size, -1)
-
+        decoder_hidden = encoder_hidden
+        decoder_cell = encoder_cell
+        
         for t in range(MSG_LENGTH):
             decoder_output, decoder_hidden, decoder_cell = \
                 self.decoder(decoder_input, decoder_hidden, decoder_cell)            
