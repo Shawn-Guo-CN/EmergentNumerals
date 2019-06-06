@@ -1,5 +1,5 @@
 from utils.conf import *
-from models.Set2Seq_to_Seq2Seq_Dense import Set2Seq_Seq2Seq
+from models.Set2Seq_to_Seq2Seq import Set2Seq_Seq2Seq
 from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
 
@@ -107,7 +107,7 @@ def train():
                 iter, dev_loss, dev_acc, max_dev_acc))
 
         if iter % SAVE_EVERY == 0:
-            directory = os.path.join(SAVE_DIR, 'set2seq_' + str(HIDDEN_SIZE))
+            directory = os.path.join(SAVE_DIR, 'set2seq_to_seq2seq_' + str(HIDDEN_SIZE))
             if not os.path.exists(directory):
                 os.makedirs(directory)
             torch.save({
@@ -125,7 +125,7 @@ def test():
     voc = Voc()
     model = Set2Seq_Seq2Seq(voc.num_words).to(DEVICE)
     param_optimizer = OPTIMISER(model.parameters(), lr=LEARNING_RATE)
-    decoder_optimizer = OPTIMISER(model.decoder.parameters(), 
+    decoder_optimizer = OPTIMISER(model.speaker.decoder.parameters(), 
                                     lr=LEARNING_RATE * DECODER_LEARING_RATIO)
     print('done')
 

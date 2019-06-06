@@ -66,3 +66,6 @@ BATCH_SIZE = 1024
 MSG_LENGTH = NUM_WORD
 # Size of vocabulary this is available for communication
 MSG_VOCSIZE = 10
+MSG_MODE = 'GUMBEL' # Or 'SOFTMAX', 'GUMBEL'
+MSG_TAU = 1 # Hyperparam for gumbel softmax
+MSG_HARD = False # Discretized as one-hot vectors

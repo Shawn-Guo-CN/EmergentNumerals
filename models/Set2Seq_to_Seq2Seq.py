@@ -91,8 +91,14 @@ class MSGGeneratorLSTM(nn.Module):
         output = output.squeeze(0)
         
         # prediction size = [batch size, vocab size]
-        # prediction = F.softmax(self.out(output), dim=1)
+        # 
         prediction = self.out(output)
+
+        if MSG_MODE == 'SOFTMAX':
+            prediction = F.softmax(prediction, dim=1)
+        elif MSG_MODE == 'GUMBEL':
+            prediction = F.gumbel_softmax(prediction, tau=MSG_TAU, hard=MSG_HARD, dim=1)
+
         return prediction, hidden, cell
 
     def init_hidden(self):
