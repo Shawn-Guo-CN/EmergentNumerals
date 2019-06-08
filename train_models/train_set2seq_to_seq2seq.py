@@ -107,7 +107,11 @@ def train():
                 iter, dev_loss, dev_acc, max_dev_acc))
 
         if iter % SAVE_EVERY == 0:
-            directory = os.path.join(SAVE_DIR, 'set2seq_to_seq2seq_' + str(HIDDEN_SIZE))
+            path_join = 'set2seq_to_seq2seq_' + MSG_MODE
+            if MSG_MODE == 'GUMBEL':
+                model_str = '_hard' if MSG_HARD else '_soft'
+                path_join += model_str
+            directory = os.path.join(SAVE_DIR, path_join)
             if not os.path.exists(directory):
                 os.makedirs(directory)
             torch.save({
