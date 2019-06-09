@@ -7,7 +7,7 @@ from preprocesses.Voc import Voc
 def print_input_message_pair(input_str, message_tensor, out_file):
     print('---', file=out_file)
     print(input_str, file=out_file)
-    message = message_tensor.detach().numpy()[0]
+    message = message_tensor.detach().cpu().numpy()[0]
     # print(message[0], file=out_file)
     max_idx = []
     for r_idx in range(message.shape[0]):
@@ -35,7 +35,7 @@ def main():
     test_str_set = test_set.load_stringset(TEST_FILE_PATH)
     print('done')
 
-    param_file = './params/set2seq_to_seq2seq_GUMBEL_soft/6_0.1429_checkpoint.tar'
+    param_file = './params/set2seq_to_seq2seq_GUMBEL_hart/6_0.1429_checkpoint.tar'
     print('rebuilding model from saved parameters in ' + param_file + '...')
     model = Set2Seq_Seq2Seq(voc.num_words).to(DEVICE)
     checkpoint = torch.load(param_file)
