@@ -3,8 +3,8 @@ from utils.conf import *
 
 def mask_NLL_loss(prediction, golden_standard, mask):
     n_total = mask.sum()
-    crossEntropy = -torch.log(torch.gather(prediction, 1, golden_standard.view(-1, 1)).squeeze(1))
-    loss = crossEntropy.masked_select(mask).mean().to(DEVICE)
+    cross_entropy = -torch.log(torch.gather(prediction, 1, golden_standard.view(-1, 1)).squeeze(1))
+    loss = cross_entropy.masked_select(mask).mean()
     n_correct = prediction.topk(1)[1].squeeze(1).eq(golden_standard).masked_select(mask).sum()
     return loss, n_correct.item(), n_total.item()
 
