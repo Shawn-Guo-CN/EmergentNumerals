@@ -4,6 +4,17 @@ from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
 
 
+def msg_tau_schedule(best_dev_acc):
+    if best_dev_acc >= 0.6:
+        MSG_TAU = 1.
+    elif best_dev_acc >= 0.8:
+        MSG_TAU = 0.5
+    elif best_dev_acc >= 0.9:
+        MSG_TAU = 0.1
+    else:
+        MSG_TAU = 2.
+
+
 def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=CLIP):
     # Zero gradients
     param_optimizer.zero_grad()
@@ -79,6 +90,8 @@ def train():
 
     print('training...')
     for iter in range(start_iteration, NUM_ITERS+1):
+        msg_tau_schedule(max_dev_acc)
+
         for idx, data_batch in enumerate(train_set):
             acc, loss = train_epoch(
                 model,
