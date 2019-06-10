@@ -3,9 +3,9 @@ from utils.conf import *
 
 def mask_NLL_loss(prediction, golden_standard, mask):
     n_total = mask.sum()
-    cross_entropy = -torch.log(torch.gather(prediction, 1, golden_standard.view(-1, 1)).squeeze(1))
+    cross_entropy = -F.log_softmax(torch.gather(prediction, 1, golden_standard.view(-1, 1)).squeeze(1), dim=-1)
     loss = cross_entropy.masked_select(mask).mean()
-    n_correct = prediction.topk(1)[1].squeeze(1).eq(golden_standard).masked_select(mask).sum()
+    n_correct = prediction.topk(1, dim=1)[1].squeeze(1).eq(golden_standard).masked_select(mask).sum()
     return loss, n_correct.item(), n_total.item()
 
 
@@ -189,8 +189,9 @@ class SeqDecoderLSTM(nn.Module):
         output = output.squeeze(0)
         
         #prediction size = [batch size, output dim]
-        prediction = F.softmax(self.out(output), dim=1)
-        return prediction, hidden, cell
+        # prediction = F.softmax(self.out(output), dim=1)
+        output = self.out(output)
+        return output, hidden, cell
 
     def init_hidden(self):
         return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
