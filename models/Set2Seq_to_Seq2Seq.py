@@ -168,8 +168,8 @@ class MSGEncoderLSTM(nn.Module):
         return nn.Parameter(torch.zeros(1, 1, self.hidden_size, device=DEVICE))
 
 
-class DecoderLSTM(nn.Module):
-    def __init__(self, output_size, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
+class SeqDecoderLSTM(nn.Module):
+    def __init__(self, output_size, hidden_size=HIDDEN_SIZE):
         super().__init__()
         self.hidden_size = hidden_size
         self.output_size = output_size
@@ -200,7 +200,7 @@ class ListeningAgent(nn.Module):
     def __init__(self, voc_size, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
         super().__init__()
         self.voc_size = voc_size
-        self.hidden_size=hidden_size
+        self.hidden_size = hidden_size
 
         # universal modules
         self.embedding = nn.Embedding(self.voc_size, HIDDEN_SIZE)
@@ -208,7 +208,7 @@ class ListeningAgent(nn.Module):
 
         # encoder and decoder
         self.encoder = MSGEncoderLSTM()
-        self.decoder = DecoderLSTM(self.voc_size, self.hidden_size)
+        self.decoder = SeqDecoderLSTM(self.voc_size, self.hidden_size)
 
     def forward(self, message, target_var, target_mask, target_max_len):
         batch_size = message.shape[1]

@@ -15,8 +15,8 @@ for training model
 DEVICE = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 LEARNING_RATE = 1e-4 # learning rate
 DROPOUT_RATIO = 0.2
-CLIP = 100.0 # max after clipping gradients
-TEACHER_FORCING_RATIO = 0.5
+CLIP = 50.0 # max after clipping gradients
+TEACHER_FORCING_RATIO = 0.3
 DECODER_LEARING_RATIO = 5.0
 NUM_ITERS = 400
 PRINT_EVERY = 1
@@ -68,4 +68,4 @@ MSG_LENGTH = NUM_WORD
 MSG_VOCSIZE = 10
 MSG_MODE = 'GUMBEL' # Or 'SOFTMAX', 'GUMBEL'
 MSG_TAU = 2. # Hyperparam for gumbel softmax
-MSG_HARD = False # Discretized as one-hot vectors
+MSG_HARD = True # Discretized as one-hot vectors
