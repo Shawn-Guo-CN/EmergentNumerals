@@ -29,11 +29,11 @@ class  FruitSeqDataset(Dataset):
         target_indices = []
 
         def _string2indices_(seq):
-            return [SOS_INDEX] + [self.voc.word2index[w] for w in seq] + [EOS_INDEX]
+            return [self.voc.word2index[w] for w in seq] + [EOS_INDEX]
         
         for string in string_set:
-            # input contains neither SOS or EOS, target contains both SOS and EOS
-            input_indices.append(_string2indices_(string)[1:-1])
+            # input contains neither SOS or EOS, target contains EOS
+            input_indices.append(_string2indices_(string)[:-1])
             target_indices.append(_string2indices_(string))
         
         return input_indices, target_indices
