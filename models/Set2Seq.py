@@ -33,14 +33,11 @@ class Attn(nn.Module):
         return attn_weights.transpose(1, 2)
 
 class EncoderLSTM(nn.Module):
-    def __init__(self, voc_size, hidden_size=HIDDEN_SIZE, max_length=MAX_LENGTH+2):
+    def __init__(self, voc_size, hidden_size=HIDDEN_SIZE):
         super(EncoderLSTM, self).__init__()
         self.hidden_size = hidden_size
-        self.max_length = max_length
 
-        self.memorising = nn.Embedding(voc_size, self.hidden_size)
         self.attn = Attn(hidden_size)
-        self.dropout = nn.Dropout(DROPOUT_RATIO)
         self.lstm = nn.LSTMCell(hidden_size, hidden_size)
         
         self.init_hidden = self.init_hidden_and_cell()
@@ -78,7 +75,8 @@ class DecoderLSTM(nn.Module):
         self.out = nn.Linear(hidden_size, output_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, embedding, target_var, target_mask, target_max_len, encoder_hidden, encoder_cell):
+    def forward(self, embedding, target_var, target_mask, target_max_len, \
+                encoder_hidden, encoder_cell):
         batch_size = target_var.shape[1]
         # Initialize variables
         outputs = []
@@ -165,7 +163,11 @@ class Set2Seq(nn.Module):
 
         seq_correct = torch.ones([input_var.shape[1]], device=DEVICE)
         for t in range(target_max_len):
-            mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(decoder_outputs[t], target_var[t], target_mask[t])
+            mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(
+                decoder_outputs[t], 
+                target_var[t], 
+                target_mask[t]
+            )
             loss += mask_loss
             print_losses.append(mask_loss.item() * n_total)
             n_total_tokens += n_total
