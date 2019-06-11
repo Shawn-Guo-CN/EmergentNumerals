@@ -2,10 +2,12 @@ from utils.conf import *
 
 
 def mask_NLL_loss(prediction, golden_standard, mask):
-    n_total = mask.sum()
+    n_total = mask.sum().item()
     loss = (LOSS_FUNCTION(prediction, golden_standard) * mask.to(prediction.dtype)).mean()
-    n_correct = prediction.topk(1)[1].squeeze(1).eq(golden_standard).masked_select(mask).sum()
-    return loss, n_correct.item(), n_total.item()
+    eq_vec = prediction.topk(1)[1].squeeze(1).eq(golden_standard).to(prediction.dtype) \
+         * mask.to(prediction.dtype)
+    n_correct = eq_vec.sum().item()
+    return loss, eq_vec, n_correct, n_total
 
 
 # Attention layer
@@ -145,8 +147,9 @@ class Set2Seq(nn.Module):
         # Initialize variables
         loss = 0
         print_losses = []
-        n_corrects = 0
-        n_totals = 0
+        n_correct_tokens = 0
+        n_total_tokens = 0
+        n_correct_seqs = 0
 
         encoder_input = self.embedding(input_var.t())
         encoder_hidden, encoder_cell = self.encoder(encoder_input, input_mask)
@@ -160,11 +163,15 @@ class Set2Seq(nn.Module):
             encoder_cell
         )
 
+        seq_correct = torch.ones([input_var.shape[1]], device=DEVICE)
         for t in range(target_max_len):
-            mask_loss, n_correct, n_total = mask_NLL_loss(decoder_outputs[t], target_var[t], target_mask[t])
+            mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(decoder_outputs[t], target_var[t], target_mask[t])
             loss += mask_loss
             print_losses.append(mask_loss.item() * n_total)
-            n_totals += n_total
-            n_corrects += n_correct
+            n_total_tokens += n_total
+            n_correct_tokens += n_correct
+            seq_correct = seq_correct * eq_vec
 
-        return loss, print_losses, n_corrects, n_totals
+        n_correct_seqs = seq_correct.sum().item()
+
+        return loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens
