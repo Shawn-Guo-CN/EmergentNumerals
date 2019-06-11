@@ -23,7 +23,7 @@ PRINT_EVERY = 1
 SAVE_EVERY = 2
 EVAL_EVERY = 2
 OPTIMISER = optim.Adam
-LOSS_FUNCTION = nn.CrossEntropyLoss()
+LOSS_FUNCTION = nn.CrossEntropyLoss(reduce=False)
 
 '''
 for testing model
