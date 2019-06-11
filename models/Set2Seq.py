@@ -98,10 +98,12 @@ class DecoderLSTM(nn.Module):
         # Forward batch of sequences through decoder one time step at a time
         for t in range(target_max_len):
             decoder_hidden, decoder_cell = self.lstm(decoder_input, (decoder_hidden, decoder_cell))
-            decoder_output = F.softmax(self.out(decoder_hidden), dim=1)
+            # Here we don't need to take Softmax as the CrossEntropyLoss later would
+            # automatically take a Softmax operation
+            decoder_output = self.out(decoder_hidden)
             outputs.append(decoder_output)
             # mask is the probabilities for predicting EOS token
-            masks.append(decoder_output[:, EOS_INDEX])
+            masks.append(F.softmax(decoder_output, dim=1)[:, EOS_INDEX])
 
             if use_teacher_forcing:
                 decoder_input = embedding(target_var[t].view(1, -1)).squeeze()
