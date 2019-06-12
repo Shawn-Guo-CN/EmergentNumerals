@@ -1,12 +1,14 @@
 from utils.conf import *
 
 
-def mask_NLL_loss(prediction, golden_standard, mask):
-    n_total = mask.sum()
-    crossEntropy = -torch.log(torch.gather(prediction, 1, golden_standard.view(-1, 1)).squeeze(1))
-    loss = crossEntropy.masked_select(mask).mean().to(DEVICE)
-    n_correct = prediction.topk(1)[1].squeeze(1).eq(golden_standard).masked_select(mask).sum()
-    return loss, n_correct.item(), n_total.item()
+def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
+    n_total = mask.sum().item()
+    loss = (LOSS_FUNCTION(prediction, golden_standard) * mask.to(prediction.dtype)).mean()
+    eq_cur = prediction.topk(1)[1].squeeze(1).eq(golden_standard).to(prediction.dtype) \
+         * mask.to(prediction.dtype)
+    n_correct = eq_cur.sum().item()
+    eq_cur = eq_cur + (1 - mask.to(prediction.dtype)) * last_eq
+    return loss, eq_cur, n_correct, n_total
 
 
 class EncoderLSTM(nn.Module):
@@ -22,7 +24,7 @@ class EncoderLSTM(nn.Module):
 
     def forward(self, input_var, input_embedded, input_lengths):
         # Pack padded batch of sequences for RNN module
-        packed = nn.utils.rnn.pack_padded_sequence(input_embedded, input_lengths)
+        packed = nn.utils.rnn.pack_padded_sequence(input_embedded, input_lengths, batch_first=True)
 
         # Forward pass through LSTM
         h0 = self.init_hidden.repeat(1, input_var.shape[1], 1)
@@ -43,23 +45,53 @@ class DecoderLSTM(nn.Module):
         super(DecoderLSTM, self).__init__()
         self.hidden_size = hidden_size
 
-        self.lstm = nn.LSTM(hidden_size, hidden_size)
+        self.lstm = nn.LSTMCell(hidden_size, hidden_size)
         self.out = nn.Linear(hidden_size, output_size)
+        self.dropout = nn.Dropout(dropout)
 
-    def forward(self, last_input, last_hidden, last_cell):
-        # output = [sent len, batch size, hid dim * n directions]
-        # hidden = [1, batch size, hid dim]
-        # cell = [1, batch size, hid dim]
-        output, (hidden, cell) = self.lstm(last_input, (last_hidden, last_cell))
-        # sent len and n directions will always be 1 in the decoder, therefore:
-        # output = [1, batch size, hid dim]
-        # hidden = [batch size, hid dim]
-        # cell = [batch size, hid dim]
-        output = output.squeeze(0)
-        
-        #prediction size = [batch size, output dim]
-        prediction = F.softmax(self.out(output), dim=1)
-        return prediction, hidden, cell
+    def forward(self, embedding, target_var, target_max_len, \
+                encoder_hidden, encoder_cell):
+        batch_size = target_var.shape[1]
+        # Initialize variables
+        outputs = []
+        masks = []
+
+        # Create initial decoder input (start with SOS tokens for each sentence)
+        decoder_input = embedding(
+            torch.LongTensor([SOS_INDEX for _ in range(batch_size)]).to(DEVICE)
+        )
+
+        # Set initial decoder hidden state to the encoder's final hidden state
+        decoder_hidden = encoder_hidden
+        decoder_cell = encoder_cell
+
+        # Determine if we are using teacher forcing this iteration
+        use_teacher_forcing = True if random.random() < TEACHER_FORCING_RATIO \
+                                    and self.training else False
+
+        # Forward batch of sequences through decoder one time step at a time
+        for t in range(target_max_len):
+            decoder_hidden, decoder_cell = self.lstm(decoder_input, (decoder_hidden, decoder_cell))
+            # Here we don't need to take Softmax as the CrossEntropyLoss later would
+            # automatically take a Softmax operation
+            decoder_output = self.out(decoder_hidden)
+            outputs.append(decoder_output)
+            # mask is the probabilities for predicting EOS token
+            masks.append(F.softmax(decoder_output, dim=1)[:, EOS_INDEX])
+
+            if use_teacher_forcing:
+                decoder_input = embedding(target_var[t].view(1, -1)).squeeze()
+            else:
+                _, topi = decoder_output.topk(1)
+                decoder_input = embedding(
+                    torch.LongTensor([topi[i][0] for i in range(batch_size)]).to(DEVICE)
+                )
+
+        # shape of outputs: Len * Batch Size * Voc Size
+        outputs = torch.stack(outputs)
+        # shape of masks: Len * Batch Size
+        masks = torch.stack(masks)
+        return outputs, masks
 
     def init_hidden(self):
         return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
@@ -81,54 +113,49 @@ class Seq2Seq(nn.Module):
 
     def forward(self, data_batch):
         input_var = data_batch['input']
-        input_lens = data_batch['input_lens']
+        input_lengths = data_batch['input_lens']
         target_var = data_batch['target']
         target_mask = data_batch['target_mask']
         target_max_len = data_batch['target_max_len']
 
+        # Initialize variables
         loss = 0
         print_losses = []
-        n_totals = 0
-        n_corrects = 0
+        n_correct_tokens = 0
+        n_total_tokens = 0
+        n_correct_seqs = 0
 
-        batch_size = input_var.shape[1]
-        # forward pass through encoder
-        input_embedded = self.embedding(input_var)
-        encoder_outputs, encoder_hidden, encoder_cell = \
-            self.encoder(input_var, input_embedded, input_lens)
+        encoder_input = self.embedding(input_var.t())
+        _, encoder_hidden, encoder_cell = self.encoder(input_var, encoder_input, input_lengths)
+        encoder_hidden = encoder_hidden.squeeze()
+        encoder_cell = encoder_cell.squeeze()
 
-        # Create initial decoder input (start with SOS tokens for each sentence)
-        decoder_input = \
-            self.embedding(torch.LongTensor([[SOS_INDEX for _ in range(batch_size)]]).to(DEVICE))
+        decoder_outputs, _ = self.decoder(
+            self.embedding,
+            target_var,
+            target_max_len,
+            encoder_hidden,
+            encoder_cell
+        )
 
-        # Set initial decoder hidden state to the encoder's final hidden state
-        decoder_hidden = encoder_hidden
-        decoder_cell = encoder_cell
-
-        # Determine if we are using teacher forcing this iteration
-        use_teacher_forcing = True if random.random() < TEACHER_FORCING_RATIO \
-                                        and self.training else False
-
-        # Forward batch of sequences through decoder one time step at a time
+        seq_correct = torch.ones([input_var.shape[1]], device=DEVICE)
+        eq_vec = torch.ones([input_var.shape[1]], device=DEVICE)
         for t in range(target_max_len):
-            decoder_output, decoder_hidden, decoder_cell = \
-               self.decoder(decoder_input, decoder_hidden, decoder_cell)
-            
-            if use_teacher_forcing:
-                decoder_input = self.embedding(target_var[t].view(1, -1))
-            else:
-                _, topi = decoder_output.topk(1)
-                decoder_input = self.embedding(
-                    torch.LongTensor([[topi[i][0] for i in range(batch_size)]]).to(DEVICE)
-                )
-            
-            mask_loss, n_correct, n_total = mask_NLL_loss(decoder_output, target_var[t], target_mask[t])
+            mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(
+                decoder_outputs[t], 
+                target_var[t], 
+                target_mask[t],
+                eq_vec
+            )
             loss += mask_loss
             print_losses.append(mask_loss.item() * n_total)
-            n_totals += n_total
-            n_corrects += n_correct
+            n_total_tokens += n_total
+            n_correct_tokens += n_correct
+            seq_correct = seq_correct * eq_vec
 
-        return loss, print_losses, n_corrects, n_totals
+        n_correct_seqs = seq_correct.sum().item()
+
+        return loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens
 
 
 class GreedySearchDecoder(nn.Module):
