@@ -1,13 +1,14 @@
 from utils.conf import *
 
 
-def mask_NLL_loss(prediction, golden_standard, mask):
+def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
     n_total = mask.sum().item()
     loss = (LOSS_FUNCTION(prediction, golden_standard) * mask.to(prediction.dtype)).mean()
-    eq_vec = prediction.topk(1)[1].squeeze(1).eq(golden_standard).to(prediction.dtype) \
+    eq_cur = prediction.topk(1)[1].squeeze(1).eq(golden_standard).to(prediction.dtype) \
          * mask.to(prediction.dtype)
-    n_correct = eq_vec.sum().item()
-    return loss, eq_vec, n_correct, n_total
+    n_correct = eq_cur.sum().item()
+    eq_cur = eq_cur + (1 - mask.to(prediction.dtype)) * last_eq
+    return loss, eq_cur, n_correct, n_total
 
 
 # Attention layer
@@ -75,7 +76,7 @@ class DecoderLSTM(nn.Module):
         self.out = nn.Linear(hidden_size, output_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, embedding, target_var, target_mask, target_max_len, \
+    def forward(self, embedding, target_var, target_max_len, \
                 encoder_hidden, encoder_cell):
         batch_size = target_var.shape[1]
         # Initialize variables
@@ -155,18 +156,19 @@ class Set2Seq(nn.Module):
         decoder_outputs, _ = self.decoder(
             self.embedding,
             target_var,
-            target_mask,
             target_max_len,
             encoder_hidden,
             encoder_cell
         )
 
         seq_correct = torch.ones([input_var.shape[1]], device=DEVICE)
+        eq_vec = torch.ones([input_var.shape[1]], device=DEVICE)
         for t in range(target_max_len):
             mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(
                 decoder_outputs[t], 
                 target_var[t], 
-                target_mask[t]
+                target_mask[t],
+                eq_vec
             )
             loss += mask_loss
             print_losses.append(mask_loss.item() * n_total)
