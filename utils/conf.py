@@ -16,7 +16,7 @@ DEVICE = torch.device("cuda:2" if torch.cuda.is_available() else "cpu")
 LEARNING_RATE = 1e-4 # learning rate
 DROPOUT_RATIO = 0.2
 CLIP = 50.0 # max after clipping gradients
-TEACHER_FORCING_RATIO = 0.3
+TEACHER_FORCING_RATIO = 0.0
 DECODER_LEARING_RATIO = 5.0
 NUM_ITERS = 400
 PRINT_EVERY = 1
@@ -63,7 +63,7 @@ hyperparameters of model
 '''
 HIDDEN_SIZE = 256
 BATCH_SIZE = 2048
-MSG_LENGTH = NUM_WORD
+MSG_MAX_LEN = NUM_WORD + 2
 # Size of vocabulary this is available for communication
 MSG_VOCSIZE = 10
 MSG_MODE = 'GUMBEL' # Or 'SOFTMAX', 'GUMBEL'

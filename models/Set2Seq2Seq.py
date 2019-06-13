@@ -1,70 +1,84 @@
 from utils.conf import *
+from torch.distributions.categorical import Categorical
+from torch.distributions.relaxed_categorical import RelaxedOneHotCategorical
 
 
-def mask_NLL_loss(prediction, golden_standard, mask):
-    n_total = mask.sum()
-    cross_entropy = -F.log_softmax(torch.gather(prediction, 1, golden_standard.view(-1, 1)).squeeze(1), dim=-1)
-    loss = cross_entropy.masked_select(mask).mean()
-    n_correct = prediction.topk(1, dim=1)[1].squeeze(1).eq(golden_standard).masked_select(mask).sum()
-    return loss, n_correct.item(), n_total.item()
+def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
+    n_total = mask.sum().item()
+    loss = (LOSS_FUNCTION(prediction, golden_standard) * mask.to(prediction.dtype)).mean()
+    eq_cur = prediction.topk(1)[1].squeeze(1).eq(golden_standard).to(prediction.dtype) \
+         * mask.to(prediction.dtype)
+    n_correct = eq_cur.sum().item()
+    eq_cur = eq_cur + (1 - mask.to(prediction.dtype)) * last_eq
+    return loss, eq_cur, n_correct, n_total
+
+
+def cat_softmax(logits, gumbel, tau=1, hard=False, dim=-1):
+    if gumbel: # use gumbel-softmax
+        gumbels = -torch.empty_like(logits, device=DEVICE).exponential_().log()  # ~Gumbel(0,1)
+        gumbels = (logits + gumbels) / tau  # ~Gumbel(logits,tau)
+        y_soft = gumbels.softmax(dim)
+    else: # use normal softmax
+        cat_distr = RelaxedOneHotCategorical(tau, logits=logits)
+        y_soft = cat_distr.rsample().to(DEVICE)
+
+    if hard:
+        # Straight through.
+        index = y_soft.max(dim, keepdim=True)[1]
+        y_hard = torch.zeros_like(logits, device=DEVICE).scatter_(dim, index, 1.0)
+        ret = y_hard - y_soft.detach() + y_soft
+    else:
+        # Reparametrization trick.
+        ret = y_soft
+    return ret
 
 
 # Attention layer
 class Attn(nn.Module):
     def __init__(self, hidden_size=HIDDEN_SIZE):
-        super().__init__()
+        super(Attn, self).__init__()
         self.hidden_size = hidden_size
 
         self.attn = nn.Linear(self.hidden_size * 2, 1)
 
-    def forward(self, hidden, whole_input):
-        # Calculate the attention weights (energies) based on the given method
+    def forward(self, hidden, whole_input, input_mask):
         attn_weights = self.attn(
-            torch.cat((hidden.transpose(0, 1).expand(-1, whole_input.size(1), -1), whole_input), 2)
+            torch.cat((hidden.unsqueeze(0).transpose(0, 1).expand(-1, whole_input.size(1), -1),
+                      whole_input), 2)
         ).sigmoid()
         #  .tanh() is another feasible function
 
-        # Transpose the attention weights and return
+        attn_weights = input_mask.transpose(0, 1).unsqueeze(-1).to(attn_weights.dtype) \
+                    * attn_weights
+
         return attn_weights.transpose(1, 2)
 
 class SetEncoderLSTM(nn.Module):
-    """
-    This class is used to encode an input set.
-    """
-    def __init__(self, voc_size, hidden_size=HIDDEN_SIZE, max_length=MAX_LENGTH+2):
-        super().__init__()
+    def __init__(self, voc_size, hidden_size=HIDDEN_SIZE):
+        super(SetEncoderLSTM, self).__init__()
         self.hidden_size = hidden_size
-        self.max_length = max_length
 
-        self.memorising = nn.Embedding(voc_size, self.hidden_size)
         self.attn = Attn(hidden_size)
-        self.dropout = nn.Dropout(DROPOUT_RATIO)
-        self.lstm = nn.LSTM(hidden_size, hidden_size)
+        self.lstm = nn.LSTMCell(hidden_size, hidden_size)
         
         self.init_hidden = self.init_hidden_and_cell()
         self.init_cell = self.init_hidden_and_cell()
 
-    def forward(self, embedded_input_var):
-        batch_size = embedded_input_var.shape[0]
+    def forward(self, embedded_input, input_mask):
+        batch_size = embedded_input.shape[0]
 
-        # Initialise the initial hidden and cell states for encoder
-        last_hidden = self.init_hidden.expand(-1, batch_size, -1).contiguous()
-        last_cell = self.init_cell.expand(-1, batch_size, -1).contiguous()
+        last_hidden = self.init_hidden.expand(batch_size, -1).contiguous()
+        last_cell = self.init_cell.expand(batch_size, -1).contiguous()
         
-        # Forward pass through LSTM
         for t in range(NUM_WORD):
-            # Calculate attention weights from the current LSTM input
-            attn_weights = self.attn(last_hidden, embedded_input_var)
-            # Calculate the attention weighted representation
-            r = attn_weights.bmm(embedded_input_var).transpose(0, 1)
-            # Forward through unidirectional LSTM
-            lstm_output, (lstm_hidden, lstm_cell) = self.lstm(r, (last_hidden, last_cell))
+            attn_weights = self.attn(last_hidden, embedded_input, input_mask)
+            r = torch.bmm(attn_weights, embedded_input).squeeze()
+            lstm_hidden, lstm_cell = self.lstm(r, (last_hidden, last_cell))
 
-        # Return hidden and cell state of LSTM
         return lstm_hidden, lstm_cell
 
     def init_hidden_and_cell(self):
-        return nn.Parameter(torch.zeros(1, 1, self.hidden_size, device=DEVICE))
+        return nn.Parameter(torch.zeros(1, self.hidden_size, device=DEVICE))
 
 
 class MSGGeneratorLSTM(nn.Module):
@@ -77,35 +91,46 @@ class MSGGeneratorLSTM(nn.Module):
         self.hidden_size = hidden_size
         self.output_size = io_size
 
-        self.lstm = nn.LSTM(self.input_size, self.hidden_size)
+        self.lstm = nn.LSTMCell(self.input_size, self.hidden_size)
         self.out = nn.Linear(self.hidden_size, self.output_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, last_input, last_hidden, last_cell):
-        # sent len and n directions will always be 1 in the decoder, therefore:
-        # output = [1, batch size, hid dim]
-        # hidden = [batch size, hid dim]
-        # cell = [batch size, hid dim]
-        output, (hidden, cell) = self.lstm(last_input, (last_hidden, last_cell))
+        self.init_input = SOS_INDEX * torch.ones(1, self.input_size, device=DEVICE)
+
+    def forward(self, encoder_hidden, encoder_cell):
+        batch_size = encoder_hidden.size(0)
+        decoder_input = self.init_input.expand(batch_size, -1)
+        decoder_hidden = encoder_hidden
+        decoder_cell = encoder_cell
+        message = []
+        mask = []
+
+        _mask = torch.ones((1, batch_size), device=DEVICE)
         
-        output = output.squeeze(0)
+        for _ in range(MSG_MAX_LEN):
+            mask.append(_mask)
+            decoder_hidden, decoder_cell = \
+                self.lstm(decoder_input, (decoder_hidden, decoder_cell))
+            logits = self.out(decoder_hidden)
+
+            if self.training:
+                if MSG_MODE == 'SOFTMAX':
+                    predict = cat_softmax(logits, gumbel=False, tau=MSG_TAU, hard=MSG_HARD, dim=1)
+                elif MSG_MODE == 'GUMBEL':
+                    predict = cat_softmax(logits, gumbel=True, tau=MSG_TAU, hard=MSG_HARD, dim=1)
+            else:
+                predict = F.one_hot(torch.argmax(logits, dim=1), 
+                                    num_classes=self.output_size).to(_mask.dtype)
+            
+            _mask = _mask * (1 - predict[:, EOS_INDEX])
+            
+            message.append(predict)
+            deocder_input = predict
         
-        # prediction size = [batch size, vocab size]
-        # 
-        prediction = self.out(output)
+        message = torch.stack(message)
+        mask = torch.stack(mask)
 
-        if MSG_MODE == 'SOFTMAX':
-            prediction = F.softmax(prediction, dim=1)
-        elif MSG_MODE == 'GUMBEL':
-            prediction = F.gumbel_softmax(prediction, tau=MSG_TAU, hard=MSG_HARD, dim=1)
-
-        return prediction, hidden, cell
-
-    def init_hidden(self):
-        return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
-
-    def init_input(self):
-        return torch.zeros(1, 1, self.input_size, device=DEVICE)
+        return message, mask
 
 
 class SpeakingAgent(nn.Module):
@@ -121,77 +146,94 @@ class SpeakingAgent(nn.Module):
         # The output size of decoder is the size of vocabulary for communication
         self.decoder = MSGGeneratorLSTM(MSG_VOCSIZE, self.hidden_size)
 
-        # the init input for decoder
-        self.init_decoder_input = nn.Parameter(self.decoder.init_input())
+    def forward(self, embedded_input_var, input_mask):
 
-    def forward(self, embedded_input_var):
-        batch_size = embedded_input_var.shape[0]
+        encoder_hidden, encoder_cell = self.encoder(embedded_input_var, input_mask)
+        message, mask = self.decoder(encoder_hidden, encoder_cell)
 
-        encoder_hidden, encoder_cell = self.encoder(embedded_input_var)
-
-        message = torch.zeros(MSG_LENGTH, batch_size, MSG_VOCSIZE, device=DEVICE)
-
-        # Create initial decoder variables
-        decoder_input = self.init_decoder_input.expand(-1, batch_size, -1)
-        decoder_hidden = encoder_hidden
-        decoder_cell = encoder_cell
-        
-        for t in range(MSG_LENGTH):
-            decoder_output, decoder_hidden, decoder_cell = \
-                self.decoder(decoder_input, decoder_hidden, decoder_cell)            
-            message[t] = decoder_output
-            deocder_input = decoder_output
-        
-        return message
+        return message, mask
 
 
 class MSGEncoderLSTM(nn.Module):
-    def __init__(self, input_size=MSG_VOCSIZE, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
+    def __init__(self, input_size=MSG_VOCSIZE, hidden_size=HIDDEN_SIZE):
         super().__init__()
         self.hidden_size = hidden_size
         self.input_size = input_size
 
         # Initialize LSTM; the input_size and hidden_size params are both set to 'hidden_size'
         #   because our input size is a word embedding with number of features == hidden_size
-        self.lstm = nn.LSTM(self.input_size, self.hidden_size)
+        self.lstm = nn.LSTMCell(self.input_size, self.hidden_size)
         self.init_hidden = self.init_hidden_and_cell()
         self.init_cell = self.init_hidden_and_cell()
 
-    def forward(self, input_var):
-        h0 = self.init_hidden.expand(-1, input_var.shape[1], -1).contiguous()
-        c0 = self.init_cell.expand(-1, input_var.shape[1], -1).contiguous()
-        outputs, (hidden, cell) = self.lstm(input_var, (h0, c0))
+    def forward(self, input_var, input_mask):
+        max_len = input_var.shape[0]
 
-        return outputs, hidden, cell
+        last_hidden = self.init_hidden.expand(input_var.shape[1], -1).contiguous()
+        last_cell = self.init_cell.expand(input_var.shape[1], -1).contiguous()
+        for t in range(max_len):
+            hidden, cell = self.lstm(input_var[t], (last_hidden, last_cell))
+            last_hidden = input_mask[t].t() * hidden + (1 - input_mask[t].t()) * last_hidden
+            last_cell = input_mask[t].t() * cell + (1 - input_mask[t].t()) * last_cell
+
+        return last_hidden, last_cell
 
     def init_hidden_and_cell(self):
-        return nn.Parameter(torch.zeros(1, 1, self.hidden_size, device=DEVICE))
+        return nn.Parameter(torch.zeros(1, self.hidden_size, device=DEVICE))
 
 
 class SeqDecoderLSTM(nn.Module):
-    def __init__(self, output_size, hidden_size=HIDDEN_SIZE):
-        super().__init__()
+    def __init__(self, output_size, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
+        super(SeqDecoderLSTM, self).__init__()
         self.hidden_size = hidden_size
-        self.output_size = output_size
 
-        self.lstm = nn.LSTM(self.hidden_size, self.hidden_size)
-        self.out = nn.Linear(self.hidden_size, self.output_size)
+        self.lstm = nn.LSTMCell(hidden_size, hidden_size)
+        self.out = nn.Linear(hidden_size, output_size)
+        self.dropout = nn.Dropout(dropout)
 
-    def forward(self, last_input, last_hidden, last_cell):
-        # output = [sent len, batch size, hid dim * n directions]
-        # hidden = [1, batch size, hid dim]
-        # cell = [1, batch size, hid dim]
-        output, (hidden, cell) = self.lstm(last_input, (last_hidden, last_cell))
-        # sent len and n directions will always be 1 in the decoder, therefore:
-        # output = [1, batch size, hid dim]
-        # hidden = [batch size, hid dim]
-        # cell = [batch size, hid dim]
-        output = output.squeeze(0)
-        
-        #prediction size = [batch size, output dim]
-        # prediction = F.softmax(self.out(output), dim=1)
-        output = self.out(output)
-        return output, hidden, cell
+    def forward(self, embedding, target_var, target_max_len, \
+                encoder_hidden, encoder_cell):
+        batch_size = target_var.shape[1]
+        # Initialize variables
+        outputs = []
+        masks = []
+
+        # Create initial decoder input (start with SOS tokens for each sentence)
+        decoder_input = embedding(
+            torch.LongTensor([SOS_INDEX for _ in range(batch_size)]).to(DEVICE)
+        )
+
+        # Set initial decoder hidden state to the encoder's final hidden state
+        decoder_hidden = encoder_hidden
+        decoder_cell = encoder_cell
+
+        # Determine if we are using teacher forcing this iteration
+        use_teacher_forcing = True if random.random() < TEACHER_FORCING_RATIO \
+                                    and self.training else False
+
+        # Forward batch of sequences through decoder one time step at a time
+        for t in range(target_max_len):
+            decoder_hidden, decoder_cell = self.lstm(decoder_input, (decoder_hidden, decoder_cell))
+            # Here we don't need to take Softmax as the CrossEntropyLoss later would
+            # automatically take a Softmax operation
+            decoder_output = self.out(decoder_hidden)
+            outputs.append(decoder_output)
+            # mask is the probabilities for predicting EOS token
+            masks.append(F.softmax(decoder_output, dim=1)[:, EOS_INDEX])
+
+            if use_teacher_forcing:
+                decoder_input = embedding(target_var[t].view(1, -1)).squeeze()
+            else:
+                _, topi = decoder_output.topk(1)
+                decoder_input = embedding(
+                    torch.LongTensor([topi[i][0] for i in range(batch_size)]).to(DEVICE)
+                )
+
+        # shape of outputs: Len * Batch Size * Voc Size
+        outputs = torch.stack(outputs)
+        # shape of masks: Len * Batch Size
+        masks = torch.stack(masks)
+        return outputs, masks
 
     def init_hidden(self):
         return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
@@ -204,61 +246,55 @@ class ListeningAgent(nn.Module):
         self.hidden_size = hidden_size
 
         # universal modules
-        self.embedding = nn.Embedding(self.voc_size, HIDDEN_SIZE)
         self.dropout = nn.Dropout(dropout)
 
         # encoder and decoder
         self.encoder = MSGEncoderLSTM()
         self.decoder = SeqDecoderLSTM(self.voc_size, self.hidden_size)
 
-    def forward(self, message, target_var, target_mask, target_max_len):
+    def forward(self, embedding, message, msg_mask, \
+                target_var, target_mask, target_max_len):
         batch_size = message.shape[1]
 
-        # Initialize return variables
+        # Initialize variables
         loss = 0
         print_losses = []
-        n_corrects = 0
-        n_totals = 0
-        
-        # forward pass through message encoder
-        encoder_outputs, encoder_hidden, encoder_cell = self.encoder(message)
+        n_correct_tokens = 0
+        n_total_tokens = 0
+        n_correct_seqs = 0
 
-        # Create initial decoder input (start with SOS tokens for each sentence)
-        decoder_input = \
-            self.embedding(torch.LongTensor([[SOS_INDEX for _ in range(batch_size)]]).to(DEVICE))
+        encoder_hidden, encoder_cell = self.encoder(message, msg_mask)
 
-        # Set initial decoder hidden state to the encoder's final hidden state
-        decoder_hidden = encoder_hidden
-        decoder_cell = encoder_cell
+        decoder_outputs, _ = self.decoder(
+            embedding,
+            target_var,
+            target_max_len,
+            encoder_hidden,
+            encoder_cell
+        )
 
-        # Determine if we are using teacher forcing this iteration
-        use_teacher_forcing = True if random.random() < TEACHER_FORCING_RATIO \
-                                        and self.training else False
-
-        # Forward batch of sequences through decoder one time step at a time
+        seq_correct = torch.ones((1, batch_size), device=DEVICE)
+        eq_vec = torch.ones((1, batch_size), device=DEVICE)
         for t in range(target_max_len):
-            decoder_output, decoder_hidden, decoder_cell = \
-               self.decoder(decoder_input, decoder_hidden, decoder_cell)
-            
-            if use_teacher_forcing:
-                decoder_input = self.embedding(target_var[t].view(1, -1))
-            else:
-                _, topi = decoder_output.topk(1)
-                decoder_input = self.embedding(
-                    torch.LongTensor([[topi[i][0] for i in range(batch_size)]]).to(DEVICE)
-                )
-            
-            mask_loss, n_correct, n_total = mask_NLL_loss(decoder_output, target_var[t], target_mask[t])
+            mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(
+                decoder_outputs[t],
+                target_var[t],
+                target_mask[t],
+                eq_vec
+            )
             loss += mask_loss
             print_losses.append(mask_loss.item() * n_total)
-            n_totals += n_total
-            n_corrects += n_correct
+            n_total_tokens += n_total
+            n_correct_tokens += n_correct
+            seq_correct = seq_correct * eq_vec
 
-        return loss, print_losses, n_corrects, n_totals
+        n_correct_seqs = seq_correct.sum().item()
+
+        return loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens
 
 
 class Set2Seq2Seq(nn.Module):
-    def __init__(self, voc_size, msg_length=MSG_LENGTH, msg_vocsize=MSG_VOCSIZE, 
+    def __init__(self, voc_size, msg_length=MSG_MAX_LEN, msg_vocsize=MSG_VOCSIZE, 
                     hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
         super().__init__()
         self.voc_size = voc_size
@@ -279,16 +315,17 @@ class Set2Seq2Seq(nn.Module):
 
     def forward(self, data_batch):
         input_var = data_batch['input']
+        input_mask = data_batch['input_mask']
         target_var = data_batch['target']
         target_mask = data_batch['target_mask']
         target_max_len = data_batch['target_max_len']
 
-        batch_size = input_var.shape[1]
-
         speaker_input = self.embedding(input_var.t())
-        message = self.speaker(speaker_input)
+        message, msg_mask = self.speaker(speaker_input, input_mask)
+        # message shape: [msg_max_len, batch_size, msg_voc_size]
+        # msg_mask shape: [msg_max_len, 1, batch_size]
 
-        loss, print_losses, n_corrects, n_totals = \
-            self.listener(message, target_var, target_mask, target_max_len)
+        loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens = \
+            self.listener(self.embedding, message, msg_mask, target_var, target_mask, target_max_len)
         
-        return loss, print_losses, n_corrects, n_totals
+        return loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens

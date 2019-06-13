@@ -21,11 +21,12 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=CLIP
     decoder_optimizer.zero_grad()
 
     # Forward pass through model
-    loss, print_losses, n_corrects, n_totals = model(data_batch)
+    loss, print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)
     # Perform backpropatation
     loss.backward()
     # Calculate accuracy
-    acc = round(float(n_corrects) / float(n_totals), 6)
+    tok_acc = round(float(n_correct_token) / float(n_total_token), 6)
+    seq_acc = round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
 
     # Clip gradients: gradients are modified in place
     nn.utils.clip_grad_norm_(model.parameters(), clip)
@@ -34,25 +35,28 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=CLIP
     param_optimizer.step()
     decoder_optimizer.step()
 
-    return acc, sum(print_losses) / n_totals
+    return seq_acc, tok_acc, sum(print_losses) / n_total_token
 
 
 def eval_model(model, dataset):
     model.eval()
-            
+
     loss = 0.
-    acc = 0.
-    for idx, data_batch in enumerate(dataset):
-        _, print_losses, n_corrects, n_totals = model(data_batch)
-        loss += sum(print_losses) / n_totals
-        acc += float(n_corrects) / float(n_totals)
+    seq_acc = 0.
+    tok_acc = 0.
+    for _, data_batch in enumerate(dataset):
+        __, print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)
+        loss += sum(print_losses) / n_total_token
+        seq_acc += round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
+        tok_acc += float(n_correct_token) / float(n_total_token)
 
     loss /= len(dataset)
-    acc /= len(dataset)
+    seq_acc /= len(dataset)
+    tok_acc /= len(dataset)
 
     model.train()
 
-    return acc, loss
+    return seq_acc, tok_acc, loss
 
 
 def train():
@@ -67,7 +71,7 @@ def train():
     print('done')
     
     print('building model...')
-    model = Set2Seq_Seq2Seq(voc.num_words).to(DEVICE)
+    model = Set2Seq2Seq(voc.num_words).to(DEVICE)
     param_optimizer = OPTIMISER(model.parameters(), lr=LEARNING_RATE)
     decoder_optimizer = OPTIMISER(model.speaker.decoder.parameters(), 
                                     lr=LEARNING_RATE * DECODER_LEARING_RATIO)
@@ -84,46 +88,46 @@ def train():
     print('initialising...')
     start_iteration = 1
     print_loss = 0.
-    print_acc = 0.
-    max_dev_acc = 0.
+    print_seq_acc = 0.
+    print_tok_acc = 0.
+    max_dev_seq_acc = 0.
     print('done')
 
     print('training...')
     for iter in range(start_iteration, NUM_ITERS+1):
-        msg_tau_schedule(max_dev_acc)
+        msg_tau_schedule(max_dev_seq_acc)
 
         for idx, data_batch in enumerate(train_set):
-            acc, loss = train_epoch(
-                model,
+            seq_acc, tok_acc, loss = train_epoch(model,
                 data_batch,
                 param_optimizer,
                 decoder_optimizer
             )
             print_loss += loss
-            print_acc += acc
+            print_seq_acc += seq_acc
+            print_tok_acc += tok_acc
 
         if iter % PRINT_EVERY == 0:
             print_loss_avg = print_loss / (PRINT_EVERY * len(train_set))
-            print_acc_avg = print_acc / (PRINT_EVERY * len(train_set))
-            print("Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg acc: {:.4f}".format(
-                iter, iter / NUM_ITERS * 100, print_loss_avg, print_acc_avg
+            print_seq_acc_avg = print_seq_acc / (PRINT_EVERY * len(train_set))
+            print_tok_acc_avg = print_tok_acc / (PRINT_EVERY * len(train_set))
+            print("Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg seq acc: {:.4f}; Avg tok acc: {:.4f}".format(
+                iter, iter / NUM_ITERS * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
                 ))
-            print_loss = 0.
-            print_acc = 0.
+            print_seq_acc = 0.
+            print_tok_acc = 0.
 
         if iter % EVAL_EVERY == 0:
-            dev_acc, dev_loss = eval_model(model, dev_set)
-            if dev_acc > max_dev_acc:
-                max_dev_acc = dev_acc
+            dev_seq_acc, dev_tok_acc, dev_loss = eval_model(model, dev_set)
+            if dev_seq_acc > max_dev_seq_acc:
+                max_dev_seq_acc = dev_seq_acc
 
-            print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Acc: {:.4f}; Best Acc: {:.4f}".format(
-                iter, dev_loss, dev_acc, max_dev_acc))
-
+            print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Seq Acc: {:.4f}; Avg Tok Acc: {:.4f}; Best Seq Acc: {:.4f}".format(
+                iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
+        
         if iter % SAVE_EVERY == 0:
-            path_join = 'set2seq_to_seq2seq_' + MSG_MODE
-            if MSG_MODE == 'GUMBEL':
-                model_str = '_hard' if MSG_HARD else '_soft'
-                path_join += model_str
+            path_join = 'set2seq2seq' + MSG_MODE
+            path_join += '_hard' if MSG_HARD else '_soft'
             directory = os.path.join(SAVE_DIR, path_join)
             if not os.path.exists(directory):
                 os.makedirs(directory)
@@ -134,13 +138,13 @@ def train():
                 'de_opt': decoder_optimizer.state_dict(),
                 'loss': loss,
                 'voc': voc
-            }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_acc, 'checkpoint')))
+            }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
 
 
 def test():
     print('building model...')
     voc = Voc()
-    model = Set2Seq_Seq2Seq(voc.num_words).to(DEVICE)
+    model = Set2Seq2Seq(voc.num_words).to(DEVICE)
     param_optimizer = OPTIMISER(model.parameters(), lr=LEARNING_RATE)
     decoder_optimizer = OPTIMISER(model.speaker.decoder.parameters(), 
                                     lr=LEARNING_RATE * DECODER_LEARING_RATIO)
@@ -162,9 +166,10 @@ def test():
     test_set = FruitSeqDataset(voc, dataset_file_path=TEST_FILE_PATH)
     print('done')
     
-    test_acc, test_loss = eval_model(model, test_set)
-    print("[TEST]Loss: {:.4f}; Accuracy: {:.4f}".format(
-                test_loss, test_acc * 100))
+    test_seq_acc, test_tok_acc, test_loss = eval_model(model, test_set)
+    print("[TEST]Loss: {:.4f}; Seq-level Accuracy: {:.4f}; Tok-level Accuracy: {:.4f}".format(
+                test_loss, test_seq_acc * 100, test_tok_acc * 100)
+         )
 
 
 if __name__ == '__main__':
