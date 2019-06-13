@@ -257,7 +257,7 @@ class ListeningAgent(nn.Module):
         return loss, print_losses, n_corrects, n_totals
 
 
-class Set2Seq_Seq2Seq(nn.Module):
+class Set2Seq2Seq(nn.Module):
     def __init__(self, voc_size, msg_length=MSG_LENGTH, msg_vocsize=MSG_VOCSIZE, 
                     hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
         super().__init__()
