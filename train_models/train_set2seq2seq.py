@@ -173,7 +173,12 @@ def test():
 
 
 if __name__ == '__main__':
-    if TEST_MODE:
-        test()
-    else:
-        train()
+    random.seed(1234)
+    torch.manual_seed(1234)
+    torch.cuda.manual_seed(1234)
+    with autograd.detect_anomaly():
+        print('with detect_anomaly')
+        if TEST_MODE:
+            test()
+        else:
+            train()
