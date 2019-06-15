@@ -21,8 +21,10 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=CLIP
     decoder_optimizer.zero_grad()
 
     # Forward pass through model
-    loss, print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)
+    loss, log_msg_prob, print_losses, \
+        n_correct_seq, n_correct_token, n_total_token = model(data_batch)
     # Perform backpropatation
+    loss += loss * log_msg_prob
     loss.backward()
     # Calculate accuracy
     tok_acc = round(float(n_correct_token) / float(n_total_token), 6)
@@ -45,7 +47,7 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        __, print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)
+        __, ___, print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)
         loss += sum(print_losses) / n_total_token
         seq_acc += round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
         tok_acc += float(n_correct_token) / float(n_total_token)
@@ -128,6 +130,7 @@ def train():
         if iter % SAVE_EVERY == 0:
             path_join = 'set2seq2seq' + MSG_MODE
             path_join += '_hard' if MSG_HARD else '_soft'
+            path_join += '_REINFORCE' if MSG_REINFORCE else ''
             directory = os.path.join(SAVE_DIR, path_join)
             if not os.path.exists(directory):
                 os.makedirs(directory)
