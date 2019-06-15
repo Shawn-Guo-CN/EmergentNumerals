@@ -132,7 +132,6 @@ def train():
         if iter % SAVE_EVERY == 0:
             path_join = 'set2seq2seq' + MSG_MODE
             path_join += '_hard' if MSG_HARD else '_soft'
-            path_join += '_REINFORCE' if MSG_REINFORCE else ''
             directory = os.path.join(SAVE_DIR, path_join)
             if not os.path.exists(directory):
                 os.makedirs(directory)
