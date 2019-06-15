@@ -119,7 +119,7 @@ class MSGGeneratorLSTM(nn.Module):
             mask.append(_mask)
             decoder_hidden, decoder_cell = \
                 self.lstm(decoder_input, (decoder_hidden, decoder_cell))
-            probs = F.softmax(self.out(decoder_hidden), dim=dim)
+            probs = F.softmax(self.out(decoder_hidden), dim=1)
 
             if self.training:
                 predict, log_prob = \
