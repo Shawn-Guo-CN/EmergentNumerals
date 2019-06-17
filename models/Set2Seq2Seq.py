@@ -1,5 +1,6 @@
 from utils.conf import *
 from torch.distributions.categorical import Categorical
+from torch.distributions.one_hot_categorical import OneHotCategorical
 from torch.distributions.relaxed_categorical import RelaxedOneHotCategorical
 
 
@@ -13,24 +14,29 @@ def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
     return loss, eq_cur, n_correct, n_total
 
 
-def cat_softmax(logits, gumbel, tau=1, hard=False, dim=-1):
-    if gumbel: # use gumbel-softmax
-        gumbels = -torch.empty_like(logits, device=DEVICE).exponential_().log()  # ~Gumbel(0,1)
-        gumbels = (logits + gumbels) / tau  # ~Gumbel(logits,tau)
-        y_soft = gumbels.softmax(dim)
+def cat_softmax(probs, mode, tau=1, hard=False, dim=-1):
+    if mode == 'REINFORCE':
+        cat_distr = OneHotCategorical(probs)
+        action = cat_distr.sample()
+        log_prob = cat_distr.log_prob(action)
+        return action, log_prob
+    elif mode == 'GUMBEL':
+        cat_distr = RelaxedOneHotCategorical(tau, probs=probs)
+        y_soft = cat_distr.rsample()
     else: # use normal softmax
-        cat_distr = RelaxedOneHotCategorical(tau, logits=logits)
-        y_soft = cat_distr.rsample().to(DEVICE)
-
+        y_soft = probs
+    
     if hard:
         # Straight through.
         index = y_soft.max(dim, keepdim=True)[1]
-        y_hard = torch.zeros_like(logits, device=DEVICE).scatter_(dim, index, 1.0)
+        y_hard = torch.zeros_like(probs, device=DEVICE).scatter_(dim, index, 1.0)
         ret = y_hard - y_soft.detach() + y_soft
+        log_prob = Categorical(probs).log_prob(index.squeeze())
     else:
         # Reparametrization trick.
         ret = y_soft
-    return ret
+
+    return ret, log_prob
 
 
 # Attention layer
@@ -95,7 +101,7 @@ class MSGGeneratorLSTM(nn.Module):
         self.out = nn.Linear(self.hidden_size, self.output_size)
         self.dropout = nn.Dropout(dropout)
 
-        self.init_input = SOS_INDEX * torch.ones(1, self.input_size, device=DEVICE)
+        self.init_input = nn.Parameter(torch.zeros(1, self.input_size, device=DEVICE))
 
     def forward(self, encoder_hidden, encoder_cell):
         batch_size = encoder_hidden.size(0)
@@ -106,20 +112,20 @@ class MSGGeneratorLSTM(nn.Module):
         mask = []
 
         _mask = torch.ones((1, batch_size), device=DEVICE)
+        log_probs = 0.
         
         for _ in range(MSG_MAX_LEN):
             mask.append(_mask)
             decoder_hidden, decoder_cell = \
                 self.lstm(decoder_input, (decoder_hidden, decoder_cell))
-            logits = self.out(decoder_hidden)
+            probs = F.softmax(self.out(decoder_hidden), dim=1)
 
             if self.training:
-                if MSG_MODE == 'SOFTMAX':
-                    predict = cat_softmax(logits, gumbel=False, tau=MSG_TAU, hard=MSG_HARD, dim=1)
-                elif MSG_MODE == 'GUMBEL':
-                    predict = cat_softmax(logits, gumbel=True, tau=MSG_TAU, hard=MSG_HARD, dim=1)
+                predict, log_prob = \
+                    cat_softmax(probs, mode=MSG_MODE, tau=MSG_TAU, hard=MSG_HARD, dim=1)
+                log_probs += _mask.squeeze().dot(log_prob)
             else:
-                predict = F.one_hot(torch.argmax(logits, dim=1), 
+                predict = F.one_hot(torch.argmax(probs, dim=1), 
                                     num_classes=self.output_size).to(_mask.dtype)
             
             _mask = _mask * (1 - predict[:, EOS_INDEX])
@@ -130,7 +136,7 @@ class MSGGeneratorLSTM(nn.Module):
         message = torch.stack(message)
         mask = torch.stack(mask)
 
-        return message, mask
+        return message, mask, log_probs
 
 
 class SpeakingAgent(nn.Module):
@@ -149,9 +155,9 @@ class SpeakingAgent(nn.Module):
     def forward(self, embedded_input_var, input_mask):
 
         encoder_hidden, encoder_cell = self.encoder(embedded_input_var, input_mask)
-        message, mask = self.decoder(encoder_hidden, encoder_cell)
+        message, mask, log_msg_prob = self.decoder(encoder_hidden, encoder_cell)
 
-        return message, mask
+        return message, mask, log_msg_prob
 
 
 class MSGEncoderLSTM(nn.Module):
@@ -194,16 +200,11 @@ class SeqDecoderLSTM(nn.Module):
     def forward(self, embedding, target_var, target_max_len, \
                 encoder_hidden, encoder_cell):
         batch_size = target_var.shape[1]
-        # Initialize variables
         outputs = []
-        masks = []
 
-        # Create initial decoder input (start with SOS tokens for each sentence)
         decoder_input = embedding(
             torch.LongTensor([SOS_INDEX for _ in range(batch_size)]).to(DEVICE)
         )
-
-        # Set initial decoder hidden state to the encoder's final hidden state
         decoder_hidden = encoder_hidden
         decoder_cell = encoder_cell
 
@@ -218,8 +219,6 @@ class SeqDecoderLSTM(nn.Module):
             # automatically take a Softmax operation
             decoder_output = self.out(decoder_hidden)
             outputs.append(decoder_output)
-            # mask is the probabilities for predicting EOS token
-            masks.append(F.softmax(decoder_output, dim=1)[:, EOS_INDEX])
 
             if use_teacher_forcing:
                 decoder_input = embedding(target_var[t].view(1, -1)).squeeze()
@@ -231,9 +230,7 @@ class SeqDecoderLSTM(nn.Module):
 
         # shape of outputs: Len * Batch Size * Voc Size
         outputs = torch.stack(outputs)
-        # shape of masks: Len * Batch Size
-        masks = torch.stack(masks)
-        return outputs, masks
+        return outputs
 
     def init_hidden(self):
         return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
@@ -244,9 +241,6 @@ class ListeningAgent(nn.Module):
         super().__init__()
         self.voc_size = voc_size
         self.hidden_size = hidden_size
-
-        # universal modules
-        self.dropout = nn.Dropout(dropout)
 
         # encoder and decoder
         self.encoder = MSGEncoderLSTM()
@@ -265,7 +259,7 @@ class ListeningAgent(nn.Module):
 
         encoder_hidden, encoder_cell = self.encoder(message, msg_mask)
 
-        decoder_outputs, _ = self.decoder(
+        decoder_outputs = self.decoder(
             embedding,
             target_var,
             target_max_len,
@@ -321,11 +315,11 @@ class Set2Seq2Seq(nn.Module):
         target_max_len = data_batch['target_max_len']
 
         speaker_input = self.embedding(input_var.t())
-        message, msg_mask = self.speaker(speaker_input, input_mask)
+        message, msg_mask, log_msg_prob = self.speaker(speaker_input, input_mask)
         # message shape: [msg_max_len, batch_size, msg_voc_size]
         # msg_mask shape: [msg_max_len, 1, batch_size]
 
         loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens = \
             self.listener(self.embedding, message, msg_mask, target_var, target_mask, target_max_len)
         
-        return loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens
+        return loss, log_msg_prob, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens
