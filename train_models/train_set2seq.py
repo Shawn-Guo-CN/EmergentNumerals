@@ -103,6 +103,7 @@ def train():
                 ))
             print_seq_acc = 0.
             print_tok_acc = 0.
+            print_loss = 0.
 
         if iter % EVAL_EVERY == 0:
             dev_seq_acc, dev_tok_acc, dev_loss = eval_model(set2seq, dev_set)

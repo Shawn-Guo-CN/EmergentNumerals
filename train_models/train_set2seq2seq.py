@@ -39,7 +39,7 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=CLIP
     param_optimizer.step()
     decoder_optimizer.step()
 
-    return seq_acc, tok_acc, sum(print_losses) / n_total_token
+    return seq_acc, tok_acc, sum(print_losses) / len(print_losses)
 
 
 def eval_model(model, dataset):
@@ -122,6 +122,7 @@ def train():
                 ))
             print_seq_acc = 0.
             print_tok_acc = 0.
+            print_loss = 0.
 
         if iter % EVAL_EVERY == 0:
             dev_seq_acc, dev_tok_acc, dev_loss = eval_model(model, dev_set)

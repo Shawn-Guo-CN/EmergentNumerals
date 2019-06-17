@@ -273,7 +273,7 @@ class ListeningAgent(nn.Module):
                 eq_vec
             )
             loss += mask_loss
-            print_losses.append(mask_loss.item() * n_total)
+            print_losses.append(mask_loss.item())
             n_total_tokens += n_total
             n_correct_tokens += n_correct
             seq_correct = seq_correct * eq_vec
