@@ -4,12 +4,12 @@ from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
 
 
-def msg_tau_schedule(best_dev_acc):
-    if best_dev_acc >= 0.6:
+def msg_tau_schedule(best_acc):
+    if best_acc >= 0.6:
         MSG_TAU = 1.
-    elif best_dev_acc >= 0.8:
+    elif best_acc >= 0.8:
         MSG_TAU = 0.5
-    elif best_dev_acc >= 0.9:
+    elif best_acc >= 0.9:
         MSG_TAU = 0.1
     else:
         MSG_TAU = 2.
@@ -21,9 +21,13 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=CLIP
     decoder_optimizer.zero_grad()
 
     # Forward pass through model
-    loss, print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)
+    loss, log_msg_prob, print_losses, \
+        n_correct_seq, n_correct_token, n_total_token = model(data_batch)
     # Perform backpropatation
     loss.backward()
+    if MSG_MODE == 'REINFORCE':
+        log_msg_prob = loss.detach() * log_msg_prob
+        log_msg_prob.backward()
     # Calculate accuracy
     tok_acc = round(float(n_correct_token) / float(n_total_token), 6)
     seq_acc = round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
@@ -35,7 +39,7 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=CLIP
     param_optimizer.step()
     decoder_optimizer.step()
 
-    return seq_acc, tok_acc, sum(print_losses) / n_total_token
+    return seq_acc, tok_acc, sum(print_losses) / len(print_losses)
 
 
 def eval_model(model, dataset):
@@ -45,7 +49,7 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        __, print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)
+        __, ___, print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)
         loss += sum(print_losses) / n_total_token
         seq_acc += round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
         tok_acc += float(n_correct_token) / float(n_total_token)
@@ -91,11 +95,13 @@ def train():
     print_seq_acc = 0.
     print_tok_acc = 0.
     max_dev_seq_acc = 0.
+    max_dev_tok_acc = 0.
     print('done')
 
     print('training...')
     for iter in range(start_iteration, NUM_ITERS+1):
-        msg_tau_schedule(max_dev_seq_acc)
+        if MSG_MODE == 'GUMBEL':
+            msg_tau_schedule(max_dev_tok_acc)
 
         for idx, data_batch in enumerate(train_set):
             seq_acc, tok_acc, loss = train_epoch(model,
@@ -116,17 +122,20 @@ def train():
                 ))
             print_seq_acc = 0.
             print_tok_acc = 0.
+            print_loss = 0.
 
         if iter % EVAL_EVERY == 0:
             dev_seq_acc, dev_tok_acc, dev_loss = eval_model(model, dev_set)
             if dev_seq_acc > max_dev_seq_acc:
                 max_dev_seq_acc = dev_seq_acc
+            if dev_tok_acc > max_dev_tok_acc:
+                max_dev_tok_acc = dev_tok_acc
 
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Seq Acc: {:.4f}; Avg Tok Acc: {:.4f}; Best Seq Acc: {:.4f}".format(
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
         
         if iter % SAVE_EVERY == 0:
-            path_join = 'set2seq2seq' + MSG_MODE
+            path_join = 'set2seq2seq_' + MSG_MODE
             path_join += '_hard' if MSG_HARD else '_soft'
             directory = os.path.join(SAVE_DIR, path_join)
             if not os.path.exists(directory):

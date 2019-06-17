@@ -1,0 +1,160 @@
+%%%%%%%%%%%%%%%%%%%%%%%%
+% Sample use of the infthesis class to prepare an MSc thesis.
+% This can be used as a template to produce your own thesis.
+% Date: June 2019
+%
+%
+% The first line specifies style options for taught MSc.
+% You should add a final option specifying your degree.
+% *Do not* change or add any other options.
+%
+% So, pick one of the following:
+% \documentclass[msc,deptreport,adi]{infthesis}     % Adv Design Inf
+% \documentclass[msc,deptreport,ai]{infthesis}      % AI
+% \documentclass[msc,deptreport,cogsci]{infthesis}  % Cognitive Sci
+% \documentclass[msc,deptreport,cs]{infthesis}      % Computer Sci
+% \documentclass[msc,deptreport,cyber]{infthesis}   % Cyber Sec
+% \documentclass[msc,deptreport,datasci]{infthesis} % Data Sci
+% \documentclass[msc,deptreport,di]{infthesis}      % Design Inf
+% \documentclass[msc,deptreport,inf]{infthesis}     % Informatics
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[msc,deptreport]{infthesis} % Do not change except to add your degree (see above).
+
+\begin{document}
+\begin{preliminary}
+
+\title{Semantic Analysis of \\ Emergent Numerals in Multi-Agent Autonomous Communication system}
+
+\author{Shangmin Guo}
+
+\abstract{
+  This skeleton demonstrates how to use the \texttt{infthesis} style
+  for MSc dissertations in Artificial Intelligence, Cognitive Science,
+  Computer Science, Data Science, and Informatics. It also emphasises
+  the page limit, and that you must not deviate from the required
+  style.  The file \texttt{skeleton.tex} generates this document and
+  can be used as a starting point for your thesis. The abstract should
+  summarise your report and fit in the space on the first page.
+}
+
+\maketitle
+
+\section*{Acknowledgements}
+Any acknowledgements go here. 
+
+\tableofcontents
+\end{preliminary}
+
+
+\chapter{Introduction}
+\label{ch1:intro}
+
+NLU is a long-standing challenge.
+
+Only massive textual materials are not sufficient for computers to understand our language.
+
+We need import these ``biases" into computational agents.
+
+It is necessary to facillate agants develop various kinds of characteristics of natural language during autonomous communication.
+
+\section{Evolutionary Linguistics}
+\label{sec1.1:evo_lang}
+
+Such question is a critical question in evolutionary linguistics.
+
+However, previous works have to pre-define the basic elements of language.
+
+\section{Deep Reinforcement Learning and Its Application in Grounded Language Learning}
+\label{sec1.2:DRL_GLL}
+
+With the recent development of DRL, we do not need to pre-define any linguistic element and thus can simulate the emergence of preliminary linguistic phenonmanon.
+
+With these promising progresses in GLL and characteristics of numerals, this project proposes a new simulation methods of the emergence of numeral systems and also methods to analyse them.
+
+%------------------------------------------------------------------------------------------%
+
+\chapter{Background}
+\label{ch2:background}
+
+A dissertation usually contains several chapters.
+
+\section{Computer Simulation Methods in Evolutionary Linguistics}
+\label{sec2.1:evolang}
+
+\section{Multi-agent Games in Grounded Language Learning}
+\label{sec2.2:gll}
+
+
+
+%------------------------------------------------------------------------------------------%
+
+\chapter{Set Generation Game and Models}
+\label{ch3:game_model}
+
+\section{Game Description}
+\label{sec3.1:game_description}
+
+One hypothesis of our work is that, the linguistic hypotheses can by implied by game dynamics.
+
+\subsection{Game Procedure}
+\label{ssec3.1.1:game_procedure}
+
+\subsection{Language Game as a Markov Desicion Process}
+\label{ssec3.1.2:game_mdp}
+
+\subsection{Numerals in the Game}
+\label{ssec3.1.3:numeral_in_game}
+
+\section{Proposed Models}
+\label{sec3.2:models}
+
+\subsection{Set2Seq2Seq Models}
+\label{ssec3.2.1:set2seq2seq}
+
+\subsection{Baseline Models}
+\label{ssec3.2.2:baselines}
+
+%------------------------------------------------------------------------------------------%
+
+\chapter{Experiment Results and Analysis}
+\label{ch4:results_analysis}
+
+%------------------------------------------------------------------------------------------%
+
+\chapter{Conclusions}
+\label{ch5:conclusion}
+
+\section{Final Reminder}
+
+The body of your dissertation, before the references and any appendices,
+\emph{must} finish by page~40. The introduction, after preliminary material,
+should have started on page~1.
+
+You may not change the dissertation format (e.g., reduce the font
+size, change the margins, or reduce the line spacing from the default
+1.5 spacing). Over length or incorrectly-formatted dissertations will
+not be accepted and you would have to modify your dissertation and
+resubmit.  You cannot assume we will check your submission before the
+final deadline and if it requires resubmission after the deadline to
+conform to the page and style requirements you will be subject to the
+usual late penalties based on your final submission time.
+
+%------------------------------------------------------------------------------------------%
+
+\bibliographystyle{apalike}
+\bibliography{main}
+
+\chapter*{Appendices}
+
+%% You can include appendices like this:
+% \appendix
+% 
+% \chapter{First appendix}
+% 
+% \section{First section}
+% 
+% Markers do not have to consider appendices. Make sure that your contributions
+% are made clear in the main body of the dissertation (within the page limit).
+
+\end{document}
