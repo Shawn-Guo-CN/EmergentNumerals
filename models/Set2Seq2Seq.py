@@ -6,7 +6,7 @@ from torch.distributions.relaxed_categorical import RelaxedOneHotCategorical
 
 def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
     n_total = mask.sum().item()
-    loss = (LOSS_FUNCTION(prediction, golden_standard) * mask.to(prediction.dtype)).mean()
+    loss = LOSS_FUNCTION(prediction, golden_standard) * mask.to(prediction.dtype)
     eq_cur = prediction.topk(1)[1].squeeze(1).eq(golden_standard).to(prediction.dtype) \
          * mask.to(prediction.dtype)
     n_correct = eq_cur.sum().item()
@@ -123,7 +123,7 @@ class MSGGeneratorLSTM(nn.Module):
                 predict = F.one_hot(torch.argmax(probs, dim=1), 
                                     num_classes=self.output_size).to(_mask.dtype)
             
-            log_probs += torch.log((probs * predict).sum(dim=1)).dot(_mask.squeeze())
+            log_probs += torch.log((probs * predict).sum(dim=1)) * _mask.squeeze()
             _mask = _mask * (1 - predict[:, EOS_INDEX])
             
             message.append(predict)
@@ -273,7 +273,7 @@ class ListeningAgent(nn.Module):
                 eq_vec
             )
             loss += mask_loss
-            print_losses.append(mask_loss.item())
+            print_losses.append(mask_loss.mean().item())
             n_total_tokens += n_total
             n_correct_tokens += n_correct
             seq_correct = seq_correct * eq_vec

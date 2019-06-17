@@ -24,10 +24,10 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=CLIP
     loss, log_msg_prob, print_losses, \
         n_correct_seq, n_correct_token, n_total_token = model(data_batch)
     # Perform backpropatation
-    loss.backward()
     if MSG_MODE == 'REINFORCE':
-        log_msg_prob = loss.detach() * log_msg_prob
+        log_msg_prob = (loss.detach() * log_msg_prob).mean()
         log_msg_prob.backward()
+    loss.mean().backward()
     # Calculate accuracy
     tok_acc = round(float(n_correct_token) / float(n_total_token), 6)
     seq_acc = round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
