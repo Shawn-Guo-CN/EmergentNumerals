@@ -24,9 +24,9 @@
 \begin{document}
 \begin{preliminary}
 
-\title{This is the Project Title}
+\title{Semantic Analysis of \\ Emergent Numerals in Multi-Agent Autonomous Communication system}
 
-\author{Your Name}
+\author{Shangmin Guo}
 
 \abstract{
   This skeleton demonstrates how to use the \texttt{infthesis} style
@@ -48,62 +48,82 @@ Any acknowledgements go here.
 
 
 \chapter{Introduction}
+\label{ch1:intro}
 
-The preliminary material of your report should contain:
-\begin{itemize}
-\item
-The title page.
-\item
-An abstract page.
-\item
-Optionally an acknowledgements page.
-\item
-The table of contents.
-\end{itemize}
+NLU is a long-standing challenge.
 
-As in this example \texttt{skeleton.tex}, the above material should be
-included between:
-\begin{verbatim}
-\begin{preliminary}
-    ...
-\end{preliminary}
-\end{verbatim}
-This style file uses roman numeral page numbers for the preliminary material.
+Only massive textual materials are not sufficient for computers to understand our language.
 
-The main content of the dissertation, starting with the first chapter,
-starts with page~1. \emph{\textbf{The main content must not go beyond page~40.}}
+We need import these ``biases" into computational agents.
 
-The report then contains a bibliography and any appendices, which may go beyond
-page~40. The appendices are only for any supporting material that's important to
-go on record. However, you cannot assume markers of dissertations will read them.
+It is necessary to facillate agants develop various kinds of characteristics of natural language during autonomous communication.
 
-You may not change the dissertation format (e.g., reduce the font
-size, change the margins, or reduce the line spacing from the default
-1.5 spacing). Over length or incorrectly-formatted dissertations will
-not be accepted and you would have to modify your dissertation and
-resubmit.  You cannot assume we will check your submission before the
-final deadline and if it requires resubmission after the deadline to
-conform to the page and style requirements you will be subject to the
-usual late penalties based on your final submission time.
+\section{Evolutionary Linguistics}
+\label{sec1.1:evo_lang}
 
-\section{Using Sections}
+Such question is a critical question in evolutionary linguistics.
 
-Divide your chapters into sub-parts as appropriate.
+However, previous works have to pre-define the basic elements of language.
 
-\section{Citations}
+\section{Deep Reinforcement Learning and Its Application in Grounded Language Learning}
+\label{sec1.2:DRL_GLL}
 
-Citations (such as \cite{P1} or \cite{P2}) can be generated using
-\texttt{BibTeX}. For more advanced usage, the \texttt{natbib} package is
-recommended. You could also consider the newer \texttt{biblatex} system.
+With the recent development of DRL, we do not need to pre-define any linguistic element and thus can simulate the emergence of preliminary linguistic phenonmanon.
 
-These examples use a numerical citation style. You may also use
-(Author, Date) format if you prefer.
+With these promising progresses in GLL and characteristics of numerals, this project proposes a new simulation methods of the emergence of numeral systems and also methods to analyse them.
 
-\chapter{Your next chapter}
+%------------------------------------------------------------------------------------------%
+
+\chapter{Background}
+\label{ch2:background}
 
 A dissertation usually contains several chapters.
 
+\section{Computer Simulation Methods in Evolutionary Linguistics}
+\label{sec2.1:evolang}
+
+\section{Multi-agent Games in Grounded Language Learning}
+\label{sec2.2:gll}
+
+
+
+%------------------------------------------------------------------------------------------%
+
+\chapter{Set Generation Game and Models}
+\label{ch3:game_model}
+
+\section{Game Description}
+\label{sec3.1:game_description}
+
+One hypothesis of our work is that, the linguistic hypotheses can by implied by game dynamics.
+
+\subsection{Game Procedure}
+\label{ssec3.1.1:game_procedure}
+
+\subsection{Language Game as a Markov Desicion Process}
+\label{ssec3.1.2:game_mdp}
+
+\subsection{Numerals in the Game}
+\label{ssec3.1.3:numeral_in_game}
+
+\section{Proposed Models}
+\label{sec3.2:models}
+
+\subsection{Set2Seq2Seq Models}
+\label{ssec3.2.1:set2seq2seq}
+
+\subsection{Baseline Models}
+\label{ssec3.2.2:baselines}
+
+%------------------------------------------------------------------------------------------%
+
+\chapter{Experiment Results and Analysis}
+\label{ch4:results_analysis}
+
+%------------------------------------------------------------------------------------------%
+
 \chapter{Conclusions}
+\label{ch5:conclusion}
 
 \section{Final Reminder}
 
@@ -120,8 +140,12 @@ final deadline and if it requires resubmission after the deadline to
 conform to the page and style requirements you will be subject to the
 usual late penalties based on your final submission time.
 
-\bibliographystyle{plain}
+%------------------------------------------------------------------------------------------%
+
+\bibliographystyle{apalike}
 \bibliography{main}
+
+\chapter*{Appendices}
 
 %% You can include appendices like this:
 % \appendix
