@@ -1,5 +1,6 @@
 from utils.conf import *
 from torch.distributions.categorical import Categorical
+from torch.distributions.one_hot_categorical import OneHotCategorical
 from torch.distributions.relaxed_categorical import RelaxedOneHotCategorical
 
 
@@ -15,12 +16,11 @@ def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
 
 def cat_softmax(probs, mode, tau=1, hard=False, dim=-1):
     if mode == 'REINFORCE':
-        cat_distr = Categorical(probs)
+        cat_distr = OneHotCategorical(probs)
         action = cat_distr.sample()
         log_prob = cat_distr.log_prob(action)
         return action, log_prob
-
-    if mode == 'GUMBEL': # use gumbel-softmax
+    elif mode == 'GUMBEL':
         cat_distr = RelaxedOneHotCategorical(tau, probs=probs)
         y_soft = cat_distr.rsample()
     else: # use normal softmax
@@ -34,7 +34,6 @@ def cat_softmax(probs, mode, tau=1, hard=False, dim=-1):
         log_prob = Categorical(probs).log_prob(index.squeeze())
     else:
         # Reparametrization trick.
-        log_prob = Categorical(probs).entropy()
         ret = y_soft
 
     return ret, log_prob
@@ -124,7 +123,7 @@ class MSGGeneratorLSTM(nn.Module):
             if self.training:
                 predict, log_prob = \
                     cat_softmax(probs, mode=MSG_MODE, tau=MSG_TAU, hard=MSG_HARD, dim=1)
-                log_probs -= _mask.squeeze().dot(log_prob)
+                log_probs += _mask.squeeze().dot(log_prob)
             else:
                 predict = F.one_hot(torch.argmax(probs, dim=1), 
                                     num_classes=self.output_size).to(_mask.dtype)
