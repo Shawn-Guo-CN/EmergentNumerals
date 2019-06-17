@@ -17,13 +17,12 @@ def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
 def cat_softmax(probs, mode, tau=1, hard=False, dim=-1):
     if mode == 'REINFORCE':
         cat_distr = OneHotCategorical(probs=probs)
+        return cat_distr.sample()
     elif mode == 'GUMBEL':
         cat_distr = RelaxedOneHotCategorical(tau, probs=probs)
-
-    if mode == 'SOFTMAX':
-        y_soft = probs
-    else:
         y_soft = cat_distr.rsample()
+    elif mode == 'SOFTMAX':
+        y_soft = probs
     
     if hard:
         # Straight through.
