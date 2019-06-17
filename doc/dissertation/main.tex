@@ -1,0 +1,136 @@
+%%%%%%%%%%%%%%%%%%%%%%%%
+% Sample use of the infthesis class to prepare an MSc thesis.
+% This can be used as a template to produce your own thesis.
+% Date: June 2019
+%
+%
+% The first line specifies style options for taught MSc.
+% You should add a final option specifying your degree.
+% *Do not* change or add any other options.
+%
+% So, pick one of the following:
+% \documentclass[msc,deptreport,adi]{infthesis}     % Adv Design Inf
+% \documentclass[msc,deptreport,ai]{infthesis}      % AI
+% \documentclass[msc,deptreport,cogsci]{infthesis}  % Cognitive Sci
+% \documentclass[msc,deptreport,cs]{infthesis}      % Computer Sci
+% \documentclass[msc,deptreport,cyber]{infthesis}   % Cyber Sec
+% \documentclass[msc,deptreport,datasci]{infthesis} % Data Sci
+% \documentclass[msc,deptreport,di]{infthesis}      % Design Inf
+% \documentclass[msc,deptreport,inf]{infthesis}     % Informatics
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[msc,deptreport]{infthesis} % Do not change except to add your degree (see above).
+
+\begin{document}
+\begin{preliminary}
+
+\title{This is the Project Title}
+
+\author{Your Name}
+
+\abstract{
+  This skeleton demonstrates how to use the \texttt{infthesis} style
+  for MSc dissertations in Artificial Intelligence, Cognitive Science,
+  Computer Science, Data Science, and Informatics. It also emphasises
+  the page limit, and that you must not deviate from the required
+  style.  The file \texttt{skeleton.tex} generates this document and
+  can be used as a starting point for your thesis. The abstract should
+  summarise your report and fit in the space on the first page.
+}
+
+\maketitle
+
+\section*{Acknowledgements}
+Any acknowledgements go here. 
+
+\tableofcontents
+\end{preliminary}
+
+
+\chapter{Introduction}
+
+The preliminary material of your report should contain:
+\begin{itemize}
+\item
+The title page.
+\item
+An abstract page.
+\item
+Optionally an acknowledgements page.
+\item
+The table of contents.
+\end{itemize}
+
+As in this example \texttt{skeleton.tex}, the above material should be
+included between:
+\begin{verbatim}
+\begin{preliminary}
+    ...
+\end{preliminary}
+\end{verbatim}
+This style file uses roman numeral page numbers for the preliminary material.
+
+The main content of the dissertation, starting with the first chapter,
+starts with page~1. \emph{\textbf{The main content must not go beyond page~40.}}
+
+The report then contains a bibliography and any appendices, which may go beyond
+page~40. The appendices are only for any supporting material that's important to
+go on record. However, you cannot assume markers of dissertations will read them.
+
+You may not change the dissertation format (e.g., reduce the font
+size, change the margins, or reduce the line spacing from the default
+1.5 spacing). Over length or incorrectly-formatted dissertations will
+not be accepted and you would have to modify your dissertation and
+resubmit.  You cannot assume we will check your submission before the
+final deadline and if it requires resubmission after the deadline to
+conform to the page and style requirements you will be subject to the
+usual late penalties based on your final submission time.
+
+\section{Using Sections}
+
+Divide your chapters into sub-parts as appropriate.
+
+\section{Citations}
+
+Citations (such as \cite{P1} or \cite{P2}) can be generated using
+\texttt{BibTeX}. For more advanced usage, the \texttt{natbib} package is
+recommended. You could also consider the newer \texttt{biblatex} system.
+
+These examples use a numerical citation style. You may also use
+(Author, Date) format if you prefer.
+
+\chapter{Your next chapter}
+
+A dissertation usually contains several chapters.
+
+\chapter{Conclusions}
+
+\section{Final Reminder}
+
+The body of your dissertation, before the references and any appendices,
+\emph{must} finish by page~40. The introduction, after preliminary material,
+should have started on page~1.
+
+You may not change the dissertation format (e.g., reduce the font
+size, change the margins, or reduce the line spacing from the default
+1.5 spacing). Over length or incorrectly-formatted dissertations will
+not be accepted and you would have to modify your dissertation and
+resubmit.  You cannot assume we will check your submission before the
+final deadline and if it requires resubmission after the deadline to
+conform to the page and style requirements you will be subject to the
+usual late penalties based on your final submission time.
+
+\bibliographystyle{plain}
+\bibliography{mybibfile}
+
+%% You can include appendices like this:
+% \appendix
+% 
+% \chapter{First appendix}
+% 
+% \section{First section}
+% 
+% Markers do not have to consider appendices. Make sure that your contributions
+% are made clear in the main body of the dissertation (within the page limit).
+
+\end{document}
