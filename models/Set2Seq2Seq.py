@@ -16,27 +16,25 @@ def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
 
 def cat_softmax(probs, mode, tau=1, hard=False, dim=-1):
     if mode == 'REINFORCE':
-        cat_distr = OneHotCategorical(probs)
-        action = cat_distr.sample()
-        log_prob = cat_distr.log_prob(action)
-        return action, log_prob
+        cat_distr = OneHotCategorical(probs=probs)
     elif mode == 'GUMBEL':
         cat_distr = RelaxedOneHotCategorical(tau, probs=probs)
-        y_soft = cat_distr.rsample()
-    else: # use normal softmax
+
+    if mode == 'SOFTMAX':
         y_soft = probs
+    else:
+        y_soft = cat_distr.rsample()
     
     if hard:
         # Straight through.
         index = y_soft.max(dim, keepdim=True)[1]
         y_hard = torch.zeros_like(probs, device=DEVICE).scatter_(dim, index, 1.0)
         ret = y_hard - y_soft.detach() + y_soft
-        log_prob = Categorical(probs).log_prob(index.squeeze())
     else:
         # Reparametrization trick.
         ret = y_soft
 
-    return ret, log_prob
+    return ret
 
 
 # Attention layer
@@ -121,13 +119,12 @@ class MSGGeneratorLSTM(nn.Module):
             probs = F.softmax(self.out(decoder_hidden), dim=1)
 
             if self.training:
-                predict, log_prob = \
-                    cat_softmax(probs, mode=MSG_MODE, tau=MSG_TAU, hard=MSG_HARD, dim=1)
-                log_probs += _mask.squeeze().dot(log_prob)
+                predict = cat_softmax(probs, mode=MSG_MODE, tau=MSG_TAU, hard=MSG_HARD, dim=1)
             else:
                 predict = F.one_hot(torch.argmax(probs, dim=1), 
                                     num_classes=self.output_size).to(_mask.dtype)
             
+            log_probs += torch.log((probs * predict).sum(dim=1)).dot(_mask.squeeze())
             _mask = _mask * (1 - predict[:, EOS_INDEX])
             
             message.append(predict)

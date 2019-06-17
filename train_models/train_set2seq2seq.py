@@ -26,8 +26,8 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=CLIP
     # Perform backpropatation
     loss.backward()
     if MSG_MODE == 'REINFORCE':
-    log_msg_prob = loss.detach() * log_msg_prob
-    log_msg_prob.backward()
+        log_msg_prob = loss.detach() * log_msg_prob
+        log_msg_prob.backward()
     # Calculate accuracy
     tok_acc = round(float(n_correct_token) / float(n_total_token), 6)
     seq_acc = round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
@@ -134,7 +134,7 @@ def train():
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
         
         if iter % SAVE_EVERY == 0:
-            path_join = 'set2seq2seq' + MSG_MODE
+            path_join = 'set2seq2seq_' + MSG_MODE
             path_join += '_hard' if MSG_HARD else '_soft'
             directory = os.path.join(SAVE_DIR, path_join)
             if not os.path.exists(directory):
