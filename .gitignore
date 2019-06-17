@@ -112,6 +112,12 @@ out
 *main.log
 *.synctex
 
+# For Latex output
+*.synctex.gz
+*.toc
+*.fls
+*.fdb*
+
 # added by Shawn
 .idea/
 .vscode/
