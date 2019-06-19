@@ -124,7 +124,7 @@ class MSGGeneratorLSTM(nn.Module):
                                     num_classes=self.output_size).to(_mask.dtype)
             
             log_probs += torch.log((probs * predict).sum(dim=1)) * _mask.squeeze()
-            _mask = _mask * (1 - predict[:, EOS_INDEX])
+            _mask = _mask * (1 - predict[:, -1])
             
             message.append(predict)
             decoder_input = predict
