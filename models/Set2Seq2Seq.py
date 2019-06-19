@@ -127,7 +127,7 @@ class MSGGeneratorLSTM(nn.Module):
             _mask = _mask * (1 - predict[:, EOS_INDEX])
             
             message.append(predict)
-            deocder_input = predict
+            decoder_input = predict
         
         message = torch.stack(message)
         mask = torch.stack(mask)

@@ -66,7 +66,7 @@ HIDDEN_SIZE = 256
 BATCH_SIZE = 2048
 MSG_MAX_LEN = NUM_WORD + 2
 # Size of vocabulary this is available for communication
-MSG_VOCSIZE = 10
+MSG_VOCSIZE = 11 # Consider the EOS for MSG
 MSG_MODE = 'REINFORCE' # 'SOFTMAX', 'GUMBEL' or 'REINFORCE'
 MSG_TAU = 2. # Hyperparam for gumbel softmax
 MSG_HARD = True # Discretized as one-hot vectors
