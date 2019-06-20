@@ -19,7 +19,7 @@ DROPOUT_RATIO = 0.2
 CLIP = 50.0 # max after clipping gradients
 TEACHER_FORCING_RATIO = 0.5
 DECODER_LEARING_RATIO = 5.0
-NUM_ITERS = 400
+NUM_ITERS = 4000
 PRINT_EVERY = 1
 SAVE_EVERY = 2
 EVAL_EVERY = 2
@@ -55,7 +55,7 @@ SOS_TOKEN = 'SOS' # Start-of-sequence token
 SOS_INDEX = 1  # SOS token index
 EOS_TOKEN = 'EOS' # End-of-sequence token
 EOS_INDEX = 2 # EOS token index
-NUM_WORD = 6 # Number of different characters
+NUM_WORD = 4 # Number of different characters
 MAX_LEN_WORD = 9 # Maximum length of a single kind of word
 MAX_LENGTH = NUM_WORD * MAX_LEN_WORD # Max length of whole sequence
 

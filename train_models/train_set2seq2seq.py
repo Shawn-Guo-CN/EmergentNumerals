@@ -135,7 +135,7 @@ def train():
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
         
         if iter % SAVE_EVERY == 0:
-            path_join = 'set2seq2seq_' + MSG_MODE
+            path_join = 'set2seq2seq_' + str(NUM_WORD) + MSG_MODE
             path_join += '_hard' if MSG_HARD else '_soft'
             directory = os.path.join(SAVE_DIR, path_join)
             if not os.path.exists(directory):
