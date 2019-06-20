@@ -15,7 +15,7 @@ def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
 
 
 def cat_softmax(probs, mode, tau=1, hard=False, dim=-1):
-    if mode == 'REINFORCE':
+    if mode == 'REINFORCE' or mode == 'SCST':
         cat_distr = OneHotCategorical(probs=probs)
         return cat_distr.sample()
     elif mode == 'GUMBEL':
@@ -317,5 +317,17 @@ class Set2Seq2Seq(nn.Module):
 
         loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens = \
             self.listener(self.embedding, message, msg_mask, target_var, target_mask, target_max_len)
+
+        if self.training and MSG_MODE == 'SCST':
+            self.speaker.eval()
+            self.listener.eval()
+            msg, msg_mask, _ = self.speaker(speaker_input, input_mask)
+            baseline = self.listener(self.embedding, msg, msg_mask, 
+                                        target_var, target_mask, target_max_len)[0]
+            self.speaker.train()
+            self.listener.train()
+        else:
+            baseline = 0.
         
-        return loss, log_msg_prob, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens
+        return loss, log_msg_prob, baseline, print_losses, \
+                n_correct_seqs, n_correct_tokens, n_total_tokens

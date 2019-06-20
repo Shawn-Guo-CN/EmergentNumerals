@@ -17,7 +17,7 @@ DEVICE = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 LEARNING_RATE = 1e-4 # learning rate
 DROPOUT_RATIO = 0.2
 CLIP = 50.0 # max after clipping gradients
-TEACHER_FORCING_RATIO = 0.5
+TEACHER_FORCING_RATIO = 0.3
 DECODER_LEARING_RATIO = 5.0
 NUM_ITERS = 4000
 PRINT_EVERY = 1
@@ -63,10 +63,10 @@ MAX_LENGTH = NUM_WORD * MAX_LEN_WORD # Max length of whole sequence
 hyperparameters of model
 '''
 HIDDEN_SIZE = 256
-BATCH_SIZE = 2048
-MSG_MAX_LEN = NUM_WORD + 2
+BATCH_SIZE = 256
+MSG_MAX_LEN = NUM_WORD + 5
 # Size of vocabulary this is available for communication
 MSG_VOCSIZE = 11 # Consider the EOS for MSG
-MSG_MODE = 'REINFORCE' # 'SOFTMAX', 'GUMBEL' or 'REINFORCE'
+MSG_MODE = 'SCST' # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
 MSG_TAU = 2. # Hyperparam for gumbel softmax
 MSG_HARD = True # Discretized as one-hot vectors
