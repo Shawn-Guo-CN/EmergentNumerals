@@ -1,23 +1,23 @@
-import configparser
-from utils.conf import *
+from utils.conf import args
+import random
 
 
-def generate_all_combinations(prefix='', type_idx=1, out_file=open(DATA_FILE_PATH, 'a')):
-    if type_idx == NUM_WORD:
-        for i in range(0, MAX_LEN_WORD+1):
+def generate_all_combinations(prefix='', type_idx=1, out_file=open(args.data_file, 'a')):
+    if type_idx == args.num_words:
+        for i in range(0, args.max_len_word+1):
             target_str = chr(64+type_idx) * i
             print(prefix+target_str)
             print(prefix+target_str, file=out_file)
     else:
-        for i in range(0, MAX_LEN_WORD+1):
+        for i in range(0, args.max_len_word+1):
             target_str = chr(64+type_idx) * i
             generate_all_combinations(prefix+target_str, type_idx+1, out_file=out_file)
 
 
-def generate_train_dev_test_files(in_file=open(DATA_FILE_PATH, 'r'),
-                                  train_file=open(TRAIN_FILE_PATH, 'a'),
-                                  dev_file=open(DEV_FILE_PATH, 'a'),
-                                  test_file=open(TEST_FILE_PATH, 'a')
+def generate_train_dev_test_files(in_file=open(args.data_file, 'r'),
+                                  train_file=open(args.train_file, 'a'),
+                                  dev_file=open(args.dev_file, 'a'),
+                                  test_file=open(args.test_file, 'a')
 ):
     string_set = []
     for line in in_file.readlines():
@@ -44,7 +44,7 @@ def generate_train_dev_test_files(in_file=open(DATA_FILE_PATH, 'r'),
     test_file.close()
 
 
-def generate_fixed_len_data(prefix='', length=15, out_file=open(DATA_FILE_PATH, mode='a')):
+def generate_fixed_len_data(prefix='', length=15, out_file=open(args.data_file, mode='a')):
     if length == 1:
         for c in ['A', 'B', 'C']:
             print(prefix+c)
@@ -54,10 +54,10 @@ def generate_fixed_len_data(prefix='', length=15, out_file=open(DATA_FILE_PATH, 
         for c in ['A', 'B', 'C']:
             generate_fixed_len_data(prefix=prefix+c, length=length-1)
 
-def generate_train_dev_test_files_bak(in_file=open(DATA_FILE_PATH, 'r'), 
-                                  train_file=open(TRAIN_FILE_PATH, 'a'),
-                                  dev_file=open(DEV_FILE_PATH, 'a'),
-                                  test_file=open(TEST_FILE_PATH, 'a')):
+def generate_train_dev_test_files_bak(in_file=open(args.data_file, 'r'), 
+                                  train_file=open(args.train_file, 'a'),
+                                  dev_file=open(args.dev_file, 'a'),
+                                  test_file=open(args.test_file, 'a')):
     pairs_set = []
     for line in in_file.readlines():
         line = line.strip().split('\t')

@@ -64,6 +64,8 @@ parser.add_argument('--clip', type=float, default=defaults['CLIP'],
         help="the maximum of gradients after clipped")
 parser.add_argument('--teacher-ratio', type=float, default=defaults['TEACHER_FORCING_RATIO'],
         help='teacher-forcing ratio for training last sequence decoder')
+parser.add_argument('--decoder-ratio', type=float, default=defaults['DECODER_LEARING_RATIO'],
+        help='learning rate ratio for training decoder')
 parser.add_argument('-i', '--iter_num', type=int, default=defaults['NUM_ITERS'],
         help='maximum number of iterations')
 parser.add_argument('--print-freq', type=int, default=defaults['PRINT_EVERY'],
@@ -102,7 +104,7 @@ parser.add_argument('--sos-index', type=int, default=defaults['SOS_INDEX'],
         help='index for SOS tokens')
 parser.add_argument('--eos-index', type=int, default=defaults['EOS_INDEX'],
         help='index for EOS tokens')
-parser.add_argument('--num-types', type=int, default=defaults['NUM_WORD'],
+parser.add_argument('--num-words', type=int, default=defaults['NUM_WORD'],
         help='number of different kinds of words')
 parser.add_argument('--max-len-word', type=int, default=defaults['MAX_LEN_WORD'],
         help='maximum length of a single kind of word')
@@ -118,6 +120,10 @@ parser.add_argument('--max-msg-len', type=int, default=MSG_MAX_LEN,
         help='maximum length of the messages')
 parser.add_argument('--msg-vocsize', type=int, default=MSG_VOCSIZE,
         help='size of vocabulary this is available for communication')
+parser.add_argument('-t', '--tau', type=str, default=defaults['MSG_TAU'],
+        help='tau in GUMBEL softmax')
+parser.add_argument('-m', '--msg-mode', type=str, default=defaults['MSG_MODE'],
+        help='mode of message generation')
 args = parser.parse_args()
 
 args.device = torch.device("cuda:" + str(args.device) \

@@ -1,9 +1,12 @@
-from utils.conf import *
+import torch
 from torch.utils.data import Dataset
+import math
+import itertools
 
+from utils.conf import args
 
 class  FruitSeqDataset(Dataset):
-    def __init__(self, voc, batch_size=BATCH_SIZE, dataset_file_path=TRAIN_FILE_PATH):
+    def __init__(self, voc, batch_size=args.batch_size, dataset_file_path=args.train_file):
         self.voc = voc
         self.batch_size = batch_size
         self.batches = self.build_batches(dataset_file_path)
@@ -29,7 +32,7 @@ class  FruitSeqDataset(Dataset):
         target_indices = []
 
         def _string2indices_(seq):
-            return [self.voc.word2index[w] for w in seq] + [EOS_INDEX]
+            return [self.voc.word2index[w] for w in seq] + [args.eos_index]
         
         for string in string_set:
             # input contains neither SOS or EOS, target contains EOS
@@ -39,16 +42,16 @@ class  FruitSeqDataset(Dataset):
         return input_indices, target_indices
 
     @staticmethod
-    def pad(l, fillvalue=PAD_INDEX):
+    def pad(l, fillvalue=args.pad_index):
         return list(itertools.zip_longest(*l, fillvalue=fillvalue))
 
     @staticmethod
-    def build_mask(l, value=PAD_INDEX):
+    def build_mask(l, value=args.pad_index):
         m = []
         for i, seq in enumerate(l):
             m.append([])
             for index in seq:
-                if index == PAD_INDEX:
+                if index == args.pad_index:
                     m[i].append(0)
                 else:
                     m[i].append(1)
@@ -58,13 +61,13 @@ class  FruitSeqDataset(Dataset):
     def build_tensor_mask_lens_maxlen(indices_batch):
         padded_indices = FruitSeqDataset.pad(indices_batch)
         
-        lens = torch.tensor([len(indices) for indices in indices_batch]).to(DEVICE)
+        lens = torch.tensor([len(indices) for indices in indices_batch]).to(args.device)
         max_len = max([len(indices) for indices in indices_batch])
         
         mask = FruitSeqDataset.build_mask(padded_indices)
-        mask = torch.ByteTensor(mask).to(DEVICE)
+        mask = torch.ByteTensor(mask).to(args.device)
 
-        padded_indices = torch.LongTensor(padded_indices).to(DEVICE)
+        padded_indices = torch.LongTensor(padded_indices).to(args.device)
         
         return padded_indices, mask, lens, max_len
 

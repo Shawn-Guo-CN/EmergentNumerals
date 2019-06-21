@@ -1,4 +1,4 @@
-from utils.conf import *
+from utils.conf import args
 
 
 class Voc:
@@ -6,14 +6,14 @@ class Voc:
         self.word2index = {}
         self.index2word = {}
 
-        self.word2index[PAD_TOKEN] = PAD_INDEX
-        self.index2word[PAD_INDEX] = PAD_TOKEN
-        self.word2index[SOS_TOKEN] = SOS_INDEX
-        self.index2word[SOS_INDEX] = SOS_TOKEN
-        self.word2index[EOS_TOKEN] = EOS_INDEX
-        self.index2word[EOS_INDEX] = EOS_TOKEN
-        for i in range(1, NUM_WORD+1):
-            self.word2index[chr(64+i)] = EOS_INDEX + i
-            self.index2word[EOS_INDEX + i] = chr(64+i)
+        self.word2index[args.pad_token] = args.pad_index
+        self.index2word[args.pad_index] = args.pad_token
+        self.word2index[args.sos_token] = args.sos_index
+        self.index2word[args.sos_index] = args.sos_token
+        self.word2index[args.eos_token] = args.eos_index
+        self.index2word[args.eos_index] = args.eos_token
+        for i in range(1, args.num_words+1):
+            self.word2index[chr(64+i)] = args.eos_index + i
+            self.index2word[args.eos_index + i] = chr(64+i)
         
-        self.num_words = NUM_WORD + 3  # include SOS, EOS and PAD
+        self.num_words = args.num_words + 3  # include SOS, EOS and PAD
