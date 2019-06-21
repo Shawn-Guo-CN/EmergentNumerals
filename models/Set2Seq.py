@@ -1,9 +1,14 @@
-from utils.conf import *
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import random
+
+from utils.conf import args
 
 
 def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
     n_total = mask.sum().item()
-    loss = (LOSS_FUNCTION(prediction, golden_standard) * mask.to(prediction.dtype)).mean()
+    loss = (args.loss_function(prediction, golden_standard) * mask.to(prediction.dtype)).mean()
     eq_cur = prediction.topk(1)[1].squeeze(1).eq(golden_standard).to(prediction.dtype) \
          * mask.to(prediction.dtype)
     n_correct = eq_cur.sum().item()
@@ -13,7 +18,7 @@ def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
 
 # Attention layer
 class Attn(nn.Module):
-    def __init__(self, hidden_size=HIDDEN_SIZE):
+    def __init__(self, hidden_size=args.hidden_size):
         super(Attn, self).__init__()
         self.hidden_size = hidden_size
 
@@ -34,7 +39,7 @@ class Attn(nn.Module):
         return attn_weights.transpose(1, 2)
 
 class EncoderLSTM(nn.Module):
-    def __init__(self, voc_size, hidden_size=HIDDEN_SIZE):
+    def __init__(self, voc_size, hidden_size=args.hidden_size):
         super(EncoderLSTM, self).__init__()
         self.hidden_size = hidden_size
 
@@ -52,7 +57,7 @@ class EncoderLSTM(nn.Module):
         last_cell = self.init_cell.expand(batch_size, -1).contiguous()
         
         # Forward pass through LSTM
-        for t in range(NUM_WORD):
+        for t in range(args.num_words):
             # Calculate attention weights from the current LSTM input
             attn_weights = self.attn(last_hidden, embedded_input, input_mask)
             # Calculate the attention weighted representation
@@ -64,11 +69,11 @@ class EncoderLSTM(nn.Module):
         return lstm_hidden, lstm_cell
 
     def init_hidden_and_cell(self):
-        return nn.Parameter(torch.zeros(1, self.hidden_size, device=DEVICE))
+        return nn.Parameter(torch.zeros(1, self.hidden_size, device=args.device))
 
 
 class DecoderLSTM(nn.Module):
-    def __init__(self, output_size, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
+    def __init__(self, output_size, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
         super(DecoderLSTM, self).__init__()
         self.hidden_size = hidden_size
 
@@ -85,7 +90,7 @@ class DecoderLSTM(nn.Module):
 
         # Create initial decoder input (start with SOS tokens for each sentence)
         decoder_input = embedding(
-            torch.LongTensor([SOS_INDEX for _ in range(batch_size)]).to(DEVICE)
+            torch.LongTensor([args.sos_index for _ in range(batch_size)]).to(args.device)
         )
 
         # Set initial decoder hidden state to the encoder's final hidden state
@@ -93,7 +98,7 @@ class DecoderLSTM(nn.Module):
         decoder_cell = encoder_cell
 
         # Determine if we are using teacher forcing this iteration
-        use_teacher_forcing = True if random.random() < TEACHER_FORCING_RATIO \
+        use_teacher_forcing = True if random.random() < args.teacher_ratio \
                                     and self.training else False
 
         # Forward batch of sequences through decoder one time step at a time
@@ -104,14 +109,14 @@ class DecoderLSTM(nn.Module):
             decoder_output = self.out(decoder_hidden)
             outputs.append(decoder_output)
             # mask is the probabilities for predicting EOS token
-            masks.append(F.softmax(decoder_output, dim=1)[:, EOS_INDEX])
+            masks.append(F.softmax(decoder_output, dim=1)[:, args.eos_index])
 
             if use_teacher_forcing:
                 decoder_input = embedding(target_var[t].view(1, -1)).squeeze()
             else:
                 _, topi = decoder_output.topk(1)
                 decoder_input = embedding(
-                    torch.LongTensor([topi[i][0] for i in range(batch_size)]).to(DEVICE)
+                    torch.LongTensor([topi[i][0] for i in range(batch_size)]).to(args.device)
                 )
 
         # shape of outputs: Len * Batch Size * Voc Size
@@ -121,11 +126,11 @@ class DecoderLSTM(nn.Module):
         return outputs, masks
 
     def init_hidden(self):
-        return torch.zeros(1, 1, self.hidden_size, device=DEVICE)
+        return torch.zeros(1, 1, self.hidden_size, device=args.device)
 
 
 class Set2Seq(nn.Module):
-    def __init__(self, voc_size, hidden_size=HIDDEN_SIZE, dropout=DROPOUT_RATIO):
+    def __init__(self, voc_size, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
         super(Set2Seq, self).__init__()
         self.voc_size = voc_size
         self.hidden_size = hidden_size
@@ -161,8 +166,8 @@ class Set2Seq(nn.Module):
             encoder_cell
         )
 
-        seq_correct = torch.ones([input_var.shape[1]], device=DEVICE)
-        eq_vec = torch.ones([input_var.shape[1]], device=DEVICE)
+        seq_correct = torch.ones([input_var.shape[1]], device=args.device)
+        eq_vec = torch.ones([input_var.shape[1]], device=args.device)
         for t in range(target_max_len):
             mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(
                 decoder_outputs[t], 
