@@ -39,6 +39,7 @@ defaults = {
     'BATCH_SIZE': 1024,
     'MSG_MODE': 'SCST', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
     'MSG_TAU': 2.,
+    'L_RESET_FREQ': 20,
 }
 
 '''
@@ -124,6 +125,8 @@ parser.add_argument('-t', '--tau', type=str, default=defaults['MSG_TAU'],
         help='tau in GUMBEL softmax')
 parser.add_argument('-m', '--msg-mode', type=str, default=defaults['MSG_MODE'],
         help='mode of message generation')
+parser.add_argument('--l-reset-freq', type=int, default=defaults['L_RESET_FREQ'],
+        help='frequence of resetting listener')
 args = parser.parse_args()
 
 args.device = torch.device("cuda:" + str(args.device) \

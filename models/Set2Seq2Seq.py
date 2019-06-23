@@ -41,6 +41,11 @@ def cat_softmax(probs, mode, tau=1, hard=False, dim=-1):
     return ret
 
 
+def weight_init(m):
+    if isinstance(m, nn.Parameter):
+        torch.nn.init.xavier_normal(m.weight.data)
+
+
 # Attention layer
 class Attn(nn.Module):
     def __init__(self, hidden_size=args.hidden_size):
@@ -286,6 +291,9 @@ class ListeningAgent(nn.Module):
         n_correct_seqs = seq_correct.sum().item()
 
         return loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens
+
+    def reset_params(self):
+        self.apply(weight_init)
 
 
 class Set2Seq2Seq(nn.Module):

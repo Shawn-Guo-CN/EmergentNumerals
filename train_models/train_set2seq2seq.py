@@ -17,6 +17,8 @@ def msg_tau_schedule(best_acc):
         args.tau = 0.5
     elif best_acc >= 0.9:
         args.tau = 0.1
+    elif best_acc >= 0.95:
+        args.tau = 0.05
     else:
         args.tau = 2.
 
@@ -144,6 +146,10 @@ def train():
 
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Seq Acc: {:.4f}; Avg Tok Acc: {:.4f}; Best Seq Acc: {:.4f}".format(
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
+
+        if iter % args.l_reset_freq == 0:
+            model.listener.reset_params()
+            print('[RESET] reset listener')
         
         if iter % args.save_freq == 0:
             path_join = 'set2seq2seq_' + str(args.num_words) + '_' + args.msg_mode
