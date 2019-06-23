@@ -6,6 +6,8 @@ from models.Set2Seq2Seq import Set2Seq2Seq
 from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
 
+DATA_FILE = './data/all_data.txt'
+OUT_FILE = './data/input_msg_pairs.txt'
 
 def print_input_message_pair(input_str, message_tensor, mask_tensor, out_file):
     print('---', file=out_file)
@@ -33,10 +35,8 @@ def main():
     print('done')
 
     print('loading data and building batches...')
-    dev_set = FruitSeqDataset(voc, dataset_file_path=args.dev_file, batch_size=1)
-    dev_str_set = dev_set.load_stringset(args.dev_file)
-    test_set = FruitSeqDataset(voc, dataset_file_path=args.test_file, batch_size=1)
-    test_str_set = test_set.load_stringset(args.test_file)
+    data_set = FruitSeqDataset(voc, dataset_file_path=DATA_FILE, batch_size=1)
+    str_set = data_set.load_stringset(DATA_FILE)
     print('done')
 
     print('rebuilding model from saved parameters in ' + args.param_file + '...')
@@ -48,14 +48,9 @@ def main():
 
     model.eval()
 
-    print('iterating dev set...')
-    dev_out_file = open('./data/dev_messages.txt', mode='a')
-    iterate_dataset(model, dev_str_set, dev_set, dev_out_file)
-
-    print('iterating test set...')
-    test_out_file = open('./data/test_messages.txt', mode='a')
-    iterate_dataset(model, test_str_set, test_set, test_out_file)
-
+    print('iterating data set...')
+    dev_out_file = open(OUT_FILE, mode='a')
+    iterate_dataset(model, str_set, data_set, dev_out_file)
 
 
 if __name__ == '__main__':
