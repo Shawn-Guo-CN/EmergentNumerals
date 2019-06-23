@@ -163,7 +163,8 @@ def train():
                 'opt': param_optimizer.state_dict(),
                 'de_opt': decoder_optimizer.state_dict(),
                 'loss': loss,
-                'voc': voc
+                'voc': voc,
+                'args': args
             }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
 
 
@@ -182,6 +183,7 @@ def test():
     else:
         print('loading saved parameters from ' + args.param_file + '...')
         checkpoint = torch.load(args.param_file)
+        args = checkpoint['args']
         model.load_state_dict(checkpoint['model'])
         param_optimizer.load_state_dict(checkpoint['opt'])
         decoder_optimizer.load_state_dict(checkpoint['de_opt'])

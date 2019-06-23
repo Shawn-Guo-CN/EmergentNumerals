@@ -42,6 +42,7 @@ def main():
     print('rebuilding model from saved parameters in ' + args.param_file + '...')
     model = Set2Seq2Seq(voc.num_words).to(args.device)
     checkpoint = torch.load(args.param_file)
+    args = checkpoint['args']
     model.load_state_dict(checkpoint['model'])
     voc = checkpoint['voc']
     print('done')
