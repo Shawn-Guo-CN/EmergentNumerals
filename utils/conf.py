@@ -50,12 +50,12 @@ MAX_LENGTH = defaults['NUM_WORD'] * defaults['MAX_LEN_WORD'] # Max length of who
 '''
 hyperparameters of model
 '''
-MSG_MAX_LEN = defaults['NUM_WORD'] + 5
+MSG_MAX_LEN = defaults['NUM_WORD'] + 1
 MSG_VOCSIZE = defaults['NUM_WORD'] + 1 # Consider the EOS for MSG
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-d', '--device', type=int, default=defaults['DEVICE'], choices=[0, 1, 2, 3, 4],
+parser.add_argument('-d', '--device', type=int, default=defaults['DEVICE'], choices=[0, 1, 2, 3, -1],
         help="which gpu to use, -1 for cpu")
 parser.add_argument('-lr', '--learning-rate', type=float, default=defaults['LEARNING_RATE'],
         help="learning rate for optimisers")

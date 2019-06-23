@@ -10,6 +10,9 @@ from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
 
 
+args = args
+
+
 def msg_tau_schedule(best_acc):
     if best_acc >= 0.6:
         args.tau = 1.
@@ -30,7 +33,7 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=args
 
     # Forward pass through model
     loss, log_msg_prob, baseline, print_losses, \
-        n_correct_seq, n_correct_token, n_total_token = model(data_batch)
+        n_correct_seq, n_correct_token, n_total_token, _ = model(data_batch)
     # Perform backpropatation
     if args.msg_mode == 'REINFORCE':
         log_msg_prob = (loss.detach() * log_msg_prob).mean()
@@ -62,7 +65,7 @@ def eval_model(model, dataset):
     for _, data_batch in enumerate(dataset):
         # useless metrics
         __, ___, ____, \
-            print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)
+            print_losses, n_correct_seq, n_correct_token, n_total_token, _ = model(data_batch)
         loss += sum(print_losses) / n_total_token
         seq_acc += round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
         tok_acc += float(n_correct_token) / float(n_total_token)

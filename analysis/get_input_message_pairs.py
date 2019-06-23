@@ -8,25 +8,49 @@ from preprocesses.Voc import Voc
 
 DATA_FILE = './data/all_data.txt'
 OUT_FILE = './data/input_msg_pairs.txt'
+args = args
 
-def print_input_message_pair(input_str, message_tensor, mask_tensor, out_file):
-    print('---', file=out_file)
-    print(input_str, file=out_file)
-    message = message_tensor.squeeze().detach().cpu().numpy()
-    # print(message[0], file=out_file)
-    max_idx = []
+
+def reproduce_msg_output(model, voc, data_batch):
+    input_var = data_batch['input']
+    input_mask = data_batch['input_mask']
+    target_var = data_batch['target']
+    target_mask = data_batch['target_mask']
+    target_max_len = data_batch['target_max_len']
+    speaker_input = model.embedding(input_var.t())
+    message, msg_mask, _ = model.speaker(speaker_input, input_mask)
+    output = model.listener(model.embedding, message, msg_mask, 
+                target_var, target_mask, target_max_len)[-1]
+    
+    message = message.squeeze().detach().cpu().numpy()
+    msg_str = ''
+    msg_end = False
     for r_idx in range(message.shape[0]):
-        max_idx.append(np.argmax(message[r_idx]))
-    print(max_idx, file=out_file)
+        cur_v = np.argmax(message[r_idx])
+        if cur_v == args.msg_vocsize - 1:
+            msg_end = True
+        if not msg_end:
+            msg_str += str(cur_v)
+    msg_str += '/'
+
+    output = output.squeeze().detach().cpu().numpy()
+    output_str = ''
+    output_end = False
+    for r_idx in range(output.shape[0]):
+        cur_v = np.argmax(output[r_idx])
+        if cur_v == args.eos_index:
+            output_end = True
+        if not output_end:
+            output_str += voc.index2word[cur_v]
+    output_str += '/'
+
+    return msg_str, output_str
 
 
-def iterate_dataset(model, str_set, batch_set, out_file):
+def iterate_dataset(model, voc, str_set, batch_set, out_file):
     for idx, data_batch in enumerate(batch_set):
-        input_var = data_batch['input']
-        input_mask = data_batch['input_mask']
-        speaker_input = model.embedding(input_var.t())
-        message, msg_mask, _ = model.speaker(speaker_input, input_mask)
-        print_input_message_pair(str_set[idx], message, msg_mask, out_file)
+        message, output = reproduce_msg_output(model, voc, data_batch)
+        print(str_set[idx] + '\t' + message + '\t' + output, file=out_file)
 
 
 def main():
@@ -50,8 +74,8 @@ def main():
     model.eval()
 
     print('iterating data set...')
-    dev_out_file = open(OUT_FILE, mode='a')
-    iterate_dataset(model, str_set, data_set, dev_out_file)
+    out_file = open(OUT_FILE, mode='a')
+    iterate_dataset(model, voc, str_set, data_set, out_file)
 
 
 if __name__ == '__main__':

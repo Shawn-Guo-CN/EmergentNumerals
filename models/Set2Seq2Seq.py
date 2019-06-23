@@ -290,7 +290,8 @@ class ListeningAgent(nn.Module):
 
         n_correct_seqs = seq_correct.sum().item()
 
-        return loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens
+        return loss, print_losses, \
+            n_correct_seqs, n_correct_tokens, n_total_tokens, decoder_outputs
 
     def reset_params(self):
         self.apply(weight_init)
@@ -328,7 +329,7 @@ class Set2Seq2Seq(nn.Module):
         # message shape: [msg_max_len, batch_size, msg_voc_size]
         # msg_mask shape: [msg_max_len, 1, batch_size]
 
-        loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens = \
+        loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens, outputs = \
             self.listener(self.embedding, message, msg_mask, target_var, target_mask, target_max_len)
 
         if self.training and args.msg_mode == 'SCST':
@@ -343,4 +344,4 @@ class Set2Seq2Seq(nn.Module):
             baseline = 0.
         
         return loss, log_msg_prob, baseline, print_losses, \
-                n_correct_seqs, n_correct_tokens, n_total_tokens
+                n_correct_seqs, n_correct_tokens, n_total_tokens, outputs
