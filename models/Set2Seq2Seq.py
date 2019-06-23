@@ -85,7 +85,7 @@ class SetEncoderLSTM(nn.Module):
         
         for t in range(args.num_words):
             attn_weights = self.attn(last_hidden, embedded_input, input_mask)
-            r = torch.bmm(attn_weights, embedded_input).squeeze()
+            r = torch.bmm(attn_weights, embedded_input).squeeze(1)
             lstm_hidden, lstm_cell = self.lstm(r, (last_hidden, last_cell))
 
         return lstm_hidden, lstm_cell

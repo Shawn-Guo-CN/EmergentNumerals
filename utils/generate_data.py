@@ -17,8 +17,7 @@ def generate_all_combinations(prefix='', type_idx=1, out_file=open(args.data_fil
 def generate_train_dev_test_files(in_file=open(args.data_file, 'r'),
                                   train_file=open(args.train_file, 'a'),
                                   dev_file=open(args.dev_file, 'a'),
-                                  test_file=open(args.test_file, 'a')
-):
+                                  test_file=open(args.test_file, 'a')):
     string_set = []
     for line in in_file.readlines():
         if len(line.strip()) == 0:
