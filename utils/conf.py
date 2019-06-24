@@ -126,7 +126,7 @@ parser.add_argument('-t', '--tau', type=str, default=defaults['MSG_TAU'],
 parser.add_argument('-m', '--msg-mode', type=str, default=defaults['MSG_MODE'],
         help='mode of message generation')
 parser.add_argument('--l-reset-freq', type=int, default=defaults['L_RESET_FREQ'],
-        help='frequence of resetting listener')
+        help='frequence of resetting listener, -1 for no reset')
 args = parser.parse_args()
 
 args.device = torch.device("cuda:" + str(args.device) \
