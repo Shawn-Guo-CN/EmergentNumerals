@@ -130,7 +130,7 @@ parser.add_argument('--l-reset-freq', type=int, default=defaults['L_RESET_FREQ']
 args = parser.parse_args()
 
 args.device = torch.device("cuda:" + str(args.device) \
-    if torch.cuda.is_available() and not args.device == 0 else "cpu")
+    if torch.cuda.is_available() and not args.device == -1 else "cpu")
 args.optimiser = defaults['OPTIMISER'] if args.optimiser == 'adam' else None
 args.loss_function = defaults['LOSS_FUNCTION'] if args.loss_function == 'cross_entropy' else None
 args.param_file = None if len(args.param_file) == 0 else args.param_file

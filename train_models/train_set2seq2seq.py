@@ -84,21 +84,34 @@ def train():
     dev_set = FruitSeqDataset(voc, dataset_file_path=args.dev_file)
     # test_set = FruitSeqDataset(voc, dataset_file_path=TEST_FILE_PATH)
     print('done')
-    
-    print('building model...')
-    model = Set2Seq2Seq(voc.num_words).to(args.device)
-    param_optimizer = args.optimiser(model.parameters(), lr=args.learning_rate)
-    decoder_optimizer = args.optimiser(model.speaker.decoder.parameters(), 
-                                    lr=args.learning_rate * args.decoder_ratio)
+        
     if args.param_file is not None:
-        print('\tloading saved parameters from ' + args.param_file + '...')
-        checkpoint = torch.load(args.param_file)
+        print('loading saved parameters from ' + args.param_file + '...')
+        checkpoint = torch.load(args.param_file, map_location=args.device)
+        train_args = checkpoint['args']
+        voc = checkpoint['voc']
+        print('done')
+
+        print('arguments for training:')
+        print(train_args)
+
+        print('rebuilding model...')
+
+        model = Set2Seq2Seq(voc.num_words).to(args.device)
         model.load_state_dict(checkpoint['model'])
+        param_optimizer = train_args.optimiser(model.parameters(), lr=train_args.learning_rate)
+        decoder_optimizer = train_args.optimiser(model.speaker.decoder.parameters(), 
+                                        lr=train_args.learning_rate * train_args.decoder_ratio)
         param_optimizer.load_state_dict(checkpoint['opt'])
         decoder_optimizer.load_state_dict(checkpoint['de_opt'])
-        voc = checkpoint['voc']
         print('\tdone')
-    print('done')
+    else:
+        print('building model...')
+        model = Set2Seq2Seq(voc.num_words).to(args.device)
+        param_optimizer = args.optimiser(model.parameters(), lr=args.learning_rate)
+        decoder_optimizer = args.optimiser(model.speaker.decoder.parameters(), 
+                                        lr=args.learning_rate * args.decoder_ratio)
+        print('done')
     
     print('initialising...')
     start_iteration = 1
