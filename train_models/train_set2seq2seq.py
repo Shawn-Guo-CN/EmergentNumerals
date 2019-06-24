@@ -10,9 +10,6 @@ from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
 
 
-args = args
-
-
 def msg_tau_schedule(best_acc):
     if best_acc >= 0.6:
         args.tau = 1.
@@ -63,10 +60,8 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        # useless metrics
-        __, ___, ____, \
-            print_losses, n_correct_seq, n_correct_token, n_total_token, _ = model(data_batch)
-        loss += sum(print_losses) / n_total_token
+        print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)[-5:-1]
+        loss += sum(print_losses) / len(print_losses)
         seq_acc += round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
         tok_acc += float(n_correct_token) / float(n_total_token)
 
@@ -112,6 +107,9 @@ def train():
     print_tok_acc = 0.
     max_dev_seq_acc = 0.
     max_dev_tok_acc = 0.
+    training_losses = []
+    training_tok_acc = []
+    training_seq_acc = []
     print('done')
 
     print('training...')
@@ -136,6 +134,9 @@ def train():
             print("Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg seq acc: {:.4f}; Avg tok acc: {:.4f}".format(
                 iter, iter / args.iter_num * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
                 ))
+            training_seq_acc.append(print_seq_acc_avg)
+            training_tok_acc.append(print_tok_acc_avg)
+            training_losses.append(print_loss_avg)
             print_seq_acc = 0.
             print_tok_acc = 0.
             print_loss = 0.
@@ -167,30 +168,33 @@ def train():
                 'de_opt': decoder_optimizer.state_dict(),
                 'loss': loss,
                 'voc': voc,
-                'args': args
+                'args': args,
+                'records': [training_seq_acc, training_tok_acc, training_losses]
             }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
 
 
 def test():
-    print('building model...')
-    voc = Voc()
-    model = Set2Seq2Seq(voc.num_words).to(args.device)
-    param_optimizer = args.optimiser(model.parameters(), lr=args.learning_rate)
-    decoder_optimizer = args.optimiser(model.speaker.decoder.parameters(), 
-                                    lr=args.learning_rate * args.decoder_ratio)
-    print('done')
-
     if args.param_file is None:
         print('please specify the saved param file.')
         exit(-1)
     else:
         print('loading saved parameters from ' + args.param_file + '...')
-        checkpoint = torch.load(args.param_file)
-        args = checkpoint['args']
+        checkpoint = torch.load(args.param_file, map_location=args.device)
+        train_args = checkpoint['args']
+        voc = checkpoint['voc']
+        print('done')
+
+        print('arguments for train:')
+        print(train_args)
+        
+        print('rebuilding model...')
+        model = Set2Seq2Seq(voc.num_words).to(args.device)
         model.load_state_dict(checkpoint['model'])
+        param_optimizer = train_args.optimiser(model.parameters(), lr=train_args.learning_rate)
+        decoder_optimizer = train_args.optimiser(model.speaker.decoder.parameters(), 
+                                        lr=train_args.learning_rate * train_args.decoder_ratio)
         param_optimizer.load_state_dict(checkpoint['opt'])
         decoder_optimizer.load_state_dict(checkpoint['de_opt'])
-        voc = checkpoint['voc']
         print('done')
 
     print('loading test data...')

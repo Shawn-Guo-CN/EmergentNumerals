@@ -8,10 +8,9 @@ from preprocesses.Voc import Voc
 
 DATA_FILE = './data/all_data.txt'
 OUT_FILE = './data/input_msg_pairs.txt'
-args = args
 
 
-def reproduce_msg_output(model, voc, data_batch):
+def reproduce_msg_output(model, voc, data_batch, train_args):
     input_var = data_batch['input']
     input_mask = data_batch['input_mask']
     target_var = data_batch['target']
@@ -20,14 +19,14 @@ def reproduce_msg_output(model, voc, data_batch):
     speaker_input = model.embedding(input_var.t())
     message, msg_mask, _ = model.speaker(speaker_input, input_mask)
     output = model.listener(model.embedding, message, msg_mask, 
-                target_var, target_mask, target_max_len)[-1]
+                        target_var, target_mask, target_max_len)[-1]
     
     message = message.squeeze().detach().cpu().numpy()
     msg_str = ''
     msg_end = False
     for r_idx in range(message.shape[0]):
         cur_v = np.argmax(message[r_idx])
-        if cur_v == args.msg_vocsize - 1:
+        if cur_v == train_args.msg_vocsize - 1:
             msg_end = True
         if not msg_end:
             msg_str += str(cur_v)
@@ -38,7 +37,7 @@ def reproduce_msg_output(model, voc, data_batch):
     output_end = False
     for r_idx in range(output.shape[0]):
         cur_v = np.argmax(output[r_idx])
-        if cur_v == args.eos_index:
+        if cur_v == train_args.eos_index:
             output_end = True
         if not output_end:
             output_str += voc.index2word[cur_v]
@@ -47,9 +46,9 @@ def reproduce_msg_output(model, voc, data_batch):
     return msg_str, output_str
 
 
-def iterate_dataset(model, voc, str_set, batch_set, out_file):
+def iterate_dataset(model, voc, str_set, batch_set, out_file, train_args):
     for idx, data_batch in enumerate(batch_set):
-        message, output = reproduce_msg_output(model, voc, data_batch)
+        message, output = reproduce_msg_output(model, voc, data_batch, train_args)
         print(str_set[idx] + '\t' + message + '\t' + output, file=out_file)
 
 
@@ -65,8 +64,8 @@ def main():
 
     print('rebuilding model from saved parameters in ' + args.param_file + '...')
     model = Set2Seq2Seq(voc.num_words).to(args.device)
-    checkpoint = torch.load(args.param_file)
-    args = checkpoint['args']
+    checkpoint = torch.load(args.param_file, map_location=args.device)
+    train_args = checkpoint['args']
     model.load_state_dict(checkpoint['model'])
     voc = checkpoint['voc']
     print('done')
@@ -75,7 +74,7 @@ def main():
 
     print('iterating data set...')
     out_file = open(OUT_FILE, mode='a')
-    iterate_dataset(model, voc, str_set, data_set, out_file)
+    iterate_dataset(model, voc, str_set, data_set, out_file, train_args)
 
 
 if __name__ == '__main__':
