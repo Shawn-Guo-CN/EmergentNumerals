@@ -1,0 +1,160 @@
+\documentclass[compress,mathserif,xcolor=dvipsnames,svgnames,aspectratio=43]{beamer}
+%% $%!TEX program = xelatex
+\usetheme{Algiers}
+
+%%% My favorite packages
+
+%\usepackage[default]{sourcesanspro}
+% \usepackage[default]{raleway}
+
+%\usepackage[T1]{fontenc}
+%\usefonttheme[onlymath]{serif}
+
+% \usepackage{fontspec}
+% \usepackage{xunicode} %Unicode extras!
+% \usepackage{xltxtra}  %Fixes
+% \usepackage{Ubuntu}
+% \usepackage[final,expansion=true,protrusion=true,spacing=true,kerning=true]{microtype} % better font output
+
+%%% Really nice for tables
+% \usepackage{booktabs}
+% \newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
+% \usepackage{float}
+
+%%% Citations
+% \usepackage{natbib}
+% \renewcommand{\bibsection}{\subsubsection*{\bibname } } %prevents natbib from adding a section
+\usepackage[english]{babel}
+% \usepackage[utf8]{inputenc}
+\usepackage{multirow}
+
+% It puts a simplistic plain slide with the section name
+% at the beginning of each section
+\usepackage{nameref}
+\makeatletter
+\newcommand*{\currentname}{\@currentlabelname}
+\makeatother
+\AtBeginSection[]
+{
+\plaintitle{\currentname}
+}
+
+% Take this off when using the template
+\usepackage{blindtext}
+\usepackage{graphicx}
+
+\setbeamertemplate{bibliography item}{\insertbiblabel}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\title{\huge{Current Progress in \\ Emergent Numeral Project}\\\medskip
+    \large\textcolor{beautyblue}{} \medskip}
+\author[{Shangmin (Shawn) Guo}]{\textcolor{grizoo}{Shangmin (Shawn) Guo}}
+\date[someday\ldots]{\today}%{1\up{er} juillet 2010}
+\institute{School of Informatics, The University of Edinburgh}
+
+\begin{frame}[plain, noframenumbering]
+\titlepage
+\end{frame}
+
+%% the content page
+\begin{frame}[plain, noframenumbering]
+\frametitle{Content}
+\tableofcontents
+\end{frame}
+
+%% the first section
+\section{Task Description \& Models}
+
+\begin{frame}[c]
+  \frametitle{Task}
+  % Characters
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Non-communication Models}
+
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Communication Model}
+  % 2 different methods
+\end{frame}
+
+%=============================================================================================%
+\section{Experiments Results \& Preliminary Discussion}
+
+\begin{frame}[c]
+  \frametitle{Model Performances}
+  
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Distribution of Messages}
+  
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Limitation of Topological Similarity}
+  
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Some Important Properties}
+  \begin{enumerate}
+    \item \textbf{Orthogonality \& Mutual Exclusivity}: 
+    \item \textbf{Monotony \& Topological Similarity}: 
+  \end{enumerate}
+\end{frame}
+
+
+%=============================================================================================%
+\section{MISC}
+
+\begin{frame}[c]
+  \frametitle{Explaination of Limiting $|V|$ and $L$}
+  
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Some Related Works}
+  \cite{li2019ease}
+\end{frame}
+
+
+% A trick for having back slides while ending the slide counter
+% on the conclusion slide
+\appendix
+\newcounter{finalframe}
+\setcounter{finalframe}{\value{framenumber}}
+
+% Geeky ending
+\begin{frame}[c,plain,fragile] %fragile
+%\begin{python}
+%feedback = raw_input( 'Questions ?' )
+%if '?' in feedback:
+%    if have_answer():
+%        give_answer()
+%    else:
+%        pretend_the_question_is_ill_posed()
+%else:
+%    print 'Thanks, let us go get MIX now.'
+%\end{python}
+
+% Or simply...
+\begin{center}
+\huge{Thank you}
+\end{center}
+\end{frame}
+
+% References
+\begin{frame}[allowframebreaks, plain]
+\tiny{
+   \bibliographystyle{amsalpha}
+   \bibliography{slides}
+}
+\end{frame}
+
+\setcounter{framenumber}{\value{finalframe}}
+\end{document}

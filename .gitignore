@@ -117,6 +117,14 @@ out
 *.toc
 *.fls
 *.fdb*
+*.nav
+*.vrb
+*.snm
+*.synctex*
+*.pdf
+*.out
+doc/slides/*/graph/
+
 
 # added by Shawn
 .idea/
