@@ -218,8 +218,15 @@ class SeqDecoderLSTM(nn.Module):
         use_teacher_forcing = True if random.random() < args.teacher_ratio \
                                     and self.training else False
 
+        if self.training:
+            # During training, decode at most as long as the longest seq in batch
+            decoder_len = target_max_len
+        else:
+            # During valid, reproduce as long as possible
+            decoder_len = args.max_seq_len
+
         # Forward batch of sequences through decoder one time step at a time
-        for t in range(target_max_len):
+        for t in range(decoder_len):
             decoder_hidden, decoder_cell = self.lstm(decoder_input, (decoder_hidden, decoder_cell))
             # Here we don't need to take Softmax as the CrossEntropyLoss later would
             # automatically take a Softmax operation
