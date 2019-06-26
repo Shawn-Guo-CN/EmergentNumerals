@@ -69,17 +69,49 @@
 
 \begin{frame}[c]
   \frametitle{Task}
-  % Characters
+  \begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.7\textwidth]{graph/task.pdf}
+    \caption{set-to-set task}
+    \label{fig:1task}
+  \end{figure}
+  \begin{block}{Numerals}
+    Symbols used to represent numbers of objects in a set.
+  \end{block}
 \end{frame}
 
 \begin{frame}[c]
   \frametitle{Non-communication Models}
-
+  \begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.7\textwidth]{graph/set_seq-2-seq.pdf}
+    \caption{set/seq-to-seq models}
+    \label{fig:2set_seq2seq}
+  \end{figure}
+  \begin{itemize}
+    \item seq2seq: just as normal
+    \item set2seq: attention times equal to numbers of types of objects
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[c]
-  \frametitle{Communication Model}
-  % 2 different methods
+  \frametitle{Communication Models}
+  \begin{figure}[!ht]
+    \centering
+    \includegraphics[width=0.7\textwidth]{graph/set2seq2seq_model.pdf}
+    \caption{set-to-seq-to-seq model}
+    \label{fig:3set2seq2seq_model}
+  \end{figure}
+  \vspace{-0.25in}
+  \begin{itemize}
+    \item at this moment, we fix the order of output symbols
+    \item messages can have variable lengths
+    \item sampling methods during training: 
+      \begin{itemize}
+        \item GUMBEL-softmax trick
+        \item REINFORCE (+SCST)
+      \end{itemize}
+  \end{itemize}
 \end{frame}
 
 %=============================================================================================%
@@ -87,7 +119,19 @@
 
 \begin{frame}[c]
   \frametitle{Model Performances}
-  
+  \begin{itemize}
+    \item Non-communication models
+      \begin{itemize}
+        \item seq2seq: 100\% seq acc, 100\% tok acc, 0.0000 on loss 
+        \item set2seq: 100\% seq acc, 100\% tok acc, 0.0000 on loss
+      \end{itemize}
+    \item Set2seq2seq (discrete symbols)
+      \begin{itemize}
+        \item Straight-Through GUMBEL-softmax: 99.89\% seq acc, 99.99\% tok acc, 0.0001 on loss
+        \item REINFORCE: 89.89\% seq acc, 93.67\% tok acc, 0.0006 on loss
+        \item REINFORCE+SCST: 98.67\% seq acc, 99.64\% tok acc, 0.0002 on loss
+      \end{itemize}
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[c]
@@ -96,7 +140,7 @@
 \end{frame}
 
 \begin{frame}[c]
-  \frametitle{Limitation of Topological Similarity}
+  \frametitle{Topological Similarity and Its Limitation}
   
 \end{frame}
 

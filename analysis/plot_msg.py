@@ -80,6 +80,8 @@ cmap = colors.ListedColormap(['white','green','blue','red','yellow'])
 bounds=[-1.5, -0.5, 0.5, 1.5, 2.5, 3.5]
 norm = colors.BoundaryNorm(bounds, cmap.N)
 heatmap = plt.pcolor(data, cmap=cmap, norm=norm)
-plt.colorbar(heatmap, ticks=[-1, 0, 1, 2, 3])
 
+plt.yticks(np.arange(0, 10001, step=1000))
+plt.colorbar(heatmap, ticks=[-1, 0, 1, 2, 3])
+plt.grid(color='black', linewidth=5)
 plt.show()
