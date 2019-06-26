@@ -11,14 +11,14 @@ from preprocesses.Voc import Voc
 
 
 def msg_tau_schedule(best_acc):
-    if best_acc >= 0.6:
-        args.tau = 1.
-    elif best_acc >= 0.8:
-        args.tau = 0.5
+    if best_acc >= 0.95:
+        args.tau = 0.05
     elif best_acc >= 0.9:
         args.tau = 0.1
-    elif best_acc >= 0.95:
-        args.tau = 0.05
+    elif best_acc >= 0.8:
+        args.tau = 0.5
+    elif best_acc >= 0.6:
+        args.tau = 1.
     else:
         args.tau = 2.
 
