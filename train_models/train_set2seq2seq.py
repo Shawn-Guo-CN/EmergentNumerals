@@ -11,14 +11,14 @@ from preprocesses.Voc import Voc
 
 
 def msg_tau_schedule(best_acc):
-    if best_acc >= 0.6:
-        args.tau = 1.
-    elif best_acc >= 0.8:
-        args.tau = 0.5
+    if best_acc >= 0.95:
+        args.tau = 0.05
     elif best_acc >= 0.9:
         args.tau = 0.1
-    elif best_acc >= 0.95:
-        args.tau = 0.05
+    elif best_acc >= 0.8:
+        args.tau = 0.5
+    elif best_acc >= 0.6:
+        args.tau = 1.
     else:
         args.tau = 2.
 
@@ -203,9 +203,9 @@ def test():
         print('rebuilding model...')
         model = Set2Seq2Seq(voc.num_words).to(args.device)
         model.load_state_dict(checkpoint['model'])
-        param_optimizer = train_args.optimiser(model.parameters(), lr=train_args.learning_rate)
+        param_optimizer = train_args.optimiser(model.parameters(), lr=args.learning_rate)
         decoder_optimizer = train_args.optimiser(model.speaker.decoder.parameters(), 
-                                        lr=train_args.learning_rate * train_args.decoder_ratio)
+                                        lr=args.learning_rate * args.decoder_ratio)
         param_optimizer.load_state_dict(checkpoint['opt'])
         decoder_optimizer.load_state_dict(checkpoint['de_opt'])
         print('done')
