@@ -203,9 +203,9 @@ def test():
         print('rebuilding model...')
         model = Set2Seq2Seq(voc.num_words).to(args.device)
         model.load_state_dict(checkpoint['model'])
-        param_optimizer = train_args.optimiser(model.parameters(), lr=train_args.learning_rate)
+        param_optimizer = train_args.optimiser(model.parameters(), lr=args.learning_rate)
         decoder_optimizer = train_args.optimiser(model.speaker.decoder.parameters(), 
-                                        lr=train_args.learning_rate * train_args.decoder_ratio)
+                                        lr=args.learning_rate * args.decoder_ratio)
         param_optimizer.load_state_dict(checkpoint['opt'])
         decoder_optimizer.load_state_dict(checkpoint['de_opt'])
         print('done')
