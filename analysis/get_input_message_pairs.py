@@ -18,7 +18,7 @@ def load_data(f):
     return dataset
 
 
-def generate_in_msg_pairs(file_path=DATA_FILE):
+def generate_perfect_in_msg_pairs(file_path=DATA_FILE):
     f = open(file_path, 'r')
     in_strs = load_data(f)
 
@@ -26,10 +26,19 @@ def generate_in_msg_pairs(file_path=DATA_FILE):
     for in_str in in_strs:
         msg = ''
         for c in range(args.num_words):
-            msg += in_str.count(chr(97+c))
+            msg += str(in_str.count(chr(65+c)))
         msgs.append(msg)
     
     return in_strs, msgs
+
+
+def output_perfect_in_msg_pairs(file_path, ins, msgs):
+    out_file = open(file_path, 'a')
+
+    for idx in range(len(ins)):
+        print(ins[idx] + '\t' + msgs[idx] + '/\t' + ins[idx] + '/', file=out_file)
+
+    out_file.close()
 
 
 def reproduce_msg_output(model, voc, data_batch, train_args):
