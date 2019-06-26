@@ -10,6 +10,28 @@ DATA_FILE = './data/all_data.txt'
 OUT_FILE = './data/input_msg_pairs.txt'
 
 
+def load_data(f):
+    dataset = []
+    for line in f.readlines():
+        line = line.strip()
+        dataset.append(line)
+    return dataset
+
+
+def generate_in_msg_pairs(file_path=DATA_FILE):
+    f = open(file_path, 'r')
+    in_strs = load_data(f)
+
+    msgs = []
+    for in_str in in_strs:
+        msg = ''
+        for c in range(args.num_words):
+            msg += in_str.count(chr(97+c))
+        msgs.append(msg)
+    
+    return in_strs, msgs
+
+
 def reproduce_msg_output(model, voc, data_batch, train_args):
     input_var = data_batch['input']
     input_mask = data_batch['input_mask']
