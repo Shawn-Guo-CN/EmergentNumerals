@@ -135,17 +135,87 @@
 \end{frame}
 
 \begin{frame}[c]
-  \frametitle{Distribution of Messages}
-  
+  \frametitle{Visualisation of Messages (1)}
+  \begin{columns}
+    \column{0.33\textwidth}
+    \includegraphics[width=0.9\textwidth]{graph/DABC.png} \\
+    \includegraphics[width=0.9\textwidth]{graph/DACB.png}
+    \column{0.33\textwidth}
+    \includegraphics[width=0.9\textwidth]{graph/DBAC.png} \\
+    \includegraphics[width=0.9\textwidth]{graph/DBCA.png}
+    \column{0.33\textwidth}
+    \includegraphics[width=\textwidth]{graph/DCAB.png} \\
+    \includegraphics[width=\textwidth]{graph/DCBA.png}
+  \end{columns}
 \end{frame}
 
 \begin{frame}[c]
-  \frametitle{Topological Similarity and Its Limitation}
-  
+  \frametitle{Visualisation of Messages (2)}
+  \includegraphics[width=0.9\textwidth]{graph/DCAB.png}
 \end{frame}
 
 \begin{frame}[c]
-  \frametitle{Some Important Properties}
+  \frametitle{Topological Similarity in \cite{brighton2006understanding}}
+  \begin{block}{General definition}
+    Correlation between \textcolor{red}{hamming} distance in meaning space and \textcolor{red}{edit} distance in signal space.
+  \end{block}
+  \begin{itemize}
+    \item natural language
+      \begin{itemize}
+        \item e.g. `ABCCD' -> `1121'
+        \item pearson: 0.9434, spearman: 0.9316
+        \item (see next page)
+      \end{itemize}
+    \item emergent protocol:
+    \begin{itemize}
+      \item e.g. `ABCCD' -> `33213112'
+      \item pearson: , spearman:
+    \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Limitation of Topological Similarity}
+  Base meaning: `1A2B3C4D'
+  
+  \begin{itemize}
+    \item `1A2B3C\textcolor{red}{5}D' v.s. `1A2B\textcolor{red}{4}C4D': $\mathcal{D}_m$ are both $1$, $\mathcal{D}_s$ are both $1$; brilliant!
+    \item `1A2B3C\textcolor{red}{5}D' v.s. `1A2B\textcolor{red}{4}C\textcolor{red}{5}D': $\mathcal{D}_m$ are $1:2$, $\mathcal{D}_s$ are $1:2$; \\still brilliant!
+    \pause
+    \item `1A2B3C\textcolor{red}{5}D' v.s. `1A2B3C\textcolor{red}{7}D': $\mathcal{D}_m$ are both $1$, $\mathcal{D}_s$ are both $1$;
+  \end{itemize}
+
+  \pause
+  \begin{block}{Question}
+    `1A2B3C\textcolor{red}{5}D' and `1A2B3C\textcolor{red}{7}D' share same $\mathcal{D}_m$?
+  \end{block}
+
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Back to Original Form?}
+  Base meaning: `1A2B3C4D' -> `ABBCCCDDDD' \\
+  Then, hamming distance -> edit distance
+  \begin{itemize}
+    \item natural language
+      \begin{itemize}
+        \item e.g. `ABCCD' -> `1121'
+        \item pearson: 0.4375, spearman: 0.4198
+      \end{itemize}
+    \item emergent protocol:
+    \begin{itemize}
+      \item e.g. `ABCCD' -> `33213112'
+      \item pearson: , spearman:
+    \end{itemize}
+  \end{itemize}
+
+  \begin{block}{Problem}
+    `1A2B3C4D' vs `1A2B3C\textcolor{red}{9}D': $\mathcal{D}_m = 5$ vs $\mathcal{D}_s = 1$
+  \end{block}
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Expected Properties}
   \begin{enumerate}
     \item \textbf{Orthogonality \& Mutual Exclusivity}: 
     \item \textbf{Monotony \& Topological Similarity}: 
@@ -195,7 +265,7 @@
 % References
 \begin{frame}[allowframebreaks, plain]
 \tiny{
-   \bibliographystyle{amsalpha}
+   \bibliographystyle{apalike}
    \bibliography{slides}
 }
 \end{frame}
