@@ -48,9 +48,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 
-\title{\huge{Current Progress in \\ Emergent Numeral Project}\\\medskip
+\title{\huge{Current Progress in \\ Emergent Numerals Project}\\\medskip
     \large\textcolor{beautyblue}{} \medskip}
-\author[{Shangmin (Shawn) Guo}]{\textcolor{grizoo}{Shangmin (Shawn) Guo}}
+\author{\textcolor{grizoo}{Shangmin (Shawn) Guo}}
 \date[someday\ldots]{\today}%{1\up{er} juillet 2010}
 \institute{School of Informatics, The University of Edinburgh}
 
@@ -132,6 +132,10 @@
         \item REINFORCE+SCST: 98.67\% seq acc, 99.64\% tok acc, 0.0002 on loss
       \end{itemize}
   \end{itemize}
+
+  \begin{block}{Uniqueness of Numerals}
+    A single symbol in \textcolor{red}{different} postions represent \textcolor{red}{same} meaning.
+  \end{block}
 \end{frame}
 
 \begin{frame}[c]
@@ -157,19 +161,21 @@
 \begin{frame}[c]
   \frametitle{Topological Similarity in \cite{brighton2006understanding}}
   \begin{block}{General definition}
-    Correlation between \textcolor{red}{hamming} distance in meaning space and \textcolor{red}{edit} distance in signal space.
+    Correlation between \textcolor{red}{hamming} distances in meaning space and \textcolor{red}{edit} distances in signal space.
   \end{block}
   \begin{itemize}
     \item natural language
       \begin{itemize}
         \item e.g. `ABCCD' -> `1121'
         \item pearson: 0.9434, spearman: 0.9316
-        \item (see next page)
+        \item why not 1: (`1A2B3C4D', `1234') vs (`4A1B2C3D', `4123')
+        \item use hamming distance in symbol space: pearson 1.0, 
+        \item (more on next page)
       \end{itemize}
     \item emergent protocol:
     \begin{itemize}
       \item e.g. `ABCCD' -> `33213112'
-      \item pearson: , spearman:
+      \item pearson: , spearman: 
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -195,7 +201,7 @@
 \begin{frame}[c]
   \frametitle{Back to Original Form?}
   Base meaning: `1A2B3C4D' -> `ABBCCCDDDD' \\
-  Then, hamming distance -> edit distance
+  Then, hamming distances -> edit distances in meaning space.
   \begin{itemize}
     \item natural language
       \begin{itemize}
@@ -215,25 +221,99 @@
 \end{frame}
 
 \begin{frame}[c]
-  \frametitle{Expected Properties}
+  \frametitle{Expected Properties of Measurements}
   \begin{enumerate}
-    \item \textbf{Orthogonality \& Mutual Exclusivity}: 
-    \item \textbf{Monotony \& Topological Similarity}: 
+    \item \textbf{Orthogonality \& Mutual Exclusivity}:
+            \begin{itemize}
+              \item symbols describing different attributes/objects should be orthogonal to each other
+              \item symbols describing a same attribute of a same object should be mutually exclusive to each other
+            \end{itemize}
+    \item \textbf{Monotony \& Topological Similarity}:
+            \begin{itemize}
+              \item closer in meaning space -> closer in symbol space 
+              \item $\approx$ similar topological structure between 2 spaces
+              \item intuitions from 2D space seem correct, what about in high-dimensional space?
+            \end{itemize}
   \end{enumerate}
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Tentative Explaination of Limiting $|V|$ and $L$ (1)}
+  Meaning space:
+  \begin{itemize}
+    \item \# of attributes is $N$, range of attributes is $|A|$
+    \item size of meaning space is $|\mathcal{M}| = |A|^N$
+    \item e.g. color (red R + green G) and shape (square S + circle C)
+  \end{itemize}
+
+  Symbol space:
+  \begin{itemize}
+    \item length of message is $L$, size of vocabulary is $|V|$
+    \item size of symbol space is $|\mathcal{S}| = |V|^L$ (fixed lengths)
+    \item e.g. \{aa, ab, ba, bb\}
+  \end{itemize}
+  Total number of ``languages'': $|\mathcal{S}|^{|\mathcal{M}|} = {(|V|^L)}^{(|A|^N)}$, e.g. $4^4=256$ \\
+  \# of degenerate languages: $|\mathcal{S}| = |V|^L$, e.g. $4$
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Tentative Explaination of Limiting $|V|$ and $L$ (2)}
+  \begin{itemize}
+    \item \# of holistic+compositional languages: $\frac{|\mathcal{S}|!}{(|\mathcal{S}|-|\mathcal{M}|)!} = \frac{|V|^L !}{(|V|^L - |A|^N)!}$, e.g. $\frac{4!}{(4-4)!}=24$
+    \item Context-free-grammar and number of compositional languages:
+      \begin{enumerate}
+        \item $S\rightarrow A_1\ A_2\dots A_N$: $N!$, e.g. $2$
+        \item $A_i\rightarrow V_k$: $(|V|\cdot (|V|-1)\dots)^N = \left(\frac{|V|!}{(|V|-|A|)!}\right)^N$, $2^2 = 4$
+        \item \# of compositional languages: $N!\cdot \left(\frac{|V|!}{(|V|-|A|)!}\right)^N$, e.g. $2\cdot 4=8$
+      \end{enumerate}
+    \item \# of holistic languages: $\frac{|V|^L !}{(|V|^L - |A|^N)!} - N!\cdot \left(\frac{|V|!}{(|V|-|A|)!}\right)^N$, e.g. $24-8=16$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Tentative Explaination of Limiting $|V|$ and $L$ (3)}
+  $|V|=|A|=L=N$ and $2$ in \cite{li2019ease}.
+  \begin{columns}
+    \column{0.25\textwidth}
+    \includegraphics[width=\textwidth]{graph/size_left.png}
+    \column{0.5\textwidth}
+    \includegraphics[width=\textwidth]{graph/size_mid.png}
+  \end{columns}
+  N.B. both of above graphs are in log-space.
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Tentative Explaination of Limiting $|V|$ and $L$ (4)}
+  $|A|=L=N=2, V$ is a variable \\
+  \begin{center}
+    \includegraphics[width=0.5\textwidth]{graph/size_V.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}[c]
+  \frametitle{Fraction of Compositional Languages in Our Project}
+  \begin{itemize}
+    \item \# of compositional languages: \\ $N!\cdot \left(\frac{|V|!}{(|V|-|A|)!}\right)^N = 4!\cdot \left(\frac{10!}{(10-10)!}\right)^4 \approx 4.16\times 10^{28}$
+    \pause
+    \item \# of holistic+compositional: $\frac{|V|^L !}{(|V|^L - |A|^N)!} = \frac{10^9!}{(10^9-10^4)!} \approx 9.51\times 10^{8999}$
+    \item farction is $\frac{1}{4.27\times 10^{8970}}$
+    \pause
+    \item \# of atoms on Earth $\approx 1.33\times 10^{50}$
+  \end{itemize}
 \end{frame}
 
 
 %=============================================================================================%
-\section{MISC}
+\section{Next Steps}
 
 \begin{frame}[c]
-  \frametitle{Explaination of Limiting $|V|$ and $L$}
+  \frametitle{Next Steps}
+  \begin{enumerate}
+    \item decrease $|\mathcal{M}|$ and $|\mathcal{S}|$
+    \item find a new measurement/technique that could satisfy the expected properties, e.g. Discrete Component Analysis
+    \item population and ease-of-teaching
+  \end{enumerate}
   
-\end{frame}
-
-\begin{frame}[c]
-  \frametitle{Some Related Works}
-  \cite{li2019ease}
 \end{frame}
 
 
