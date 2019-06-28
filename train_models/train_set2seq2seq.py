@@ -8,6 +8,8 @@ from utils.conf import args
 from models.Set2Seq2Seq import Set2Seq2Seq
 from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
+from analysis.cal_topological_similarity import cal_topological_sim
+from analysis.get_input_message_pairs import reproduce_msg_output
 
 
 def msg_tau_schedule(best_acc):
@@ -74,6 +76,46 @@ def eval_model(model, dataset):
     return seq_acc, tok_acc, loss
 
 
+def sim_check_model(model, voc, in_set, batch_set):
+    model.eval()
+    tmp_file_path = './tmp/' + str(random.random()) + '.txt'
+
+    tmp_file = open(tmp_file_path, 'a')
+    for idx, data_batch in enumerate(batch_set):
+        message, output = reproduce_msg_output(model, voc, data_batch, args)
+        print(in_set[idx] + '\t' + message + '\t' + output, file=tmp_file)
+    tmp_file.close()
+
+    corr = cal_topological_sim(
+                msg_file_path=tmp_file_path, 
+                in_dis_measure='hamming',
+                msg_dis_measure='edit',
+                corr_method='pearson'
+            )
+
+    os.remove(tmp_file_path)
+    model.train()
+
+    return corr
+
+
+def prepare_data4sim_check(voc, dataset_file_path=args.dev_file):
+    in_set = random.choices(FruitSeqDataset.load_stringset(dataset_file_path), k=args.sim_chk_k)
+    
+    tmp_file_path = './tmp/' + str(random.random()) + '.txt'
+    tmp_file = open(tmp_file_path, 'a')
+    for in_str in in_set:
+        print(in_str, file=tmp_file)
+    tmp_file.close()
+
+    batch_set = FruitSeqDataset(voc, batch_size=1, dataset_file_path=tmp_file_path).batches
+
+    os.remove(tmp_file_path)
+
+    return in_set, batch_set
+
+
+
 def train():
     print('building vocabulary...')
     voc = Voc()
@@ -112,6 +154,10 @@ def train():
         decoder_optimizer = args.optimiser(model.speaker.decoder.parameters(), 
                                         lr=args.learning_rate * args.decoder_ratio)
         print('done')
+
+    print('preparing data for testing topological similarity...')
+    sim_chk_inset, sim_chk_batchset = prepare_data4sim_check(voc, args.dev_file)
+    print('done')
     
     print('initialising...')
     start_iteration = 1
@@ -123,7 +169,11 @@ def train():
     training_losses = []
     training_tok_acc = []
     training_seq_acc = []
+    training_sim = []
     print('done')
+
+    sim = sim_check_model(model, voc, sim_chk_inset, sim_chk_batchset)
+    print('[SIM]Iteration: {}; Sim: {:.4f}'.format(0, sim))
 
     print('training...')
     for iter in range(start_iteration, args.iter_num+1):
@@ -164,6 +214,11 @@ def train():
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Seq Acc: {:.4f}; Avg Tok Acc: {:.4f}; Best Seq Acc: {:.4f}".format(
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
 
+        if iter % args.sim_chk_freq == 0:
+            sim = sim_check_model(model, voc, sim_chk_inset, sim_chk_batchset)
+            training_sim.append(sim)
+            print('[SIM]Iteration: {}; Sim: {:.4f}'.format(0, sim))
+
         if iter % args.l_reset_freq == 0 and not args.l_reset_freq == -1:
             model.listener.reset_params()
             print('[RESET] reset listener')
@@ -182,7 +237,7 @@ def train():
                 'loss': loss,
                 'voc': voc,
                 'args': args,
-                'records': [training_seq_acc, training_tok_acc, training_losses]
+                'records': [training_seq_acc, training_tok_acc, training_losses, training_sim]
             }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
 
 

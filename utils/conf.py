@@ -23,10 +23,10 @@ defaults = {
     'TEST_MODE': False,
     'SAVE_DIR': './params/',
     'PARAM_FILE': '',
-    'DATA_FILE_PATH': './data/all_data.txt',
-    'TRAIN_FILE_PATH': './data/train.txt',
-    'DEV_FILE_PATH': './data/dev.txt',
-    'TEST_FILE_PATH': './data/test.txt',
+    'DATA_FILE_PATH': './data/4/all_data.txt',
+    'TRAIN_FILE_PATH': './data/4/train.txt',
+    'DEV_FILE_PATH': './data/4/dev.txt',
+    'TEST_FILE_PATH': './data/4/test.txt',
     'PAD_TOKEN': 'PAD', # Padding token
     'PAD_INDEX': 0, # PAD token index
     'SOS_TOKEN': 'SOS', # Start-of-sequence token
@@ -40,6 +40,8 @@ defaults = {
     'MSG_MODE': 'SCST', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
     'MSG_TAU': 2.,
     'L_RESET_FREQ': 20,
+    'SIM_CHK_FREQ': 2,
+    'SIM_CHK_K': 50,
 }
 
 '''
@@ -127,6 +129,10 @@ parser.add_argument('-m', '--msg-mode', type=str, default=defaults['MSG_MODE'],
         help='mode of message generation')
 parser.add_argument('--l-reset-freq', type=int, default=defaults['L_RESET_FREQ'],
         help='frequence of resetting listener, -1 for no reset')
+parser.add_argument('--sim-chk-freq', type=int, default=defaults['SIM_CHK_FREQ'],
+        help='frequence of checking topological similarity during traing')
+parser.add_argument('--sim-chk-k', type=int, default=defaults['SIM_CHK_K'],
+        help='number of sample data used to check topological similarity')
 args = parser.parse_args()
 
 args.device = torch.device("cuda:" + str(args.device) \

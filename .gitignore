@@ -132,3 +132,4 @@ doc/slides/*/graph/
 *.code-workspace
 data/
 params/
+*tmp*
