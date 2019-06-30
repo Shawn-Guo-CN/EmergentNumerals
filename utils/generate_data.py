@@ -1,5 +1,6 @@
 from utils.conf import args
 import random
+import os
 
 
 def generate_all_combinations(prefix='', type_idx=1, out_file=open(args.data_file, 'a')):
@@ -12,6 +13,25 @@ def generate_all_combinations(prefix='', type_idx=1, out_file=open(args.data_fil
         for i in range(0, args.max_len_word+1):
             target_str = chr(64+type_idx) * i
             generate_all_combinations(prefix+target_str, type_idx+1, out_file=out_file)
+
+
+def generate_compositional_lan_pair(io_file=open(args.data_file, 'r')):
+    string_set = []
+    for line in io_file.readlines():
+        if len(line.strip()) == 0:
+            continue
+        msg = ''
+        for i in range(args.num_words):
+            msg += str(line.count(chr(65+i)))
+        string_set.append(msg + '\t' + line.strip())
+    
+    io_file.close()
+    os.remove(args.data_file)
+
+    io_file = open(args.data_file, 'a')
+    for string in string_set:
+        print(string, file=io_file)
+    io_file.close()
 
 
 def generate_train_dev_test_files(in_file=open(args.data_file, 'r'),
@@ -83,4 +103,5 @@ def generate_train_dev_test_files_bak(in_file=open(args.data_file, 'r'),
 
 if __name__ == '__main__':
     generate_all_combinations()
+    generate_compositional_lan_pair()
     generate_train_dev_test_files()
