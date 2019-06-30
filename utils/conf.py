@@ -13,7 +13,7 @@ defaults = {
     'DROPOUT_RATIO': 0.2,
     'CLIP': 50.0,
     'TEACHER_FORCING_RATIO': 0.3,
-    'DECODER_LEARING_RATIO': 1.0,
+    'SPEAKER_LEARING_RATIO': 1.0,
     'NUM_ITERS': 40000,
     'PRINT_EVERY': 1,
     'SAVE_EVERY': 2,
@@ -67,7 +67,7 @@ parser.add_argument('--clip', type=float, default=defaults['CLIP'],
         help="the maximum of gradients after clipped")
 parser.add_argument('--teacher-ratio', type=float, default=defaults['TEACHER_FORCING_RATIO'],
         help='teacher-forcing ratio for training last sequence decoder')
-parser.add_argument('--decoder-ratio', type=float, default=defaults['DECODER_LEARING_RATIO'],
+parser.add_argument('--speaker-ratio', type=float, default=defaults['SPEAKER_LEARING_RATIO'],
         help='learning rate ratio for training decoder')
 parser.add_argument('-i', '--iter_num', type=int, default=defaults['NUM_ITERS'],
         help='maximum number of iterations')

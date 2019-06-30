@@ -25,10 +25,29 @@ def msg_tau_schedule(best_acc):
         args.tau = 2.
 
 
-def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=args.clip):
+def lr_schedule(best_acc, model, m_optim, s_optim, l_optim):
+    if best_acc <= 0.8:
+        return m_optim, s_optim, l_optim
+
+    if best_acc >= 0.90:
+        lr = 1e-6
+    elif best_acc >= 0.80:
+        lr = 1e-5
+
+    args.learning_rate = lr
+    m_optim = args.optimiser(model.parameters(), lr=args.learning_rate)
+    s_optim = args.optimiser(model.speaker.parameters(), 
+                                        lr=args.learning_rate * args.speaker_ratio)
+    l_optim = args.optimiser(model.listener.parameters(),
+                                        lr=args.learning_rate * args.speaker_ratio)
+    return m_optim, s_optim, l_optim
+
+
+def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=args.clip):
     # Zero gradients
-    param_optimizer.zero_grad()
-    decoder_optimizer.zero_grad()
+    m_optimizer.zero_grad()
+    s_optimizer.zero_grad()
+    l_optimizer.zero_grad()
 
     # Forward pass through model
     loss, log_msg_prob, baseline, print_losses, \
@@ -49,8 +68,9 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=args
     nn.utils.clip_grad_norm_(model.parameters(), clip)
 
     # Adjust model weights
-    param_optimizer.step()
-    decoder_optimizer.step()
+    m_optimizer.step()
+    s_optimizer.step()
+    l_optimizer.step()
 
     return seq_acc, tok_acc, sum(print_losses) / len(print_losses)
 
@@ -141,18 +161,20 @@ def train():
 
         model = Set2Seq2Seq(voc.num_words).to(args.device)
         model.load_state_dict(checkpoint['model'])
-        param_optimizer = train_args.optimiser(model.parameters(), lr=train_args.learning_rate)
-        decoder_optimizer = train_args.optimiser(model.speaker.decoder.parameters(), 
-                                        lr=train_args.learning_rate * train_args.decoder_ratio)
-        param_optimizer.load_state_dict(checkpoint['opt'])
-        decoder_optimizer.load_state_dict(checkpoint['de_opt'])
+        model_optimiser = train_args.optimiser(model.parameters(), lr=train_args.learning_rate)
+        speaker_optimiser = train_args.optimiser(model.speaker.parameters(), 
+                                        lr=train_args.learning_rate * train_args.speaker_ratio)
+        listner_optimiser = train_args.optimiser(model.listener.parameters(), 
+                                        lr=train_args.learning_rate * train_args.speaker_ratio)
         print('\tdone')
     else:
         print('building model...')
         model = Set2Seq2Seq(voc.num_words).to(args.device)
-        param_optimizer = args.optimiser(model.parameters(), lr=args.learning_rate)
-        decoder_optimizer = args.optimiser(model.speaker.decoder.parameters(), 
-                                        lr=args.learning_rate * args.decoder_ratio)
+        model_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)
+        speaker_optimiser = args.optimiser(model.speaker.parameters(), 
+                                        lr=args.learning_rate * args.speaker_ratio)
+        listner_optimiser = args.optimiser(model.listener.parameters(),
+                                        lr=args.learning_rate * args.speaker_ratio)
         print('done')
 
     print('preparing data for testing topological similarity...')
@@ -183,8 +205,9 @@ def train():
         for idx, data_batch in enumerate(train_set):
             seq_acc, tok_acc, loss = train_epoch(model,
                 data_batch,
-                param_optimizer,
-                decoder_optimizer
+                model_optimiser,
+                speaker_optimiser,
+                listner_optimiser
             )
             print_loss += loss
             print_seq_acc += seq_acc
@@ -194,6 +217,15 @@ def train():
             print_loss_avg = print_loss / (args.print_freq * len(train_set))
             print_seq_acc_avg = print_seq_acc / (args.print_freq * len(train_set))
             print_tok_acc_avg = print_tok_acc / (args.print_freq * len(train_set))
+
+            model_optimiser, speaker_optimiser, listner_optimiser = lr_schedule(
+                print_tok_acc_avg,
+                model,
+                model_optimiser, 
+                speaker_optimiser, 
+                listner_optimiser
+            )
+
             print("Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg seq acc: {:.4f}; Avg tok acc: {:.4f}".format(
                 iter, iter / args.iter_num * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
                 ))
@@ -232,8 +264,11 @@ def train():
             torch.save({
                 'iteration': iter,
                 'model': model.state_dict(),
-                'opt': param_optimizer.state_dict(),
-                'de_opt': decoder_optimizer.state_dict(),
+                'opt': [
+                    model_optimiser.state_dict(),
+                    speaker_optimiser.state_dict(),
+                    listner_optimiser.state_dict()
+                ],
                 'loss': loss,
                 'voc': voc,
                 'args': args,
