@@ -33,7 +33,7 @@ def lr_schedule(best_acc, model, m_optim, s_optim, l_optim):
         lr = 1e-6
     elif best_acc >= 0.80:
         lr = 1e-5
-
+    
     args.learning_rate = lr
     m_optim = args.optimiser(model.parameters(), lr=args.learning_rate)
     s_optim = args.optimiser(model.speaker.parameters(), 
