@@ -15,22 +15,27 @@ def generate_all_combinations(prefix='', type_idx=1, out_file=open(args.data_fil
             generate_all_combinations(prefix+target_str, type_idx+1, out_file=out_file)
 
 
-def generate_compositional_lan_pair(io_file=open(args.data_file, 'r')):
+def generate_lan_pair(io_file=open(args.data_file, 'r'), holistic=False):
     string_set = []
+    msg_set = []
     for line in io_file.readlines():
         if len(line.strip()) == 0:
             continue
         msg = ''
         for i in range(args.num_words):
             msg += str(line.count(chr(65+i)))
-        string_set.append(msg + '\t' + line.strip())
+        string_set.append(line.strip())
+        msg_set.append(msg)
     
     io_file.close()
     os.remove(args.data_file)
 
+    if holistic:
+        random.shuffle(msg_set)
+
     io_file = open(args.data_file, 'a')
-    for string in string_set:
-        print(string, file=io_file)
+    for idx, string in enumerate(string_set):
+        print(msg_set[idx]+'\t'+string, file=io_file)
     io_file.close()
 
 
@@ -103,5 +108,5 @@ def generate_train_dev_test_files_bak(in_file=open(args.data_file, 'r'),
 
 if __name__ == '__main__':
     generate_all_combinations()
-    generate_compositional_lan_pair()
+    generate_lan_pair()
     generate_train_dev_test_files()
