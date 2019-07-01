@@ -20,7 +20,7 @@ class Seq2Seq(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         # encoder and decoder
-        self.encoder = SeqEncoder(self.hidden_size)
+        self.encoder = SeqEncoder(self.hidden_size, self.hidden_size)
         self.decoder = SeqDecoder(self.voc_size, self.hidden_size)
 
     def forward(self, data_batch):

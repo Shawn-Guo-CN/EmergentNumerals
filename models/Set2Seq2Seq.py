@@ -1,93 +1,12 @@
 import torch
 import torch.nn as nn
-from torch.distributions.categorical import Categorical
-from torch.distributions.one_hot_categorical import OneHotCategorical
-from torch.distributions.relaxed_categorical import RelaxedOneHotCategorical
 import torch.nn.functional as F
 import random
 
 from utils.conf import args
 from models.Losses import mask_NLL_loss
-from models.Encoders import SetEncoder
-from models.Decoders import SeqDecoder
-
-
-def cat_softmax(probs, mode, tau=1, hard=False, dim=-1):
-    if mode == 'REINFORCE' or mode == 'SCST':
-        cat_distr = OneHotCategorical(probs=probs)
-        return cat_distr.sample()
-    elif mode == 'GUMBEL':
-        cat_distr = RelaxedOneHotCategorical(tau, probs=probs)
-        y_soft = cat_distr.rsample()
-    elif mode == 'SOFTMAX':
-        y_soft = probs
-    
-    if hard:
-        # Straight through.
-        index = y_soft.max(dim, keepdim=True)[1]
-        y_hard = torch.zeros_like(probs, device=args.device).scatter_(dim, index, 1.0)
-        ret = y_hard - y_soft.detach() + y_soft
-    else:
-        # Reparametrization trick.
-        ret = y_soft
-
-    return ret
-
-
-def weight_init(m):
-    if isinstance(m, nn.Parameter):
-        torch.nn.init.xavier_normal(m.weight.data)
-
-
-class MSGGeneratorLSTM(nn.Module):
-    """
-    This class is used to generate messages.
-    """
-    def __init__(self, io_size=args.msg_vocsize, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
-        super().__init__()
-        self.input_size = io_size
-        self.hidden_size = hidden_size
-        self.output_size = io_size
-
-        self.lstm = nn.LSTMCell(self.input_size, self.hidden_size)
-        self.out = nn.Linear(self.hidden_size, self.output_size)
-        self.dropout = nn.Dropout(dropout)
-
-        self.init_input = nn.Parameter(torch.zeros(1, self.input_size, device=args.device))
-
-    def forward(self, encoder_hidden, encoder_cell):
-        batch_size = encoder_hidden.size(0)
-        decoder_input = self.init_input.expand(batch_size, -1)
-        decoder_hidden = encoder_hidden
-        decoder_cell = encoder_cell
-        message = []
-        mask = []
-
-        _mask = torch.ones((1, batch_size), device=args.device)
-        log_probs = 0.
-        
-        for _ in range(args.max_msg_len):
-            mask.append(_mask)
-            decoder_hidden, decoder_cell = \
-                self.lstm(decoder_input, (decoder_hidden, decoder_cell))
-            probs = F.softmax(self.out(decoder_hidden), dim=1)
-
-            if self.training:
-                predict = cat_softmax(probs, mode=args.msg_mode, tau=args.tau, hard=(not args.soft), dim=1)
-            else:
-                predict = F.one_hot(torch.argmax(probs, dim=1), 
-                                    num_classes=self.output_size).to(_mask.dtype)
-            
-            log_probs += torch.log((probs * predict).sum(dim=1)) * _mask.squeeze()
-            _mask = _mask * (1 - predict[:, -1])
-            
-            message.append(predict)
-            decoder_input = predict
-        
-        message = torch.stack(message)
-        mask = torch.stack(mask)
-
-        return message, mask, log_probs
+from models.Encoders import SetEncoder, SeqEncoder
+from models.Decoders import SeqDecoder, MSGGeneratorLSTM
 
 
 class SpeakingAgent(nn.Module):
@@ -111,42 +30,16 @@ class SpeakingAgent(nn.Module):
         return message, mask, log_msg_prob
 
 
-class MSGEncoderLSTM(nn.Module):
-    def __init__(self, input_size=args.msg_vocsize, hidden_size=args.hidden_size):
-        super().__init__()
-        self.hidden_size = hidden_size
-        self.input_size = input_size
-
-        # Initialize LSTM; the input_size and hidden_size params are both set to 'hidden_size'
-        #   because our input size is a word embedding with number of features == hidden_size
-        self.lstm = nn.LSTMCell(self.input_size, self.hidden_size)
-        self.init_hidden = self.init_hidden_and_cell()
-        self.init_cell = self.init_hidden_and_cell()
-
-    def forward(self, input_var, input_mask):
-        max_len = input_var.shape[0]
-
-        last_hidden = self.init_hidden.expand(input_var.shape[1], -1).contiguous()
-        last_cell = self.init_cell.expand(input_var.shape[1], -1).contiguous()
-        for t in range(max_len):
-            hidden, cell = self.lstm(input_var[t], (last_hidden, last_cell))
-            last_hidden = input_mask[t].t() * hidden + (1 - input_mask[t].t()) * last_hidden
-            last_cell = input_mask[t].t() * cell + (1 - input_mask[t].t()) * last_cell
-
-        return last_hidden, last_cell
-
-    def init_hidden_and_cell(self):
-        return nn.Parameter(torch.zeros(1, self.hidden_size, device=args.device))
-
-
 class ListeningAgent(nn.Module):
-    def __init__(self, voc_size, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
+    def __init__(self, voc_size, msg_vocsize=args.msg_vocsize,\
+         hidden_size=args.hidden_size, dropout=args.dropout_ratio):
         super().__init__()
         self.voc_size = voc_size
+        self.msg_vocsize = msg_vocsize
         self.hidden_size = hidden_size
 
         # encoder and decoder
-        self.encoder = MSGEncoderLSTM()
+        self.encoder = SeqEncoder(self.msg_vocsize, self.hidden_size)
         self.decoder = SeqDecoder(self.voc_size, self.hidden_size)
 
     def forward(self, embedding, message, msg_mask, \
@@ -160,19 +53,24 @@ class ListeningAgent(nn.Module):
         n_total_tokens = 0
         n_correct_seqs = 0
 
-        encoder_hidden, encoder_cell = self.encoder(message, msg_mask)
+        msg_len = msg_mask.squeeze(1).sum(dim=0)
+        message = message.transpose(0, 1)
+
+        _, encoder_hidden, encoder_cell = self.encoder(message, msg_len)
 
         decoder_outputs, _ = self.decoder(
             embedding,
             target_var,
             target_max_len,
-            encoder_hidden,
-            encoder_cell
+            encoder_hidden.squeeze(0),
+            encoder_cell.squeeze(0)
         )
 
         seq_correct = torch.ones((1, batch_size), device=args.device)
         eq_vec = torch.ones((1, batch_size), device=args.device)
-        for t in range(target_max_len):
+
+        loss_max_len = min(decoder_outputs.shape[0], target_var.shape[0])
+        for t in range(loss_max_len):
             mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(
                 decoder_outputs[t],
                 target_var[t],
@@ -211,7 +109,8 @@ class Set2Seq2Seq(nn.Module):
         self.speaker = SpeakingAgent(self.embedding, self.voc_size, 
                                         self.hidden_size, self.dropout)
         # Listening agent
-        self.listener = ListeningAgent(self.voc_size, self.hidden_size, self.dropout)
+        self.listener = ListeningAgent(self.voc_size, self.msg_vocsize,
+                                self.hidden_size, self.dropout)
         
 
     def forward(self, data_batch):

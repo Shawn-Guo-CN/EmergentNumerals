@@ -47,7 +47,8 @@ defaults = {
 '''
 for preprocessing sequences
 '''
-MAX_LENGTH = defaults['NUM_WORD'] * defaults['MAX_LEN_WORD'] # Max length of whole sequence
+# Max length of whole sequence, extra 1 for EOS
+MAX_LENGTH = defaults['NUM_WORD'] * defaults['MAX_LEN_WORD'] + 1 
 
 '''
 hyperparameters of model

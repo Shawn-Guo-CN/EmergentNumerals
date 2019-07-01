@@ -29,21 +29,28 @@ class Attn(nn.Module):
 
 
 class SeqEncoder(nn.Module):
-    def __init__(self, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
+    def __init__(self, in_size=args.hidden_size, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
         super().__init__()
+        self.in_size = in_size
         self.hidden_size = hidden_size
 
         # Initialize LSTM; the input_size and hidden_size params are both set to 'hidden_size'
         #   because our input size is a word embedding with number of features == hidden_size
-        self.lstm = nn.LSTM(hidden_size, hidden_size)
+        self.lstm = nn.LSTM(in_size, hidden_size)
         self.init_hidden = self.init_hidden_and_cell()
         self.init_cell = self.init_hidden_and_cell()
 
     def forward(self, input_embedded, input_lengths):
+        """
+        inpug_embedded shape: [B, L, I]
+        input_lengths shape: [B]
+        """
         batch_size = input_embedded.shape[0]
 
         # Pack padded batch of sequences for RNN module
-        packed = nn.utils.rnn.pack_padded_sequence(input_embedded, input_lengths, batch_first=True)
+        packed = nn.utils.rnn.pack_padded_sequence(
+            input_embedded, input_lengths, 
+            batch_first=True, enforce_sorted=False)
 
         # Forward pass through LSTM
         h0 = self.init_hidden.expand(1, batch_size, -1).contiguous()
@@ -82,7 +89,7 @@ class SetEncoder(nn.Module):
             # Calculate attention weights from the current LSTM input
             attn_weights = self.attn(last_hidden, embedded_input, input_mask)
             # Calculate the attention weighted representation
-            r = torch.bmm(attn_weights, embedded_input).squeeze()
+            r = torch.bmm(attn_weights, embedded_input).squeeze(1)
             # Forward through unidirectional LSTM
             lstm_hidden, lstm_cell = self.lstm(r, (last_hidden, last_cell))
 

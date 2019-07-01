@@ -109,6 +109,7 @@ def generate_train_dev_test_files_bak(in_file=open(args.data_file, 'r'),
 
 
 if __name__ == '__main__':
-    generate_all_combinations()
-    generate_lan_pair(holistic=True)
-    generate_train_dev_test_files_bak()
+    # generate_all_combinations()
+    # generate_lan_pair(holistic=True)
+    # generate_train_dev_test_files_bak()
+    generate_train_dev_test_files()

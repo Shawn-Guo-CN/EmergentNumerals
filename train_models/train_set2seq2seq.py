@@ -194,8 +194,8 @@ def train():
     training_sim = []
     print('done')
 
-    # sim = sim_check_model(model, voc, sim_chk_inset, sim_chk_batchset)
-    # print('[SIM]Iteration: {}; Sim: {:.4f}'.format(0, sim))
+    sim = sim_check_model(model, voc, sim_chk_inset, sim_chk_batchset)
+    print('[SIM]Iteration: {}; Sim: {:.4f}'.format(0, sim))
 
     print('training...')
     for iter in range(start_iteration, args.iter_num+1):
