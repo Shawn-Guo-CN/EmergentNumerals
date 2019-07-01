@@ -39,13 +39,15 @@ class SeqEncoder(nn.Module):
         self.init_hidden = self.init_hidden_and_cell()
         self.init_cell = self.init_hidden_and_cell()
 
-    def forward(self, input_var, input_embedded, input_lengths):
+    def forward(self, input_embedded, input_lengths):
+        batch_size = input_embedded.shape[0]
+
         # Pack padded batch of sequences for RNN module
         packed = nn.utils.rnn.pack_padded_sequence(input_embedded, input_lengths, batch_first=True)
 
         # Forward pass through LSTM
-        h0 = self.init_hidden.repeat(1, input_var.shape[1], 1)
-        c0 = self.init_cell.repeat(1, input_var.shape[1], 1)
+        h0 = self.init_hidden.expand(1, batch_size, -1).contiguous()
+        c0 = self.init_cell.expand(1, batch_size, -1).contiguous()
         outputs, (hidden, cell) = self.lstm(packed, (h0, c0))
 
         # Unpack padding

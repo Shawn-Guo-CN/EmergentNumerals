@@ -35,8 +35,10 @@ class SeqDecoder(nn.Module):
         use_teacher_forcing = True if random.random() < args.teacher_ratio \
                                     and self.training else False
 
+        decoding_max_len = target_max_len if self.training else args.max_seq_len
+
         # Forward batch of sequences through decoder one time step at a time
-        for t in range(target_max_len):
+        for t in range(decoding_max_len):
             decoder_hidden, decoder_cell = self.lstm(decoder_input, (decoder_hidden, decoder_cell))
             # Here we don't need to take Softmax as the CrossEntropyLoss later would
             # automatically take a Softmax operation
@@ -61,3 +63,5 @@ class SeqDecoder(nn.Module):
 
     def init_hidden(self):
         return torch.zeros(1, 1, self.hidden_size, device=args.device)
+
+
