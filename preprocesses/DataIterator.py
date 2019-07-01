@@ -4,7 +4,7 @@ import math
 import itertools
 
 from utils.conf import args
-from Voc import Voc
+from preprocesses.Voc import Voc
 
 class FruitSeqDataset(Dataset):
     def __init__(self, voc, batch_size=args.batch_size, dataset_file_path=args.train_file):
