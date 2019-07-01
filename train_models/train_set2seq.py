@@ -69,7 +69,7 @@ def train():
     set2seq = Set2Seq(voc.num_words).to(args.device)
     param_optimizer = args.optimiser(set2seq.parameters(), lr=args.learning_rate)
     decoder_optimizer = args.optimiser(set2seq.decoder.parameters(), 
-                                    lr=args.learning_rate * args.decoder_ratio)
+                                    lr=args.learning_rate * args.speaker_ratio)
     if args.param_file is not None:
         print('\tloading saved parameters from ' + args.param_file + '...')
         checkpoint = torch.load(args.param_file)
