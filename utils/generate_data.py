@@ -26,7 +26,7 @@ def generate_lan_pair(io_file=open(args.data_file, 'r'), holistic=False):
             msg += str(line.count(chr(65+i)))
         string_set.append(line.strip())
         msg_set.append(msg)
-    
+
     io_file.close()
     os.remove(args.data_file)
 
@@ -48,7 +48,7 @@ def generate_train_dev_test_files(in_file=open(args.data_file, 'r'),
         if len(line.strip()) == 0:
             continue
         string_set.append(line.strip())
-    
+
     random.shuffle(string_set)
     train_set = string_set[:int(0.9*len(string_set))]
     dev_set = string_set[int(0.9*len(string_set)):int(0.95*len(string_set))]
@@ -78,17 +78,17 @@ def generate_fixed_len_data(prefix='', length=15, out_file=open(args.data_file, 
         for c in ['A', 'B', 'C']:
             generate_fixed_len_data(prefix=prefix+c, length=length-1)
 
-def generate_train_dev_test_files_bak(in_file=open(args.data_file, 'r'), 
+def generate_train_dev_test_files_bak(in_file=open(args.data_file, 'r'),
                                   train_file=open(args.train_file, 'a'),
                                   dev_file=open(args.dev_file, 'a'),
                                   test_file=open(args.test_file, 'a')):
     pairs_set = []
     for line in in_file.readlines():
-        line = line.strip().split('\t')
-        if len(line) == 0:
+        if len(line.strip()) == 0:
             continue
+        line = line.strip().split('\t')
         pairs_set.append([line[0], line[1]])
-    
+
     random.shuffle(pairs_set)
     train_set = pairs_set[:int(0.8*len(pairs_set))]
     dev_set = pairs_set[int(0.8*len(pairs_set)):int(0.9*len(pairs_set))]
