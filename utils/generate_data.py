@@ -85,6 +85,8 @@ def generate_train_dev_test_files_bak(in_file=open(args.data_file, 'r'),
     pairs_set = []
     for line in in_file.readlines():
         line = line.strip().split('\t')
+        if len(line) == 0:
+            continue
         pairs_set.append([line[0], line[1]])
     
     random.shuffle(pairs_set)
@@ -108,5 +110,5 @@ def generate_train_dev_test_files_bak(in_file=open(args.data_file, 'r'),
 
 if __name__ == '__main__':
     generate_all_combinations()
-    generate_lan_pair()
-    generate_train_dev_test_files()
+    generate_lan_pair(holistic=True)
+    generate_train_dev_test_files_bak()
