@@ -23,10 +23,10 @@ defaults = {
     'TEST_MODE': False,
     'SAVE_DIR': './params/',
     'PARAM_FILE': '',
-    'DATA_FILE_PATH': './data/4_perfect/all_data.txt',
-    'TRAIN_FILE_PATH': './data/4_perfect/train.txt',
-    'DEV_FILE_PATH': './data/4_perfect/dev.txt',
-    'TEST_FILE_PATH': './data/4_perfect/test.txt',
+    'DATA_FILE_PATH': './data/4/all_data.txt',
+    'TRAIN_FILE_PATH': './data/4/train.txt',
+    'DEV_FILE_PATH': './data/4/dev.txt',
+    'TEST_FILE_PATH': './data/4/test.txt',
     'PAD_TOKEN': 'PAD', # Padding token
     'PAD_INDEX': 0, # PAD token index
     'SOS_TOKEN': 'SOS', # Start-of-sequence token

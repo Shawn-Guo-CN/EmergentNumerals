@@ -4,102 +4,9 @@ import torch.nn.functional as F
 import random
 
 from utils.conf import args
-
-
-def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
-    n_total = mask.sum().item()
-    loss = (args.loss_function(prediction, golden_standard) * mask.to(prediction.dtype)).mean()
-    eq_cur = prediction.topk(1)[1].squeeze(1).eq(golden_standard).to(prediction.dtype) \
-         * mask.to(prediction.dtype)
-    n_correct = eq_cur.sum().item()
-    eq_cur = eq_cur + (1 - mask.to(prediction.dtype)) * last_eq
-    return loss, eq_cur, n_correct, n_total
-
-
-class EncoderLSTM(nn.Module):
-    def __init__(self, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
-        super(EncoderLSTM, self).__init__()
-        self.hidden_size = hidden_size
-
-        # Initialize LSTM; the input_size and hidden_size params are both set to 'hidden_size'
-        #   because our input size is a word embedding with number of features == hidden_size
-        self.lstm = nn.LSTM(hidden_size, hidden_size)
-        self.init_hidden = self.init_hidden_and_cell()
-        self.init_cell = self.init_hidden_and_cell()
-
-    def forward(self, input_var, input_embedded, input_lengths):
-        # Pack padded batch of sequences for RNN module
-        packed = nn.utils.rnn.pack_padded_sequence(input_embedded, input_lengths, batch_first=True)
-
-        # Forward pass through LSTM
-        h0 = self.init_hidden.repeat(1, input_var.shape[1], 1)
-        c0 = self.init_cell.repeat(1, input_var.shape[1], 1)
-        outputs, (hidden, cell) = self.lstm(packed, (h0, c0))
-
-        # Unpack padding
-        outputs, _ = nn.utils.rnn.pad_packed_sequence(outputs)
-        # Return output and final hidden state
-        return outputs, hidden, cell
-
-    def init_hidden_and_cell(self):
-        return nn.Parameter(torch.zeros(1, 1, self.hidden_size, device=args.device))
-
-
-class DecoderLSTM(nn.Module):
-    def __init__(self, output_size, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
-        super(DecoderLSTM, self).__init__()
-        self.hidden_size = hidden_size
-
-        self.lstm = nn.LSTMCell(hidden_size, hidden_size)
-        self.out = nn.Linear(hidden_size, output_size)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, embedding, target_var, target_max_len, \
-                encoder_hidden, encoder_cell):
-        batch_size = target_var.shape[1]
-        # Initialize variables
-        outputs = []
-        masks = []
-
-        # Create initial decoder input (start with SOS tokens for each sentence)
-        decoder_input = embedding(
-            torch.LongTensor([args.sos_index for _ in range(batch_size)]).to(args.device)
-        )
-
-        # Set initial decoder hidden state to the encoder's final hidden state
-        decoder_hidden = encoder_hidden
-        decoder_cell = encoder_cell
-
-        # Determine if we are using teacher forcing this iteration
-        use_teacher_forcing = True if random.random() < args.teacher_ratio \
-                                    and self.training else False
-
-        # Forward batch of sequences through decoder one time step at a time
-        for t in range(target_max_len):
-            decoder_hidden, decoder_cell = self.lstm(decoder_input, (decoder_hidden, decoder_cell))
-            # Here we don't need to take Softmax as the CrossEntropyLoss later would
-            # automatically take a Softmax operation
-            decoder_output = self.out(decoder_hidden)
-            outputs.append(decoder_output)
-            # mask is the probabilities for predicting EOS token
-            masks.append(F.softmax(decoder_output, dim=1)[:, args.eos_index])
-
-            if use_teacher_forcing:
-                decoder_input = embedding(target_var[t].view(1, -1)).squeeze()
-            else:
-                _, topi = decoder_output.topk(1)
-                decoder_input = embedding(
-                    torch.LongTensor([topi[i][0] for i in range(batch_size)]).to(args.device)
-                )
-
-        # shape of outputs: Len * Batch Size * Voc Size
-        outputs = torch.stack(outputs)
-        # shape of masks: Len * Batch Size
-        masks = torch.stack(masks)
-        return outputs, masks
-
-    def init_hidden(self):
-        return torch.zeros(1, 1, self.hidden_size, device=args.device)
+from models.Encoders import SeqEncoder
+from models.Decoders import SeqDecoder
+from models.Losses import mask_NLL_loss
 
 
 class Seq2Seq(nn.Module):
@@ -113,8 +20,8 @@ class Seq2Seq(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         # encoder and decoder
-        self.encoder = EncoderLSTM(self.hidden_size)
-        self.decoder = DecoderLSTM(self.voc_size, self.hidden_size)
+        self.encoder = SeqEncoder(self.hidden_size)
+        self.decoder = SeqDecoder(self.voc_size, self.hidden_size)
 
     def forward(self, data_batch):
         input_var = data_batch['input']
