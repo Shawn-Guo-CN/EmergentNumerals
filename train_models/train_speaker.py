@@ -109,7 +109,7 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)[-5:-1]
+        print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)[1:-2]
         loss += sum(print_losses) / len(print_losses)
         seq_acc += round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
         tok_acc += float(n_correct_token) / float(n_total_token)
