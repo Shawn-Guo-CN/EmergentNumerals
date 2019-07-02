@@ -12,7 +12,7 @@ defaults = {
     'LEARNING_RATE':1e-4,
     'DROPOUT_RATIO': 0.2,
     'CLIP': 50.0,
-    'TEACHER_FORCING_RATIO': 0.3,
+    'TEACHER_FORCING_RATIO': 0.0,
     'SPEAKER_LEARING_RATIO': 1.0,
     'NUM_ITERS': 40000,
     'PRINT_EVERY': 1,
@@ -21,23 +21,23 @@ defaults = {
     'OPTIMISER': optim.Adam,
     'LOSS_FUNCTION': nn.CrossEntropyLoss(reduce=False),
     'TEST_MODE': False,
-    'SAVE_DIR': './params/',
+    'SAVE_DIR': './params/2/',
     'PARAM_FILE': '',
-    'DATA_FILE_PATH': './data/4/all_data.txt',
-    'TRAIN_FILE_PATH': './data/4/train.txt',
-    'DEV_FILE_PATH': './data/4/dev.txt',
-    'TEST_FILE_PATH': './data/4/test.txt',
+    'DATA_FILE_PATH': './data/2/all_data.txt',
+    'TRAIN_FILE_PATH': './data/2/train.txt',
+    'DEV_FILE_PATH': './data/2/dev.txt',
+    'TEST_FILE_PATH': './data/2/test.txt',
     'PAD_TOKEN': 'PAD', # Padding token
     'PAD_INDEX': 0, # PAD token index
     'SOS_TOKEN': 'SOS', # Start-of-sequence token
     'SOS_INDEX': 1,  # SOS token index
     'EOS_TOKEN': 'EOS', # End-of-sequence token
     'EOS_INDEX': 2, # EOS token index
-    'NUM_WORD': 4, # Number of different characters
-    'MAX_LEN_WORD': 9,
+    'NUM_WORD': 2, # Number of different characters
+    'MAX_LEN_WORD': 5,
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 1024,
-    'MSG_MODE': 'SCST', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
+    'MSG_MODE': 'REINFORCE', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
     'MSG_TAU': 2.,
     'L_RESET_FREQ': 20,
     'SIM_CHK_FREQ': 2,

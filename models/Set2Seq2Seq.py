@@ -6,7 +6,7 @@ import random
 from utils.conf import args
 from models.Losses import mask_NLL_loss
 from models.Encoders import SetEncoder, SeqEncoder
-from models.Decoders import SeqDecoder, MSGGeneratorLSTM
+from models.Decoders import SeqDecoder, MSGGeneratorLSTM, weight_init
 
 
 class SpeakingAgent(nn.Module):
