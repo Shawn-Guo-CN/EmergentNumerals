@@ -26,9 +26,9 @@ class SpeakingAgent(nn.Module):
     def forward(self, embedded_input_var, input_mask):
 
         encoder_hidden, encoder_cell = self.encoder(embedded_input_var, input_mask)
-        message, mask, log_msg_prob = self.decoder(encoder_hidden, encoder_cell)
+        message, mask, msg_probs, log_msg_prob = self.decoder(encoder_hidden, encoder_cell)
 
-        return message, mask, log_msg_prob
+        return message, mask, msg_probs, log_msg_prob
 
 
 class ListeningAgent(nn.Module):
@@ -136,7 +136,7 @@ class Set2Seq2Seq(nn.Module):
         target_max_len = data_batch['target_max_len']
 
         speaker_input = self.embedding(input_var.t())
-        message, msg_mask, log_msg_prob = self.speaker(speaker_input, input_mask)
+        message, msg_mask, _msg_probs_, log_msg_prob = self.speaker(speaker_input, input_mask)
         # message shape: [msg_max_len, batch_size, msg_voc_size]
         # msg_mask shape: [msg_max_len, 1, batch_size]
 

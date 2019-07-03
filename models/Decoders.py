@@ -130,6 +130,7 @@ class MSGGeneratorLSTM(nn.Module):
         decoder_cell = encoder_cell
         message = []
         mask = []
+        digits = []
 
         _mask = torch.ones((1, batch_size), device=args.device)
         log_probs = 0.
@@ -139,21 +140,24 @@ class MSGGeneratorLSTM(nn.Module):
             decoder_input = F.relu(decoder_input)
             decoder_hidden, decoder_cell = \
                 self.lstm(decoder_input, (decoder_hidden, decoder_cell))
-            probs = F.softmax(self.out(decoder_hidden), dim=1)
+            _probs = F.softmax(self.out(decoder_hidden), dim=1)
+            digits.append(self.out(decoder_hidden))
 
             if self.training:
-                predict = cat_softmax(probs, mode=args.msg_mode, tau=args.tau, hard=(not args.soft), dim=1)
+                predict = cat_softmax(_probs, mode=args.msg_mode, tau=args.tau, hard=(not args.soft), dim=1)
             else:
-                predict = F.one_hot(torch.argmax(probs, dim=1), 
+                predict = F.one_hot(torch.argmax(_probs, dim=1), 
                                     num_classes=self.output_size).to(_mask.dtype)
             
-            log_probs += torch.log((probs * predict).sum(dim=1)) * _mask.squeeze()
+            log_probs += torch.log((_probs * predict).sum(dim=1)) * _mask.squeeze()
             _mask = _mask * (1 - predict[:, -1])
+
             
             message.append(predict)
             decoder_input = torch.matmul(predict, self.msg_embedding)
         
         message = torch.stack(message)
         mask = torch.stack(mask)
+        digits = torch.stack(digits)
 
-        return message, mask, log_probs
+        return message, mask, digits, log_probs

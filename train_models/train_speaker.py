@@ -24,12 +24,16 @@ class Set2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
+        self.msg_embedding = nn.Parameter(
+                torch.randn(self.msg_vocsize, self.hidden_size, device=args.device)
+            )
 
         # Speaking agent
         self.speaker = SpeakingAgent(
                 self.embedding, self.voc_size, 
                 hidden_size=args.hidden_size, 
-                dropout=args.dropout_ratio
+                dropout=args.dropout_ratio,
+                msg_embedding=self.msg_embedding
             )
 
     def forward(self, data_batch):
@@ -42,7 +46,7 @@ class Set2Seq(nn.Module):
         batch_size = input_var.shape[1]
 
         speaker_input = self.embedding(input_var.t())
-        message, msg_mask, log_msg_prob = self.speaker(speaker_input, input_mask)
+        message, msg_mask, msg_digits, log_msg_prob = self.speaker(speaker_input, input_mask)
 
         loss = 0
         print_losses = []
@@ -54,7 +58,7 @@ class Set2Seq(nn.Module):
         eq_vec = torch.ones((1, batch_size), device=args.device)
         for t in range(target_max_len):
             mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(
-                message[t],
+                msg_digits[t],
                 target_var[t],
                 target_mask[t],
                 eq_vec
@@ -87,7 +91,8 @@ def train_epoch(model, data_batch, m_optimizer, clip=args.clip):
     # elif args.msg_mode == 'SCST':
     #     log_msg_prob = ((loss.detach() - baseline.detach()) * log_msg_prob).mean()
     #     log_msg_prob.backward()
-    loss.mean().backward()
+    else:
+        loss.mean().backward()
 
     # Calculate accuracy
     tok_acc = round(float(n_correct_token) / float(n_total_token), 6)
