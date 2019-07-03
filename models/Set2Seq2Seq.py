@@ -10,7 +10,8 @@ from models.Decoders import SeqDecoder, MSGGeneratorLSTM, weight_init
 
 
 class SpeakingAgent(nn.Module):
-    def __init__(self, embedding, voc_size, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
+    def __init__(self, embedding, voc_size, hidden_size=args.hidden_size, \
+            dropout=args.dropout_ratio, msg_embedding=None):
         super().__init__()
         self.voc_size = voc_size
         self.hidden_size = hidden_size
@@ -20,7 +21,7 @@ class SpeakingAgent(nn.Module):
 
         self.encoder = SetEncoder(self.voc_size, self.hidden_size)
         # The output size of decoder is the size of vocabulary for communication
-        self.decoder = MSGGeneratorLSTM(args.msg_vocsize, self.hidden_size)
+        self.decoder = MSGGeneratorLSTM(args.msg_vocsize, self.hidden_size, msg_embedding=msg_embedding)
 
     def forward(self, embedded_input_var, input_mask):
 
@@ -31,15 +32,22 @@ class SpeakingAgent(nn.Module):
 
 
 class ListeningAgent(nn.Module):
-    def __init__(self, voc_size, msg_vocsize=args.msg_vocsize,\
-         hidden_size=args.hidden_size, dropout=args.dropout_ratio):
+    def __init__(self, voc_size, msg_vocsize=args.msg_vocsize, \
+            hidden_size=args.hidden_size, dropout=args.dropout_ratio, msg_embedding=None):
         super().__init__()
         self.voc_size = voc_size
         self.msg_vocsize = msg_vocsize
         self.hidden_size = hidden_size
 
+        if msg_embedding is not None:
+            self.msg_embedding = msg_embedding
+        else:
+            self.msg_embedding = nn.Parameter(
+                torch.randn(self.msg_vocsize, self.hidden_size, device=args.device)
+                )
+
         # encoder and decoder
-        self.encoder = SeqEncoder(self.msg_vocsize, self.hidden_size)
+        self.encoder = SeqEncoder(self.hidden_size, self.hidden_size)
         self.decoder = SeqDecoder(self.voc_size, self.hidden_size)
 
     def forward(self, embedding, message, msg_mask, \
@@ -55,6 +63,10 @@ class ListeningAgent(nn.Module):
 
         msg_len = msg_mask.squeeze(1).sum(dim=0)
         message = message.transpose(0, 1)
+
+        message = F.relu(
+            torch.bmm(message, self.msg_embedding.expand(batch_size, -1, -1))
+        )
 
         _, encoder_hidden, encoder_cell = self.encoder(message, msg_len)
 
@@ -104,13 +116,16 @@ class Set2Seq2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
+        self.msg_embedding = nn.Parameter(
+                torch.randn(self.msg_vocsize, self.hidden_size, device=args.device)
+            )
 
         # Speaking agent
         self.speaker = SpeakingAgent(self.embedding, self.voc_size, 
-                                        self.hidden_size, self.dropout)
+                                        self.hidden_size, self.dropout, self.msg_embedding)
         # Listening agent
         self.listener = ListeningAgent(self.voc_size, self.msg_vocsize,
-                                self.hidden_size, self.dropout)
+                                self.hidden_size, self.dropout, self.msg_embedding)
         
 
     def forward(self, data_batch):

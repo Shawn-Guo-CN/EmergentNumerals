@@ -99,17 +99,29 @@ class MSGGeneratorLSTM(nn.Module):
     """
     This class is used to generate messages.
     """
-    def __init__(self, io_size=args.msg_vocsize, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
+    def __init__(
+            self, io_size=args.msg_vocsize, 
+            hidden_size=args.hidden_size, 
+            dropout=args.dropout_ratio,
+            msg_embedding=None
+        ):
         super().__init__()
         self.input_size = io_size
         self.hidden_size = hidden_size
         self.output_size = io_size
 
-        self.lstm = nn.LSTMCell(self.input_size, self.hidden_size)
+        self.lstm = nn.LSTMCell(self.hidden_size, self.hidden_size)
         self.out = nn.Linear(self.hidden_size, self.output_size)
         self.dropout = nn.Dropout(dropout)
 
-        self.init_input = nn.Parameter(torch.zeros(1, self.input_size, device=args.device))
+        self.init_input = nn.Parameter(torch.zeros(1, self.hidden_size, device=args.device))
+
+        if msg_embedding is not None:
+            self.msg_embedding = msg_embedding
+        else:
+            self.msg_embedding = nn.Parameter(
+                torch.randn(self.input_size, self.hidden_size, device=args.device)
+            )
 
     def forward(self, encoder_hidden, encoder_cell):
         batch_size = encoder_hidden.size(0)
@@ -124,6 +136,7 @@ class MSGGeneratorLSTM(nn.Module):
         
         for _ in range(args.max_msg_len):
             mask.append(_mask)
+            decoder_input = F.relu(decoder_input)
             decoder_hidden, decoder_cell = \
                 self.lstm(decoder_input, (decoder_hidden, decoder_cell))
             probs = F.softmax(self.out(decoder_hidden), dim=1)
@@ -138,7 +151,7 @@ class MSGGeneratorLSTM(nn.Module):
             _mask = _mask * (1 - predict[:, -1])
             
             message.append(predict)
-            decoder_input = predict
+            decoder_input = torch.matmul(predict, self.msg_embedding)
         
         message = torch.stack(message)
         mask = torch.stack(mask)
