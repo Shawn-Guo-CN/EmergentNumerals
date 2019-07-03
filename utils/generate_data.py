@@ -1,6 +1,7 @@
 from utils.conf import args
 import random
 import os
+import time
 
 
 def generate_all_combinations(prefix='', type_idx=1, out_file=open(args.data_file, 'a')):
@@ -28,6 +29,7 @@ def generate_lan_pair(io_file=open(args.data_file, 'r'), holistic=False):
         msg_set.append(msg)
 
     io_file.close()
+    time.sleep(2)
     os.remove(args.data_file)
 
     if holistic:
@@ -109,7 +111,7 @@ def generate_train_dev_test_files_bak(in_file=open(args.data_file, 'r'),
 
 
 if __name__ == '__main__':
-    # generate_all_combinations()
-    # generate_lan_pair(holistic=True)
+    generate_all_combinations()
+    generate_lan_pair(holistic=False)
     # generate_train_dev_test_files_bak()
-    generate_train_dev_test_files()
+    # generate_train_dev_test_files()

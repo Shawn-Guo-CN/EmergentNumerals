@@ -25,9 +25,13 @@ class Set2Seq2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
+        self.msg_embedding = nn.Parameter(
+                torch.randn(self.msg_vocsize, self.hidden_size, device=args.device)
+            )
 
         # Listening agent
-        self.listener = ListeningAgent(self.voc_size, self.hidden_size, self.dropout)
+        self.listener = ListeningAgent(self.voc_size, self.msg_vocsize,
+                                self.hidden_size, self.dropout, self.msg_embedding)
         
     def forward(self, data_batch):
         input_var = data_batch['input']
@@ -42,6 +46,7 @@ class Set2Seq2Seq(nn.Module):
         loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens, outputs = \
             self.listener(self.embedding, msg, msg_mask, target_var, target_mask, target_max_len)
 
+        """
         if self.training and args.msg_mode == 'SCST':
             self.listener.eval()
             baseline = self.listener(self.embedding, msg, msg_mask, 
@@ -49,8 +54,9 @@ class Set2Seq2Seq(nn.Module):
             self.listener.train()
         else:
             baseline = 0.
+        """
         
-        return loss, baseline, print_losses, \
+        return loss, 0., print_losses, \
                 n_correct_seqs, n_correct_tokens, n_total_tokens, outputs
 
 
