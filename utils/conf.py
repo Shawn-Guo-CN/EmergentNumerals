@@ -38,7 +38,7 @@ defaults = {
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 1024,
     'MSG_MODE': 'REINFORCE', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
-    'MSG_TAU': 2.,
+    'MSG_TAU': 1.,
     'L_RESET_FREQ': 20,
     'SIM_CHK_FREQ': 2,
     'SIM_CHK_K': 50,
