@@ -15,22 +15,15 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=args
     param_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
 
-    # Forward pass through model
-    loss, print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)
-    # Perform backpropatation
+    loss, print_losses, _, _, tok_acc, seq_acc = model(data_batch)
     loss.backward()
-    # Calculate accuracy
-    tok_acc = round(float(n_correct_token) / float(n_total_token), 6)
-    seq_acc = round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
 
-    # Clip gradients: gradients are modified in place
     nn.utils.clip_grad_norm_(model.parameters(), clip)
 
-    # Adjust model weights
     param_optimizer.step()
     decoder_optimizer.step()
 
-    return seq_acc, tok_acc, sum(print_losses) / n_total_token
+    return seq_acc, tok_acc, sum(print_losses) / len(print_losses)
 
 
 def eval_model(model, dataset):
@@ -40,10 +33,10 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        __, print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)
-        loss += sum(print_losses) / n_total_token
-        seq_acc += round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
-        tok_acc += float(n_correct_token) / float(n_total_token)
+        loss, print_losses, _, _, t_acc, s_acc = model(data_batch)
+        loss += sum(print_losses) / len(print_losses)
+        seq_acc += t_acc
+        tok_acc += s_acc
 
     loss /= len(dataset)
     seq_acc /= len(dataset)

@@ -28,10 +28,11 @@ def seq_cross_entropy_loss(predict_digits, target, target_mask, target_max_len):
      n_correct_seqs = 0
 
      seq_correct = torch.ones((1, batch_size), device=args.device)
+     tok_correct = []
      eq_vec = torch.ones((1, batch_size), device=args.device)
 
      for t in range(target_max_len):
-         mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(
+         mask_loss, eq_cur, eq_vec = mask_NLL_loss_simple(
              predict_digits[t],
              target[t],
              target_mask[t],
@@ -39,14 +40,16 @@ def seq_cross_entropy_loss(predict_digits, target, target_mask, target_max_len):
          )
          loss += mask_loss
          print_losses.append(mask_loss.mean().item())
-         n_total_tokens += n_total
-         n_correct_tokens += n_correct
+         n_total_tokens += target_mask[t].sum().item()
+         n_correct_tokens += eq_cur.sum().item()
          seq_correct = seq_correct * eq_vec
+         tok_correct.append(eq_cur)
 
      seq_correct = seq_correct.squeeze(0)
+     tok_correct = torch.stack(tok_correct)
      n_correct_seqs = seq_correct.sum().item()
 
      tok_acc = round(float(n_correct_tokens) / float(n_total_tokens), 6)
      seq_acc = round(float(n_correct_seqs) / float(batch_size), 6)
 
-     return loss, print_losses, seq_correct, tok_acc, seq_acc
+     return loss, print_losses, tok_correct, seq_correct, tok_acc, seq_acc

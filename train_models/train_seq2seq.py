@@ -16,7 +16,7 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=args
     decoder_optimizer.zero_grad()
 
     # Forward pass through model
-    loss, print_losses, _, tok_acc, seq_acc = model(data_batch)
+    loss, print_losses, _, _, tok_acc, seq_acc = model(data_batch)
     loss.backward()
     # Clip gradients: gradients are modified in place
     nn.utils.clip_grad_norm_(model.parameters(), clip)
@@ -35,7 +35,7 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        loss, print_losses, _, t_acc, s_acc = model(data_batch)
+        loss, print_losses, _, _, t_acc, s_acc = model(data_batch)
         loss += sum(print_losses) / len(print_losses)
         seq_acc += s_acc
         tok_acc += t_acc

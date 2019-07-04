@@ -6,7 +6,7 @@ import random
 from utils.conf import args
 from models.Encoders import SeqEncoder
 from models.Decoders import SeqDecoder
-from models.Losses import mask_NLL_loss, seq_cross_entropy_loss
+from models.Losses import seq_cross_entropy_loss
 
 
 class Seq2Seq(nn.Module):
@@ -35,10 +35,6 @@ class Seq2Seq(nn.Module):
 
         batch_size = input_var.shape[1]
 
-        # Initialize variables
-        loss = 0
-        print_losses = []
-
         embedded_input = self.embedding(input_var.t())
         _, encoder_hidden, encoder_cell = self.encoder(embedded_input, input_lengths)
         encoder_hidden = encoder_hidden.squeeze()
@@ -56,7 +52,7 @@ class Seq2Seq(nn.Module):
         )
 
         loss_max_len = min(decoder_logits.shape[0], target_var.shape[0])
-        loss, print_losses, seq_correct, tok_acc, seq_acc\
+        loss, print_losses, tok_correct, seq_correct, tok_acc, seq_acc\
             = seq_cross_entropy_loss(decoder_logits, target_var, target_mask, loss_max_len)
 
-        return loss, print_losses, seq_correct, tok_acc, seq_acc
+        return loss, print_losses, tok_correct, seq_correct, tok_acc, seq_acc

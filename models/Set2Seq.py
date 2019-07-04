@@ -7,6 +7,7 @@ from utils.conf import args
 from models.Losses import mask_NLL_loss
 from models.Encoders import SetEncoder
 from models.Decoders import SeqDecoder
+from models.Losses import seq_cross_entropy_loss
 
 
 class Set2Seq(nn.Module):
@@ -19,7 +20,10 @@ class Set2Seq(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         self.encoder = SetEncoder(self.voc_size, self.hidden_size)
-        self.decoder = SeqDecoder(self.voc_size, self.hidden_size)
+        self.decoder = SeqDecoder(
+            self.voc_size, self.hidden_size, self.voc_size,
+            embedding=self.embedding.weight
+            )
 
     def forward(self, data_batch):
         input_var = data_batch['input']
@@ -28,39 +32,24 @@ class Set2Seq(nn.Module):
         target_mask = data_batch['target_mask']
         target_max_len = data_batch['target_max_len']
 
-        # Initialize variables
-        loss = 0
-        print_losses = []
-        n_correct_tokens = 0
-        n_total_tokens = 0
-        n_correct_seqs = 0
+        batch_size = input_var.shape[1]
 
         encoder_input = self.embedding(input_var.t())
         encoder_hidden, encoder_cell = self.encoder(encoder_input, input_mask)
 
-        decoder_outputs, _ = self.decoder(
-            self.embedding,
-            target_var,
-            target_max_len,
+        if self.training:
+            decoder_max_len = target_max_len
+        else:
+            decoder_max_len = args.max_seq_len
+
+        _, decoder_logits, _ = self.decoder(
             encoder_hidden,
-            encoder_cell
+            encoder_cell,
+            max_len=decoder_max_len
         )
 
-        seq_correct = torch.ones([input_var.shape[1]], device=args.device)
-        eq_vec = torch.ones([input_var.shape[1]], device=args.device)
-        for t in range(target_max_len):
-            mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(
-                decoder_outputs[t], 
-                target_var[t], 
-                target_mask[t],
-                eq_vec
-            )
-            loss += mask_loss
-            print_losses.append(mask_loss.item() * n_total)
-            n_total_tokens += n_total
-            n_correct_tokens += n_correct
-            seq_correct = seq_correct * eq_vec
+        loss_max_len = min(decoder_logits.shape[0], target_var.shape[0])
+        loss, print_losses, tok_correct, seq_correct, tok_acc, seq_acc\
+            = seq_cross_entropy_loss(decoder_logits, target_var, target_mask, loss_max_len)
 
-        n_correct_seqs = seq_correct.sum().item()
-
-        return loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens
+        return loss, print_losses, tok_correct, seq_correct, tok_acc, seq_acc
