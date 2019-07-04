@@ -7,6 +7,7 @@ import os
 
 from utils.conf import args
 from models.Set2Seq2Seq import ListeningAgent
+from models.Losses import seq_cross_entropy_loss
 from preprocesses.DataIterator import PairDataset
 from preprocesses.Voc import Voc
 from analysis.cal_topological_similarity import cal_topological_sim
@@ -25,14 +26,14 @@ class Set2Seq2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
-        self.msg_embedding = nn.Parameter(
-                torch.randn(self.msg_vocsize, self.hidden_size, device=args.device)
-            )
+        self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size)
 
         # Listening agent
-        self.listener = ListeningAgent(self.voc_size, self.msg_vocsize,
-                                self.hidden_size, self.dropout, self.msg_embedding)
-        
+        self.listener = ListeningAgent(
+            self.msg_vocsize, self.hidden_size, self.voc_size,
+            self.dropout, self.embedding.weight, self.msg_embedding.weight
+        )
+
     def forward(self, data_batch):
         input_var = data_batch['input']
         msg_mask = data_batch['input_mask']
@@ -43,21 +44,13 @@ class Set2Seq2Seq(nn.Module):
         msg = F.one_hot(input_var).to(torch.float32)
         msg_mask = msg_mask.to(torch.float32).unsqueeze(1)
 
-        loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens, outputs = \
-            self.listener(self.embedding, msg, msg_mask, target_var, target_mask, target_max_len)
+        listener_outputs = self.listener(msg, msg_mask, target_max_len)
 
-        """
-        if self.training and args.msg_mode == 'SCST':
-            self.listener.eval()
-            baseline = self.listener(self.embedding, msg, msg_mask, 
-                                        target_var, target_mask, target_max_len)[0]
-            self.listener.train()
-        else:
-            baseline = 0.
-        """
+        loss_max_len = min(listener_outputs.shape[0], target_var.shape[0])
+        loss, print_losses, tok_correct, seq_correct, tok_acc, seq_acc\
+            = seq_cross_entropy_loss(listener_outputs, target_var, target_mask, loss_max_len)
         
-        return loss, 0., print_losses, \
-                n_correct_seqs, n_correct_tokens, n_total_tokens, outputs
+        return loss, 0., print_losses, tok_correct, seq_correct, tok_acc, seq_acc
 
 
 def train_epoch(model, data_batch, m_optimizer, clip=args.clip):
@@ -65,13 +58,9 @@ def train_epoch(model, data_batch, m_optimizer, clip=args.clip):
     m_optimizer.zero_grad()
 
     # Forward pass through model
-    loss, baseline, print_losses, \
-        n_correct_seq, n_correct_token, n_total_token, _ = model(data_batch)
+    loss, baseline, print_losses, tok_correct, seq_correct, tok_acc, seq_acc = model(data_batch)
     # Perform backpropatation
     loss.mean().backward()
-    # Calculate accuracy
-    tok_acc = round(float(n_correct_token) / float(n_total_token), 6)
-    seq_acc = round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
 
     # Clip gradients: gradients are modified in place
     nn.utils.clip_grad_norm_(model.parameters(), clip)
@@ -89,10 +78,10 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)[-5:-1]
+        loss, baseline, print_losses, tok_correct, seq_correct, t_acc, s_acc = model(data_batch)
         loss += sum(print_losses) / len(print_losses)
-        seq_acc += round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
-        tok_acc += float(n_correct_token) / float(n_total_token)
+        seq_acc += s_acc
+        tok_acc += t_acc
 
     loss /= len(dataset)
     seq_acc /= len(dataset)

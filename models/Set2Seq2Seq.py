@@ -6,7 +6,7 @@ import random
 from utils.conf import args
 from models.Losses import mask_NLL_loss, seq_cross_entropy_loss
 from models.Encoders import SetEncoder, SeqEncoder
-from models.Decoders import SeqDecoder, MSGGeneratorLSTM, weight_init
+from models.Decoders import SeqDecoder, weight_init
 
 
 class SpeakingAgent(nn.Module):
@@ -120,19 +120,17 @@ class Set2Seq2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
-        self.msg_embedding = nn.Parameter(
-                torch.randn(self.msg_vocsize, self.hidden_size, device=args.device)
-            )
+        self.msg_embedding = nn.Embedding(self.voc_size, self.hidden_size)
 
         # Speaking agent
         self.speaker = SpeakingAgent(
-            self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
+            self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding.weight,
             self.hidden_size, self.dropout
         )
         # Listening agent
         self.listener = ListeningAgent(
             self.msg_vocsize, self.hidden_size, self.voc_size,
-            self.dropout, self.embedding.weight, self.msg_embedding
+            self.dropout, self.embedding.weight, self.msg_embedding.wight
         )
         
 
