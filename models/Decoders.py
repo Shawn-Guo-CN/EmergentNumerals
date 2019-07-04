@@ -129,7 +129,7 @@ class SeqDecoder(nn.Module):
                                     num_classes=self.output_size).to(mask.dtype)
             
             predicts.append(predict)
-            mask = mask * (1 - predict[:, eos_idx])
+            # mask = mask * (1 - predict[:, eos_idx]) # for variable lengths
             
             decoder_input = torch.matmul(predict, self.embedding)
 

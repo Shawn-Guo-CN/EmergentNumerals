@@ -120,7 +120,7 @@ class Set2Seq2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
-        self.msg_embedding = nn.Embedding(self.voc_size, self.hidden_size)
+        self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size)
 
         # Speaking agent
         self.speaker = SpeakingAgent(
@@ -130,7 +130,7 @@ class Set2Seq2Seq(nn.Module):
         # Listening agent
         self.listener = ListeningAgent(
             self.msg_vocsize, self.hidden_size, self.voc_size,
-            self.dropout, self.embedding.weight, self.msg_embedding.wight
+            self.dropout, self.embedding.weight, self.msg_embedding.weight
         )
         
 
