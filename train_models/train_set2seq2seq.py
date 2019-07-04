@@ -25,25 +25,6 @@ def msg_tau_schedule(best_acc):
         args.tau = 2.
 
 
-def lr_schedule(best_acc, model, m_optim, s_optim, l_optim):
-    if best_acc <= 0.8:
-        return m_optim, s_optim, l_optim
-
-    if best_acc >= 0.90:
-        lr = 1e-6
-    elif best_acc >= 0.80:
-        lr = 1e-5
-    
-    if not args.learning_rate ==lr:
-        args.learning_rate = lr
-        m_optim = args.optimiser(model.parameters(), lr=args.learning_rate)
-        s_optim = args.optimiser(model.speaker.parameters(), 
-                                            lr=args.learning_rate * args.speaker_ratio)
-        l_optim = args.optimiser(model.listener.parameters(),
-                                            lr=args.learning_rate * args.speaker_ratio)
-    return m_optim, s_optim, l_optim
-
-
 def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=args.clip):
     # Zero gradients
     m_optimizer.zero_grad()

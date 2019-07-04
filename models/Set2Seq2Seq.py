@@ -71,12 +71,7 @@ class ListeningAgent(nn.Module):
             encoder_cell.squeeze(0)
         )
 
-        loss_max_len = min(decoder_outputs.shape[0], target_var.shape[0])
-
-        loss, print_losses, seq_correct, tok_acc, seq_acc\
-            = seq_cross_entropy_loss(decoder_outputs, target_var, target_mask, loss_max_len)
-
-        return loss, print_losses, seq_correct, tok_acc, seq_acc, decoder_outputs
+        return decoder_outputs
 
     def reset_params(self):
         self.apply(weight_init)
@@ -118,8 +113,13 @@ class Set2Seq2Seq(nn.Module):
         # message shape: [msg_max_len, batch_size, msg_voc_size]
         # msg_mask shape: [msg_max_len, 1, batch_size]
 
-        loss, print_losses, seq_correct, tok_acc, seq_acc, outputs = \
+        listener_outputs = \
             self.listener(self.embedding, message, msg_mask, target_var, target_mask, target_max_len)
+
+        loss_max_len = min(listener_outputs.shape[0], target_var.shape[0])
+
+        loss, print_losses, seq_correct, tok_acc, seq_acc\
+            = seq_cross_entropy_loss(listener_outputs, target_var, target_mask, loss_max_len)
 
         if self.training and args.msg_mode == 'SCST':
             self.speaker.eval()
@@ -133,4 +133,4 @@ class Set2Seq2Seq(nn.Module):
             baseline = 0.
         
         return loss, log_msg_prob, baseline, print_losses, \
-                seq_correct, tok_acc, seq_acc, outputs
+                seq_correct, tok_acc, seq_acc, listener_outputs
