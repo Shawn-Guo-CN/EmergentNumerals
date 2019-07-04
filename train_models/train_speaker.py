@@ -24,17 +24,13 @@ class Set2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
-        self.msg_embedding = nn.Parameter(
-                torch.randn(self.msg_vocsize, self.hidden_size, device=args.device)
-            )
+        self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size)
 
         # Speaking agent
         self.speaker = SpeakingAgent(
-                self.embedding, self.voc_size, 
-                hidden_size=args.hidden_size, 
-                dropout=args.dropout_ratio,
-                msg_embedding=self.msg_embedding
-            )
+            self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding.weight,
+            self.hidden_size, self.dropout
+        )
 
     def forward(self, data_batch):
         input_var = data_batch['input']
@@ -45,14 +41,15 @@ class Set2Seq(nn.Module):
 
         batch_size = input_var.shape[1]
 
-        speaker_input = self.embedding(input_var.t())
-        message, msg_mask, msg_digits, log_msg_prob = self.speaker(speaker_input, input_mask)
+        message, msg_logits, msg_mask = self.speaker(input_var, input_mask)
 
-        loss, print_losses, seq_correct, tok_acc, seq_acc\
-            = seq_cross_entropy_loss(msg_digits, target_var, target_mask, target_max_len)
+        log_msg_prob = torch.sum(msg_logits, dim=1)
 
-        return loss, print_losses, seq_correct,\
-            tok_acc, seq_acc, message, log_msg_prob
+        loss_max_len = min(message.shape[0], target_var.shape[0])
+        loss, print_losses, tok_correct, seq_correct, tok_acc, seq_acc\
+            = seq_cross_entropy_loss(msg_logits, target_var, target_mask, loss_max_len)
+
+        return loss, print_losses, seq_correct, tok_acc, seq_acc, message, log_msg_prob
 
     def tok_reward(self, msg_digits, target, target_mask, target_max_len):
         pass
