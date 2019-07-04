@@ -198,14 +198,6 @@ def train():
             print_seq_acc_avg = print_seq_acc / (args.print_freq * len(train_set))
             print_tok_acc_avg = print_tok_acc / (args.print_freq * len(train_set))
 
-            model_optimiser, speaker_optimiser, listner_optimiser = lr_schedule(
-                print_tok_acc_avg,
-                model,
-                model_optimiser, 
-                speaker_optimiser, 
-                listner_optimiser
-            )
-
             print("Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg seq acc: {:.4f}; Avg tok acc: {:.4f}".format(
                 iter, iter / args.iter_num * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
                 ))

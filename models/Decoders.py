@@ -13,11 +13,13 @@ def cat_softmax(probs, mode, tau=1, hard=False, dim=-1):
     if mode == 'REINFORCE' or mode == 'SCST':
         cat_distr = OneHotCategorical(probs=probs)
         return cat_distr.sample()
-    elif mode == 'SOFTMAX':
-        y_soft = probs
     elif mode == 'GUMBEL':
         cat_distr = RelaxedOneHotCategorical(tau, probs=probs)
         y_soft = cat_distr.rsample()
+    elif mode == 'SOFTMAX':
+        y_soft = probs
+    else:
+        y_soft = probs
     
     if hard:
         # Straight through.
@@ -40,11 +42,11 @@ def decoding_sampler(logits, mode, tau=1, hard=False, dim=-1):
     if mode == 'REINFORCE' or mode == 'SCST':
         cat_distr = OneHotCategorical(logits=logits)
         return cat_distr.sample()
-    elif mode == 'SOFTMAX':
-        y_soft = logits
     elif mode == 'GUMBEL':
         cat_distr = RelaxedOneHotCategorical(tau, logits=logits)
         y_soft = cat_distr.rsample()
+    else: # mode == 'SOFTMAX':
+        y_soft = logits
     
     if hard:
         # Straight through.
@@ -148,10 +150,10 @@ class MSGGeneratorLSTM(nn.Module):
     def __init__(
             self,
             input_size=args.msg_vocsize,
+            hidden_size=args.hidden_size,
             output_size=args.msg_vocsize,
-            hidden_size=args.hidden_size, 
             dropout=args.dropout_ratio,
-            msg_embedding=None
+            embedding=None
         ):
         super().__init__()
         self.input_size = input_size
@@ -164,7 +166,7 @@ class MSGGeneratorLSTM(nn.Module):
 
         self.init_input = nn.Parameter(torch.zeros(1, self.hidden_size, device=args.device))
 
-        if msg_embedding is not None:
+        if embedding is not None:
             self.msg_embedding = msg_embedding
         else:
             self.msg_embedding = nn.Parameter(
