@@ -53,7 +53,7 @@ MAX_LENGTH = defaults['NUM_WORD'] * defaults['MAX_LEN_WORD'] + 1
 '''
 hyperparameters of model
 '''
-MSG_MAX_LEN = defaults['NUM_WORD'] + 1
+MSG_MAX_LEN = defaults['NUM_WORD']
 MSG_VOCSIZE = defaults['MAX_LEN_WORD'] + 2 # Consider 0 and EOS for MSG
 
 

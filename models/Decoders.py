@@ -149,10 +149,9 @@ class MSGGeneratorLSTM(nn.Module):
                 predict = F.one_hot(torch.argmax(_probs, dim=1), 
                                     num_classes=self.output_size).to(_mask.dtype)
             
-            log_probs += torch.log((_probs * predict).sum(dim=1)) * _mask.squeeze()
-            _mask = _mask * (1 - predict[:, -1])
+            log_probs += torch.log((_probs * predict).sum(dim=1)) # * _mask.squeeze()
+            # _mask = _mask * (1 - predict[:, -1])
 
-            
             message.append(predict)
             decoder_input = torch.matmul(predict, self.msg_embedding)
         
