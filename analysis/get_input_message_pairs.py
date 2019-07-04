@@ -48,7 +48,7 @@ def reproduce_msg_output(model, voc, data_batch, train_args):
     target_mask = data_batch['target_mask']
     target_max_len = data_batch['target_max_len']
     speaker_input = model.embedding(input_var.t())
-    message, msg_mask, _ = model.speaker(speaker_input, input_mask)
+    message, msg_mask, _, _ = model.speaker(speaker_input, input_mask)
     output = model.listener(model.embedding, message, msg_mask, 
                         target_var, target_mask, target_max_len)[-1]
     

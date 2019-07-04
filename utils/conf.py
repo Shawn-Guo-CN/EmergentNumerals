@@ -16,17 +16,17 @@ defaults = {
     'SPEAKER_LEARING_RATIO': 1.0,
     'NUM_ITERS': 40000,
     'PRINT_EVERY': 1,
-    'SAVE_EVERY': 2,
-    'EVAL_EVERY': 2,
+    'SAVE_EVERY': 1000,
+    'EVAL_EVERY': 10,
     'OPTIMISER': optim.Adam,
     'LOSS_FUNCTION': nn.CrossEntropyLoss(reduce=False),
     'TEST_MODE': False,
     'SAVE_DIR': './params/2/',
     'PARAM_FILE': '',
-    'DATA_FILE_PATH': './data/2_perfect/all_data.txt',
-    'TRAIN_FILE_PATH': './data/2_perfect/train.txt',
-    'DEV_FILE_PATH': './data/2_perfect/dev.txt',
-    'TEST_FILE_PATH': './data/2_perfect/test.txt',
+    'DATA_FILE_PATH': './data/2/all_data.txt',
+    'TRAIN_FILE_PATH': './data/2/train.txt',
+    'DEV_FILE_PATH': './data/2/dev.txt',
+    'TEST_FILE_PATH': './data/2/test.txt',
     'PAD_TOKEN': 'PAD', # Padding token
     'PAD_INDEX': 0, # PAD token index
     'SOS_TOKEN': 'SOS', # Start-of-sequence token
@@ -37,10 +37,10 @@ defaults = {
     'MAX_LEN_WORD': 5,
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 1024,
-    'MSG_MODE': 'REINFORCE', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
+    'MSG_MODE': 'GUBMEL', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
     'MSG_TAU': 1.,
     'L_RESET_FREQ': 20,
-    'SIM_CHK_FREQ': 2,
+    'SIM_CHK_FREQ': 100,
     'SIM_CHK_K': 50,
 }
 
@@ -53,7 +53,7 @@ MAX_LENGTH = defaults['NUM_WORD'] * defaults['MAX_LEN_WORD'] + 1
 '''
 hyperparameters of model
 '''
-MSG_MAX_LEN = defaults['NUM_WORD']
+MSG_MAX_LEN = defaults['NUM_WORD'] + 1
 MSG_VOCSIZE = defaults['MAX_LEN_WORD'] + 2 # Consider 0 and EOS for MSG
 
 

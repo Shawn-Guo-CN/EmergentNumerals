@@ -52,7 +52,8 @@ def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=a
 
     # Forward pass through model
     loss, log_msg_prob, baseline, print_losses, \
-        n_correct_seq, n_correct_token, n_total_token, _ = model(data_batch)
+        _, tok_acc, seq_acc , _ = model(data_batch)
+    
     # Perform backpropatation
     if args.msg_mode == 'REINFORCE':
         log_msg_prob = (loss.detach() * log_msg_prob).mean()
@@ -62,8 +63,6 @@ def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=a
         log_msg_prob.backward()
     loss.mean().backward()
     # Calculate accuracy
-    tok_acc = round(float(n_correct_token) / float(n_total_token), 6)
-    seq_acc = round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
 
     # Clip gradients: gradients are modified in place
     nn.utils.clip_grad_norm_(model.parameters(), clip)
@@ -83,10 +82,10 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)[-5:-1]
+        print_losses, _, t_acc, s_acc = model(data_batch)[3:-1]
         loss += sum(print_losses) / len(print_losses)
-        seq_acc += round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
-        tok_acc += float(n_correct_token) / float(n_total_token)
+        seq_acc += s_acc
+        tok_acc += t_acc
 
     loss /= len(dataset)
     seq_acc /= len(dataset)

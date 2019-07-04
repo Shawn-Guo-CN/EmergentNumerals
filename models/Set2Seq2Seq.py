@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import random
 
 from utils.conf import args
-from models.Losses import mask_NLL_loss
+from models.Losses import mask_NLL_loss, seq_cross_entropy_loss
 from models.Encoders import SetEncoder, SeqEncoder
 from models.Decoders import SeqDecoder, MSGGeneratorLSTM, weight_init
 
@@ -54,13 +54,6 @@ class ListeningAgent(nn.Module):
                 target_var, target_mask, target_max_len):
         batch_size = message.shape[1]
 
-        # Initialize variables
-        loss = 0
-        print_losses = []
-        n_correct_tokens = 0
-        n_total_tokens = 0
-        n_correct_seqs = 0
-
         msg_len = msg_mask.squeeze(1).sum(dim=0)
         message = message.transpose(0, 1)
 
@@ -78,27 +71,12 @@ class ListeningAgent(nn.Module):
             encoder_cell.squeeze(0)
         )
 
-        seq_correct = torch.ones((1, batch_size), device=args.device)
-        eq_vec = torch.ones((1, batch_size), device=args.device)
-
         loss_max_len = min(decoder_outputs.shape[0], target_var.shape[0])
-        for t in range(loss_max_len):
-            mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(
-                decoder_outputs[t],
-                target_var[t],
-                target_mask[t],
-                eq_vec
-            )
-            loss += mask_loss
-            print_losses.append(mask_loss.mean().item())
-            n_total_tokens += n_total
-            n_correct_tokens += n_correct
-            seq_correct = seq_correct * eq_vec
 
-        n_correct_seqs = seq_correct.sum().item()
+        loss, print_losses, seq_correct, tok_acc, seq_acc\
+            = seq_cross_entropy_loss(decoder_outputs, target_var, target_mask, loss_max_len)
 
-        return loss, print_losses, \
-            n_correct_seqs, n_correct_tokens, n_total_tokens, decoder_outputs
+        return loss, print_losses, seq_correct, tok_acc, seq_acc, decoder_outputs
 
     def reset_params(self):
         self.apply(weight_init)
@@ -140,7 +118,7 @@ class Set2Seq2Seq(nn.Module):
         # message shape: [msg_max_len, batch_size, msg_voc_size]
         # msg_mask shape: [msg_max_len, 1, batch_size]
 
-        loss, print_losses, n_correct_seqs, n_correct_tokens, n_total_tokens, outputs = \
+        loss, print_losses, seq_correct, tok_acc, seq_acc, outputs = \
             self.listener(self.embedding, message, msg_mask, target_var, target_mask, target_max_len)
 
         if self.training and args.msg_mode == 'SCST':
@@ -155,4 +133,4 @@ class Set2Seq2Seq(nn.Module):
             baseline = 0.
         
         return loss, log_msg_prob, baseline, print_losses, \
-                n_correct_seqs, n_correct_tokens, n_total_tokens, outputs
+                seq_correct, tok_acc, seq_acc, outputs

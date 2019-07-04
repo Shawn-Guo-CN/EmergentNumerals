@@ -7,7 +7,7 @@ import os
 
 from utils.conf import args
 from models.Set2Seq2Seq import SpeakingAgent
-from models.Set2Seq2Seq import mask_NLL_loss
+from models.Losses import mask_NLL_loss, mask_NLL_loss_simple, seq_cross_entropy_loss
 from preprocesses.DataIterator import PairDataset
 from preprocesses.Voc import Voc
 
@@ -48,31 +48,14 @@ class Set2Seq(nn.Module):
         speaker_input = self.embedding(input_var.t())
         message, msg_mask, msg_digits, log_msg_prob = self.speaker(speaker_input, input_mask)
 
-        loss = 0
-        print_losses = []
-        n_correct_tokens = 0
-        n_total_tokens = 0
-        n_correct_seqs = 0
+        loss, print_losses, seq_correct, tok_acc, seq_acc\
+            = seq_cross_entropy_loss(msg_digits, target_var, target_mask, target_max_len)
 
-        seq_correct = torch.ones((1, batch_size), device=args.device)
-        eq_vec = torch.ones((1, batch_size), device=args.device)
-        for t in range(target_max_len):
-            mask_loss, eq_vec, n_correct, n_total = mask_NLL_loss(
-                msg_digits[t],
-                target_var[t],
-                target_mask[t],
-                eq_vec
-            )
-            loss += mask_loss
-            print_losses.append(mask_loss.mean().item())
-            n_total_tokens += n_total
-            n_correct_tokens += n_correct
-            seq_correct = seq_correct * eq_vec
+        return loss, print_losses, seq_correct,\
+            tok_acc, seq_acc, message, log_msg_prob
 
-        n_correct_seqs = seq_correct.sum().item()
-
-        return loss, print_losses, \
-            n_correct_seqs, n_correct_tokens, n_total_tokens, message, log_msg_prob
+    def tok_reward(self, msg_digits, target, target_mask, target_max_len):
+        pass
 
 
 def train_epoch(model, data_batch, m_optimizer, clip=args.clip):
@@ -80,12 +63,12 @@ def train_epoch(model, data_batch, m_optimizer, clip=args.clip):
     m_optimizer.zero_grad()
 
     # Forward pass through model
-    loss, print_losses, \
-        n_correct_seq, n_correct_token, n_total_token,\
+    loss, print_losses, seq_correct, tok_acc, seq_acc,\
              _, log_msg_prob = model(data_batch)
     
     # Perform backpropatation
     if args.msg_mode == 'REINFORCE':
+        seq_correct = seq_correct + 1
         log_msg_prob = (loss.detach() * log_msg_prob).mean()
         log_msg_prob.backward()
     # elif args.msg_mode == 'SCST':
@@ -93,10 +76,6 @@ def train_epoch(model, data_batch, m_optimizer, clip=args.clip):
     #     log_msg_prob.backward()
     else:
         loss.mean().backward()
-
-    # Calculate accuracy
-    tok_acc = round(float(n_correct_token) / float(n_total_token), 6)
-    seq_acc = round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
 
     # Clip gradients: gradients are modified in place
     nn.utils.clip_grad_norm_(model.parameters(), clip)
@@ -114,10 +93,10 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        print_losses, n_correct_seq, n_correct_token, n_total_token = model(data_batch)[1:-2]
+        print_losses, _, t_acc, s_acc = model(data_batch)[1:-2]
         loss += sum(print_losses) / len(print_losses)
-        seq_acc += round(float(n_correct_seq) / float(data_batch['input'].shape[1]), 6)
-        tok_acc += float(n_correct_token) / float(n_total_token)
+        tok_acc += t_acc
+        seq_acc += s_acc
 
     loss /= len(dataset)
     seq_acc /= len(dataset)
