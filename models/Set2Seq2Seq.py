@@ -27,14 +27,10 @@ class SpeakingAgent(nn.Module):
 
         self.encoder = SetEncoder(self.voc_size, self.hidden_size)
         # The output size of decoder is the size of vocabulary for communication
-        # self.decoder = SeqDecoder(
-        #     self.msg_vocsize, self.hidden_size, self.msg_vocsize,
-        #     embedding=self.msg_embedding
-        # )
-        self.decoder = MSGGeneratorLSTM(
-            
+        self.decoder = SeqDecoder(
+            self.msg_vocsize, self.hidden_size, self.msg_vocsize,
+            embedding=self.msg_embedding
         )
-
 
     def forward(self, input_var, input_mask):
         embedded_input = self.embedding(input_var.t())
