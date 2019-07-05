@@ -54,8 +54,8 @@ MAX_LENGTH = defaults['NUM_WORD'] * defaults['MAX_LEN_WORD'] + 1
 '''
 hyperparameters of model
 '''
-MSG_MAX_LEN = defaults['NUM_WORD'] + 4
-MSG_VOCSIZE = defaults['MAX_LEN_WORD'] + 3 # Consider 0 and EOS for MSG
+MSG_MAX_LEN = defaults['NUM_WORD'] + 1
+MSG_VOCSIZE = defaults['MAX_LEN_WORD'] + 2 # Consider 0 and EOS for MSG
 
 
 parser = argparse.ArgumentParser()

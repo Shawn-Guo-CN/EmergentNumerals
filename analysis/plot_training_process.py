@@ -8,7 +8,15 @@ from utils.conf import args
 def load_training_status(file_path:str) -> tuple:
     checkpoint = torch.load(file_path, map_location=torch.device('cpu'))
     seq_acc, tok_acc, losses, sim = checkpoint['records']
+    print(checkpoint['args'])
     return seq_acc, tok_acc, losses, sim
+
+
+def EMA_smooth(l:list, alpha=0.01) -> list:
+    new_l = [l[1]]
+    for i in l:
+        new_l.append(alpha * i + (1-alpha) * new_l[-1])
+    return new_l
 
 
 def plot_training_into_1_figure(chk_points_paths:list) -> None:
@@ -21,10 +29,12 @@ def plot_training_into_1_figure(chk_points_paths:list) -> None:
         label = file_path.split('.')[1].split('/')[-2]
         if min_len > len(sim):
             min_len = len(sim)
+        s_acc = EMA_smooth(s_acc)
+        t_ac = EMA_smooth(t_ac)
         ax0.plot(sim, label=label, linewidth=0.2)
-        ax1.plot(t_ac, label=label, linewidth=0.2)
-        ax2.plot(loss, label=label, linewidth=0.2)
-        ax3.plot(s_acc, label=label, linewidth=0.2)
+        ax1.plot(t_ac, label=label, linewidth=1)
+        ax2.plot(loss, label=label, linewidth=1)
+        ax3.plot(s_acc, label=label, linewidth=1)
 
     def _set_legend_(ax):
         leg = ax.legend()
@@ -42,8 +52,9 @@ def plot_training_into_1_figure(chk_points_paths:list) -> None:
 
 def main():
     chk_point_path_list = [
-        './params/listener/comp/4_11000.tar',
-        './params/listener/holistic/4_11000.tar',
+        './params/listener/comp/0705_12000_4.tar',
+        './params/listener/holistic/0705_12000_4.tar',
+        # './params/0705_4_38700.tar'
     ]
 
     plot_training_into_1_figure(chk_point_path_list)
