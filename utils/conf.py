@@ -13,7 +13,8 @@ defaults = {
     'DROPOUT_RATIO': 0.2,
     'CLIP': 50.0,
     'TEACHER_FORCING_RATIO': 0.0,
-    'SPEAKER_LEARING_RATIO': 1.0,
+    'SPEAKER_LEARNING_RATIO': 5.0,
+    'LISTENER_LEARNING_RATIO': 1.0,
     'NUM_ITERS': 40000,
     'PRINT_EVERY': 1,
     'SAVE_EVERY': 1000,
@@ -21,12 +22,12 @@ defaults = {
     'OPTIMISER': optim.Adam,
     'LOSS_FUNCTION': nn.CrossEntropyLoss(reduce=False),
     'TEST_MODE': False,
-    'SAVE_DIR': './params/2/',
+    'SAVE_DIR': './params/tmp/',
     'PARAM_FILE': '',
-    'DATA_FILE_PATH': './data/2_perfect/all_data.txt',
-    'TRAIN_FILE_PATH': './data/2_perfect/train.txt',
-    'DEV_FILE_PATH': './data/2_perfect/dev.txt',
-    'TEST_FILE_PATH': './data/2_perfect/test.txt',
+    'DATA_FILE_PATH': './data/2/all_data.txt',
+    'TRAIN_FILE_PATH': './data/2/train.txt',
+    'DEV_FILE_PATH': './data/2/dev.txt',
+    'TEST_FILE_PATH': './data/2/test.txt',
     'PAD_TOKEN': 'PAD', # Padding token
     'PAD_INDEX': 0, # PAD token index
     'SOS_TOKEN': 'SOS', # Start-of-sequence token
@@ -40,7 +41,7 @@ defaults = {
     'MSG_MODE': 'GUBMEL', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
     'MSG_TAU': 1.,
     'L_RESET_FREQ': 20,
-    'SIM_CHK_FREQ': 100,
+    'SIM_CHK_FREQ': 1000,
     'SIM_CHK_K': 50,
 }
 
@@ -53,8 +54,8 @@ MAX_LENGTH = defaults['NUM_WORD'] * defaults['MAX_LEN_WORD'] + 1
 '''
 hyperparameters of model
 '''
-MSG_MAX_LEN = defaults['NUM_WORD']
-MSG_VOCSIZE = defaults['MAX_LEN_WORD'] + 1 # Consider 0 and EOS for MSG
+MSG_MAX_LEN = defaults['NUM_WORD'] + 4
+MSG_VOCSIZE = defaults['MAX_LEN_WORD'] + 3 # Consider 0 and EOS for MSG
 
 
 parser = argparse.ArgumentParser()
@@ -68,8 +69,10 @@ parser.add_argument('--clip', type=float, default=defaults['CLIP'],
         help="the maximum of gradients after clipped")
 parser.add_argument('--teacher-ratio', type=float, default=defaults['TEACHER_FORCING_RATIO'],
         help='teacher-forcing ratio for training last sequence decoder')
-parser.add_argument('--speaker-ratio', type=float, default=defaults['SPEAKER_LEARING_RATIO'],
-        help='learning rate ratio for training decoder')
+parser.add_argument('--speaker-ratio', type=float, default=defaults['SPEAKER_LEARNING_RATIO'],
+        help='learning rate ratio for training speaker')
+parser.add_argument('--listener-ratio', type=float, default=defaults['LISTENER_LEARNING_RATIO'],
+        help='learning rate ratio for training listener')
 parser.add_argument('-i', '--iter_num', type=int, default=defaults['NUM_ITERS'],
         help='maximum number of iterations')
 parser.add_argument('--print-freq', type=int, default=defaults['PRINT_EVERY'],

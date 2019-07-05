@@ -6,7 +6,8 @@ import random
 from utils.conf import args
 from models.Losses import mask_NLL_loss, seq_cross_entropy_loss
 from models.Encoders import SetEncoder, SeqEncoder
-from models.Decoders import SeqDecoder, weight_init
+from models.Decoders import SeqDecoder
+from models.Utils import weight_init
 
 
 class SpeakingAgent(nn.Module):
@@ -67,7 +68,7 @@ class ListeningAgent(nn.Module):
             self.msg_embedding = msg_embedding
         else:
             self.msg_embedding = nn.Parameter(
-                    torch.randn(self.msg_vocsize, self.hidden_size, device=args.device)
+                    torch.randn(self.input_size, self.hidden_size, device=args.device)
                 )
 
         # encoder and decoder
@@ -143,26 +144,27 @@ class Set2Seq2Seq(nn.Module):
 
         message, msg_logits, msg_mask = self.speaker(input_var, input_mask)
 
+        spk_entropy = (F.softmax(msg_logits, dim=2) * msg_logits).sum(dim=2).sum(dim=0)
         log_msg_prob = torch.sum(msg_logits, dim=1)
 
-        listener_outputs = self.listener(message, msg_mask, target_max_len)
+        seq_logits = self.listener(message, msg_mask, target_max_len)
 
-        loss_max_len = min(listener_outputs.shape[0], target_var.shape[0])
+        loss_max_len = min(seq_logits.shape[0], target_var.shape[0])
 
         loss, print_losses, tok_correct, seq_correct, tok_acc, seq_acc\
-            = seq_cross_entropy_loss(listener_outputs, target_var, target_mask, loss_max_len)
+            = seq_cross_entropy_loss(seq_logits, target_var, target_mask, loss_max_len)
 
         if self.training and args.msg_mode == 'SCST':
             self.speaker.eval()
             self.listener.eval()
             msg, _, msg_mask = self.speaker(input_var, input_mask)
-            l_outputs = self.listener(msg, msg_mask, args.max_seq_len)
-            loss_max_len = min(listener_outputs.shape[0], target_var.shape[0])
-            baseline = seq_cross_entropy_loss(l_outputs, target_var, target_mask, loss_max_len)[0]
+            s_logits = self.listener(msg, msg_mask, args.max_seq_len)
+            loss_max_len = min(s_logits.shape[0], target_var.shape[0])
+            baseline = seq_cross_entropy_loss(s_logits, target_var, target_mask, loss_max_len)[0]
             self.speaker.train()
             self.listener.train()
         else:
             baseline = 0.
         
         return loss, log_msg_prob, baseline, print_losses, \
-                seq_correct, tok_acc, seq_acc, listener_outputs
+                seq_correct, tok_acc, seq_acc, seq_logits, spk_entropy

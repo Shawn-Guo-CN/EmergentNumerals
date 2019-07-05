@@ -31,9 +31,11 @@ def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=a
     s_optimizer.zero_grad()
     l_optimizer.zero_grad()
 
+    model.speaker.eval()
+
     # Forward pass through model
     loss, log_msg_prob, baseline, print_losses, \
-        _, tok_acc, seq_acc , _ = model(data_batch)
+        _, tok_acc, seq_acc , _, s_entropy = model(data_batch)
     
     # Perform backpropatation
     if args.msg_mode == 'REINFORCE':
@@ -63,7 +65,7 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        print_losses, _, t_acc, s_acc = model(data_batch)[3:-1]
+        print_losses, _, t_acc, s_acc = model(data_batch)[3:-2]
         loss += sum(print_losses) / len(print_losses)
         seq_acc += s_acc
         tok_acc += t_acc
@@ -154,7 +156,7 @@ def train():
         speaker_optimiser = args.optimiser(model.speaker.parameters(), 
                                         lr=args.learning_rate * args.speaker_ratio)
         listner_optimiser = args.optimiser(model.listener.parameters(),
-                                        lr=args.learning_rate * args.speaker_ratio)
+                                        lr=args.learning_rate * args.listener_ratio)
         print('done')
 
     print('preparing data for testing topological similarity...')
