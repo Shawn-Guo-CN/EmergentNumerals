@@ -58,7 +58,7 @@ class SeqEncoder(nn.Module):
         outputs, (hidden, cell) = self.lstm(packed, (h0, c0))
 
         # Unpack padding
-        outputs, _ = nn.utils.rnn.pad_packed_sequence(outputs)
+        outputs, _ = nn.utils.rnn.pad_packed_sequence(outputs, batch_first=True)
         # Return output and final hidden state
         return outputs, hidden, cell
 

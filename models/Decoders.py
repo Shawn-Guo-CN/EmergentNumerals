@@ -48,25 +48,24 @@ class SeqDecoder(nn.Module):
         self.hidden_size = hidden_size
         self.output_size = output_size
 
-        self.lstm = nn.LSTMCell(hidden_size, hidden_size)
+        self.embedding = embedding
+
+        if embedding is None:
+            self.lstm = nn.LSTMCell(output_size, hidden_size)
+            self.init_input = nn.Parameter(torch.zeros(1, self.output_size, device=args.device))
+        else:
+            self.lstm = nn.LSTMCell(hidden_size, hidden_size)
+            self.init_input = nn.Parameter(torch.zeros(1, self.hidden_size, device=args.device))
+        
         self.out = nn.Linear(hidden_size, output_size)
         self.dropout = nn.Dropout(dropout)
-
-        self.init_input = nn.Parameter(torch.zeros(1, self.hidden_size, device=args.device))
-
-        if embedding is not None:
-            self.embedding = embedding
-        else:
-            self.embedding = nn.Parameter(
-                torch.randn(self.output_size, self.hidden_size, device=args.device)
-            )
 
     def forward(self, encoder_hidden, encoder_cell, 
                 max_len=args.max_seq_len,
                 init_input=None,
                 mode='SOFTMAX',
                 sample_hard=True,
-                eos_idx=args.eos_index
+                eos_idx=None
         ):
         batch_size = encoder_hidden.shape[0]
         
@@ -100,9 +99,14 @@ class SeqDecoder(nn.Module):
                                     num_classes=self.output_size).to(mask.dtype)
             
             predicts.append(predict)
-            # mask = mask * (1 - predict[:, eos_idx]) # for variable lengths
+
+            if eos_idx is not None:
+                mask = mask * (1 - predict[:, eos_idx]) # for variable lengths
             
-            decoder_input = torch.matmul(predict, self.embedding)
+            if self.embedding is not None:
+                decoder_input = torch.matmul(predict, self.embedding)
+            else:
+                decoder_input = predict
 
         # shape of predicts: Len * Batch Size * Voc Size
         predicts = torch.stack(predicts)

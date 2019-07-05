@@ -32,6 +32,7 @@ class SpeakingAgent(nn.Module):
             embedding=self.msg_embedding
         )
 
+
     def forward(self, input_var, input_mask):
         embedded_input = self.embedding(input_var.t())
         encoder_hidden, encoder_cell = self.encoder(embedded_input, input_mask)
@@ -39,7 +40,6 @@ class SpeakingAgent(nn.Module):
                 encoder_hidden, encoder_cell,
                 mode=args.msg_mode,
                 max_len=args.max_msg_len,
-                eos_idx=-1,
             )
 
         return message, logits, mask
@@ -64,15 +64,13 @@ class ListeningAgent(nn.Module):
                 torch.randn(self.output_size, self.hidden_size, device=args.device)
             )
 
-        if msg_embedding is not None:
-            self.msg_embedding = msg_embedding
+        self.msg_embedding = msg_embedding
+        
+        if self.msg_embedding is None:
+            self.encoder = SeqEncoder(self.input_size, self.hidden_size)
         else:
-            self.msg_embedding = nn.Parameter(
-                    torch.randn(self.input_size, self.hidden_size, device=args.device)
-                )
+            self.encoder = SeqEncoder(self.hidden_size, self.hidden_size)
 
-        # encoder and decoder
-        self.encoder = SeqEncoder(self.hidden_size, self.hidden_size)
         self.decoder = SeqDecoder(
                 self.output_size, self.hidden_size, self.output_size,
                 embedding=self.embedding
@@ -84,9 +82,10 @@ class ListeningAgent(nn.Module):
         msg_len = msg_mask.squeeze(1).sum(dim=0)
         message = message.transpose(0, 1)
 
-        message = F.relu(
-            torch.bmm(message, self.msg_embedding.expand(batch_size, -1, -1))
-        )
+        if self.msg_embedding is not None:
+            message = F.relu(
+                torch.bmm(message, self.msg_embedding.expand(batch_size, -1, -1))
+            )
 
         _, encoder_hidden, encoder_cell = self.encoder(message, msg_len)
         encoder_hidden = encoder_hidden.squeeze(0)
@@ -125,13 +124,13 @@ class Set2Seq2Seq(nn.Module):
 
         # Speaking agent
         self.speaker = SpeakingAgent(
-            self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding.weight,
+            self.voc_size, self.msg_vocsize, self.embedding, None,
             self.hidden_size, self.dropout
         )
         # Listening agent
         self.listener = ListeningAgent(
             self.msg_vocsize, self.hidden_size, self.voc_size,
-            self.dropout, self.embedding.weight, self.msg_embedding.weight
+            self.dropout, self.embedding.weight, None
         )
         
 
