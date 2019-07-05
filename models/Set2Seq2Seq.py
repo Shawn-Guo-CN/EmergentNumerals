@@ -6,7 +6,7 @@ import random
 from utils.conf import args
 from models.Losses import mask_NLL_loss, seq_cross_entropy_loss
 from models.Encoders import SetEncoder, SeqEncoder
-from models.Decoders import SeqDecoder
+from models.Decoders import SeqDecoder, MSGGeneratorLSTM
 from models.Utils import weight_init
 
 
@@ -27,9 +27,12 @@ class SpeakingAgent(nn.Module):
 
         self.encoder = SetEncoder(self.voc_size, self.hidden_size)
         # The output size of decoder is the size of vocabulary for communication
-        self.decoder = SeqDecoder(
-            self.msg_vocsize, self.hidden_size, self.msg_vocsize,
-            embedding=self.msg_embedding
+        # self.decoder = SeqDecoder(
+        #     self.msg_vocsize, self.hidden_size, self.msg_vocsize,
+        #     embedding=self.msg_embedding
+        # )
+        self.decoder = MSGGeneratorLSTM(
+            
         )
 
 
