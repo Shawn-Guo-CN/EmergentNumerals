@@ -22,7 +22,7 @@ defaults = {
     'OPTIMISER': optim.Adam,
     'LOSS_FUNCTION': nn.CrossEntropyLoss(reduce=False),
     'TEST_MODE': False,
-    'SAVE_DIR': './params/tmp/',
+    'SAVE_DIR': './params/',
     'PARAM_FILE': '',
     'DATA_FILE_PATH': './data/2/all_data.txt',
     'TRAIN_FILE_PATH': './data/2/train.txt',

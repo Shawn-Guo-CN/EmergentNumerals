@@ -1,13 +1,70 @@
 import torch
-import random
-import torch.autograd as autograd
 import torch.nn as nn
+import torch.autograd as autograd
+import numpy as np
+import pandas as pd
 import os
+import random
 
 from utils.conf import args
 from models.Set2Seq import Set2Seq
 from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
+
+
+def load_stringset(file_path):
+    str_set = []
+    for line in open(file_path, 'r'):
+        line = line.strip()
+        str_set.append(line)
+    return str_set
+
+
+def reproduce_input_hidden_pairs(model, voc, dataset_file_path):
+    repro_dataset = FruitSeqDataset(voc, dataset_file_path=dataset_file_path, batch_size=1)
+    repro_strset = load_stringset(dataset_file_path)
+
+    def _instr2coordinate_(in_str, voc):
+        coordinate = []
+        for i in range(voc.num_words - 3):
+            coordinate.append(in_str.count(chr(65+i)))
+        return np.asarray(coordinate)
+
+    pair_set = []
+    for idx, data_batch in enumerate(repro_dataset):
+        input_var = data_batch['input']
+        input_mask = data_batch['input_mask']
+        hidden, _ = model.encoder(model.embedding(input_var.t()), input_mask)
+        hidden = hidden.squeeze().detach().cpu().numpy()
+        in_vec = _instr2coordinate_(repro_strset[idx], voc)
+        pair_set.append([in_vec, hidden])
+    
+    return pair_set
+
+
+def input_hidden_sim_analysis(model, voc, data_file_path=args.data_file):
+    in_hidden_pairs = reproduce_input_hidden_pairs(model, voc, data_file_path)
+
+    mean_distances = []
+    symbol_distances = []
+
+    num_pairs = len(in_hidden_pairs)
+    for i in range(num_pairs - 1):
+        for j in range(i+1, num_pairs):
+            mean_distances.append(np.linalg.norm(in_hidden_pairs[i][0] - in_hidden_pairs[j][0]))
+            symbol_distances.append(np.linalg.norm(in_hidden_pairs[i][1] - in_hidden_pairs[j][1]))
+
+    mean_distances = np.asarray(mean_distances)
+    symbol_distances = np.asarray(symbol_distances)
+
+    if symbol_distances.sum() == 0:
+        symbol_distances = symbol_distances + 0.1
+        symbol_distances[-1] -= 0.01
+
+    dis_table = pd.DataFrame({'MD': mean_distances, 'SD': symbol_distances})
+    corr = dis_table.corr('pearson')['SD']['MD']
+
+    return corr
 
 
 def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=args.clip):
@@ -79,6 +136,10 @@ def train():
     print_seq_acc = 0.
     print_tok_acc = 0.
     max_dev_seq_acc = 0.
+    training_losses = []
+    training_tok_acc = []
+    training_seq_acc = []
+    training_sim = []
     print('done')
 
     print('training...')
@@ -100,6 +161,9 @@ def train():
             print("Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg seq acc: {:.4f}; Avg tok acc: {:.4f}".format(
                 iter, iter / args.iter_num * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
                 ))
+            training_seq_acc.append(print_seq_acc_avg)
+            training_tok_acc.append(print_tok_acc_avg)
+            training_losses.append(print_loss_avg)
             print_seq_acc = 0.
             print_tok_acc = 0.
             print_loss = 0.
@@ -108,9 +172,13 @@ def train():
             dev_seq_acc, dev_tok_acc, dev_loss = eval_model(set2seq, dev_set)
             if dev_seq_acc > max_dev_seq_acc:
                 max_dev_seq_acc = dev_seq_acc
-
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Seq Acc: {:.4f}; Avg Tok Acc: {:.4f}; Best Seq Acc: {:.4f}".format(
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
+
+        if iter % args.sim_chk_freq == 0:
+            corr = input_hidden_sim_analysis(set2seq, voc, args.data_file)
+            training_sim.append(corr)
+            print("[SIM]Iteration: {}; Sim: {:.4f}".format(iter, corr))
 
         if iter % args.save_freq == 0:
             directory = os.path.join(args.save_dir, 'set2seq_' + str(args.hidden_size))
@@ -122,7 +190,9 @@ def train():
                 'opt': param_optimizer.state_dict(),
                 'de_opt': decoder_optimizer.state_dict(),
                 'loss': loss,
-                'voc': voc
+                'voc': voc,
+                'args': args,
+                'records': [training_seq_acc, training_tok_acc, training_losses, training_sim]
             }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
 
 
