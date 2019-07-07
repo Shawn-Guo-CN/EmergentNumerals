@@ -16,8 +16,8 @@ def decoding_sampler(logits, mode, tau=1, hard=False, dim=-1):
     elif mode == 'GUMBEL':
         cat_distr = RelaxedOneHotCategorical(tau, logits=logits)
         y_soft = cat_distr.rsample()
-    else: # mode == 'SOFTMAX':
-        y_soft = logits
+    elif mode == 'SOFTMAX':
+        y_soft = F.softmax(logits, dim=1)
     
     if hard:
         # Straight through.
@@ -122,7 +122,7 @@ class MSGGeneratorLSTM(nn.Module):
     """
     This class is used to generate messages.
     """
-    def __init__(self, io_size=args.msg_vocsize, hidden_size=args.hidden_size, dropout=args.drop_out):
+    def __init__(self, io_size=args.msg_vocsize, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
         super().__init__()
         self.input_size = io_size
         self.hidden_size = hidden_size

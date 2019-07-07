@@ -127,7 +127,7 @@ parser.add_argument('--max-msg-len', type=int, default=MSG_MAX_LEN,
         help='maximum length of the messages')
 parser.add_argument('--msg-vocsize', type=int, default=MSG_VOCSIZE,
         help='size of vocabulary this is available for communication')
-parser.add_argument('-t', '--tau', type=str, default=defaults['MSG_TAU'],
+parser.add_argument('-t', '--tau', type=float, default=defaults['MSG_TAU'],
         help='tau in GUMBEL softmax')
 parser.add_argument('-m', '--msg-mode', type=str, default=defaults['MSG_MODE'],
         help='mode of message generation')
