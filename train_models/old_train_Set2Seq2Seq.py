@@ -1,11 +1,4 @@
-import torch
-import torch.nn as nn
-from torch import optim
-
-import random
-import torch.autograd as autograd
-
-from utils.conf import args
+from utils.conf2 import *
 from models.old_Set2Seq2Seq import Set2Seq2Seq
 from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
@@ -13,16 +6,16 @@ from preprocesses.Voc import Voc
 
 def msg_tau_schedule(best_acc):
     if best_acc >= 0.6:
-        args.tau = 1.
+        MSG_TAU = 1.
     elif best_acc >= 0.8:
-        args.tau = 0.5
+        MSG_TAU = 0.5
     elif best_acc >= 0.9:
-        args.tau = 0.1
+        MSG_TAU = 0.1
     else:
-        args.tau = 2.
+        MSG_TAU = 2.
 
 
-def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=args.clip):
+def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=CLIP):
     # Zero gradients
     param_optimizer.zero_grad()
     decoder_optimizer.zero_grad()
@@ -32,7 +25,7 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=args
         n_correct_seq, n_correct_token, n_total_token = model(data_batch)
     # Perform backpropatation
     loss.backward()
-    if args.msg_mode == 'REINFORCE':
+    if MSG_MODE == 'REINFORCE':
         log_msg_prob = loss.detach() * log_msg_prob
         log_msg_prob.backward()
     # Calculate accuracy
@@ -76,19 +69,19 @@ def train():
     print('done')
 
     print('loading data and building batches...')
-    train_set = FruitSeqDataset(voc, dataset_file_path=args.train_file)
-    dev_set = FruitSeqDataset(voc, dataset_file_path=args.dev_file)
-    # test_set = FruitSeqDataset(voc, dataset_file_path=args.test_file)
+    train_set = FruitSeqDataset(voc, dataset_file_path=TRAIN_FILE_PATH)
+    dev_set = FruitSeqDataset(voc, dataset_file_path=DEV_FILE_PATH)
+    # test_set = FruitSeqDataset(voc, dataset_file_path=TEST_FILE_PATH)
     print('done')
     
     print('building model...')
-    model = Set2Seq2Seq(voc.num_words).to(args.device)
-    param_optimizer = args.optimiser(model.parameters(), lr=args.learning_rate)
-    decoder_optimizer = args.optimiser(model.speaker.decoder.parameters(), 
-                                    lr=args.learning_rate * args.speaker_ratio)
-    if args.param_file is not None:
-        print('\tloading saved parameters from ' + args.param_file + '...')
-        checkpoint = torch.load(args.param_file)
+    model = Set2Seq2Seq(voc.num_words).to(DEVICE)
+    param_optimizer = OPTIMISER(model.parameters(), lr=LEARNING_RATE)
+    decoder_optimizer = OPTIMISER(model.speaker.decoder.parameters(), 
+                                    lr=LEARNING_RATE * DECODER_LEARING_RATIO)
+    if PARAM_FILE is not None:
+        print('\tloading saved parameters from ' + PARAM_FILE + '...')
+        checkpoint = torch.load(PARAM_FILE)
         model.load_state_dict(checkpoint['model'])
         param_optimizer.load_state_dict(checkpoint['opt'])
         decoder_optimizer.load_state_dict(checkpoint['de_opt'])
@@ -106,8 +99,8 @@ def train():
     print('done')
 
     print('training...')
-    for iter in range(start_iteration, args.iter_num+1):
-        if args.msg_mode == 'GUMBEL':
+    for iter in range(start_iteration, NUM_ITERS+1):
+        if MSG_MODE == 'GUMBEL':
             msg_tau_schedule(max_dev_tok_acc)
 
         for idx, data_batch in enumerate(train_set):
@@ -120,18 +113,18 @@ def train():
             print_seq_acc += seq_acc
             print_tok_acc += tok_acc
 
-        if iter % args.print_freq == 0:
-            print_loss_avg = print_loss / (args.print_freq * len(train_set))
-            print_seq_acc_avg = print_seq_acc / (args.print_freq * len(train_set))
-            print_tok_acc_avg = print_tok_acc / (args.print_freq * len(train_set))
+        if iter % PRINT_EVERY == 0:
+            print_loss_avg = print_loss / (PRINT_EVERY * len(train_set))
+            print_seq_acc_avg = print_seq_acc / (PRINT_EVERY * len(train_set))
+            print_tok_acc_avg = print_tok_acc / (PRINT_EVERY * len(train_set))
             print("Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg seq acc: {:.4f}; Avg tok acc: {:.4f}".format(
-                iter, iter / args.iter_num * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
+                iter, iter / NUM_ITERS * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
                 ))
             print_loss = 0.
             print_seq_acc = 0.
             print_tok_acc = 0.
 
-        if iter % args.eval_freq == 0:
+        if iter % EVAL_EVERY == 0:
             dev_seq_acc, dev_tok_acc, dev_loss = eval_model(model, dev_set)
             if dev_seq_acc > max_dev_seq_acc:
                 max_dev_seq_acc = dev_seq_acc
@@ -141,10 +134,10 @@ def train():
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Seq Acc: {:.4f}; Avg Tok Acc: {:.4f}; Best Seq Acc: {:.4f}".format(
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
         
-        if iter % args.save_freq == 0:
-            path_join = 'set2seq2seq_' + args.msg_mode
-            path_join += '_hard' if (not args.soft) else '_soft'
-            directory = os.path.join(args.save_dir, path_join)
+        if iter % SAVE_EVERY == 0:
+            path_join = 'set2seq2seq_' + MSG_MODE
+            path_join += '_hard' if MSG_HARD else '_soft'
+            directory = os.path.join(SAVE_DIR, path_join)
             if not os.path.exists(directory):
                 os.makedirs(directory)
             torch.save({
@@ -160,18 +153,18 @@ def train():
 def test():
     print('building model...')
     voc = Voc()
-    model = Set2Seq2Seq(voc.num_words).to(args.device)
-    param_optimizer = args.optimiser(model.parameters(), lr=args.learning_rate)
-    decoder_optimizer = args.optimiser(model.speaker.decoder.parameters(), 
-                                    lr=args.learning_rate * args.speaker_ratio)
+    model = Set2Seq2Seq(voc.num_words).to(DEVICE)
+    param_optimizer = OPTIMISER(model.parameters(), lr=LEARNING_RATE)
+    decoder_optimizer = OPTIMISER(model.speaker.decoder.parameters(), 
+                                    lr=LEARNING_RATE * DECODER_LEARING_RATIO)
     print('done')
 
-    if args.param_file is None:
+    if PARAM_FILE is None:
         print('please specify the saved param file.')
         exit(-1)
     else:
-        print('loading saved parameters from ' + args.param_file + '...')
-        checkpoint = torch.load(args.param_file)
+        print('loading saved parameters from ' + PARAM_FILE + '...')
+        checkpoint = torch.load(PARAM_FILE)
         model.load_state_dict(checkpoint['model'])
         param_optimizer.load_state_dict(checkpoint['opt'])
         decoder_optimizer.load_state_dict(checkpoint['de_opt'])
@@ -179,7 +172,7 @@ def test():
         print('done')
 
     print('loading test data...')
-    test_set = FruitSeqDataset(voc, dataset_file_path=args.test_file)
+    test_set = FruitSeqDataset(voc, dataset_file_path=TEST_FILE_PATH)
     print('done')
     
     test_seq_acc, test_tok_acc, test_loss = eval_model(model, test_set)
@@ -194,7 +187,7 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(1234)
     with autograd.detect_anomaly():
         print('with detect_anomaly')
-        if args.test:
+        if TEST_MODE:
             test()
         else:
             train()

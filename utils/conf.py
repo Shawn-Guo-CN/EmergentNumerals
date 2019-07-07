@@ -8,7 +8,7 @@ from torch import optim
 default values for argparser
 '''
 defaults = {
-    'DEVICE': 1,
+    'DEVICE': 2,
     'LEARNING_RATE':1e-4,
     'DROPOUT_RATIO': 0.2,
     'CLIP': 50.0,
@@ -54,8 +54,8 @@ MAX_LENGTH = defaults['NUM_WORD'] * defaults['MAX_LEN_WORD'] + 1
 '''
 hyperparameters of model
 '''
-MSG_MAX_LEN = defaults['NUM_WORD'] + 1
-MSG_VOCSIZE = defaults['MAX_LEN_WORD'] + 2 # Consider 0 and EOS for MSG
+MSG_MAX_LEN = defaults['NUM_WORD'] + 2
+MSG_VOCSIZE = defaults['MAX_LEN_WORD'] + 5 # Consider 0 and EOS for MSG
 
 
 parser = argparse.ArgumentParser()
