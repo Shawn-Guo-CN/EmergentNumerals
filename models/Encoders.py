@@ -86,15 +86,11 @@ class SetEncoder(nn.Module):
         
         # Forward pass through LSTM
         for t in range(args.num_words):
-            # Calculate attention weights from the current LSTM input
             attn_weights = self.attn(last_hidden, embedded_input, input_mask)
-            # Calculate the attention weighted representation
             r = torch.bmm(attn_weights, embedded_input).squeeze(1)
-            # Forward through unidirectional LSTM
-            lstm_hidden, lstm_cell = self.lstm(r, (last_hidden, last_cell))
+            last_hidden, last_cell = self.lstm(r, (last_hidden, last_cell))
 
-        # Return hidden and cell state of LSTM
-        return lstm_hidden, lstm_cell
+        return last_hidden, last_cell
 
     def init_hidden_and_cell(self):
         return nn.Parameter(torch.zeros(1, self.hidden_size, device=args.device))
