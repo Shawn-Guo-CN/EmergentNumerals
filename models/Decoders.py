@@ -23,10 +23,7 @@ def decoding_sampler(logits, mode, tau=1, hard=False, dim=-1):
         # Straight through.
         index = y_soft.max(dim, keepdim=True)[1]
         y_hard = torch.zeros_like(logits, device=args.device).scatter_(dim, index, 1.0)
-        if mode == 'GUMBEL':
-            ret = y_hard - y_soft.detach() + y_soft
-        else: # if SOFTMAX mode
-            ret = y_hard
+        ret = y_hard - y_soft.detach() + y_soft
     else:
         # Reparametrization trick.
         ret = y_soft
@@ -63,7 +60,7 @@ class SeqDecoder(nn.Module):
     def forward(self, encoder_hidden, encoder_cell, 
                 max_len=args.max_seq_len,
                 init_input=None,
-                mode='SOFTMAX',
+                mode='GUMBEL',
                 sample_hard=True,
                 eos_idx=None
         ):
@@ -101,7 +98,7 @@ class SeqDecoder(nn.Module):
             predicts.append(predict)
 
             if eos_idx is not None:
-                mask = mask * (1 - predict[:, eos_idx]) # for variable lengths
+                mask = mask * (1 - predict[:, eos_idx].detach()) # for variable lengths
             
             if self.embedding is not None:
                 decoder_input = torch.matmul(predict, self.embedding)
@@ -116,54 +113,3 @@ class SeqDecoder(nn.Module):
         masks = torch.stack(masks)
         
         return predicts, logits, masks
-
-
-class MSGGeneratorLSTM(nn.Module):
-    """
-    This class is used to generate messages.
-    """
-    def __init__(self, io_size=args.msg_vocsize, hidden_size=args.hidden_size, dropout=args.dropout_ratio):
-        super().__init__()
-        self.input_size = io_size
-        self.hidden_size = hidden_size
-        self.output_size = io_size
-
-        self.lstm = nn.LSTMCell(self.input_size, self.hidden_size)
-        self.out = nn.Linear(self.hidden_size, self.output_size)
-        self.dropout = nn.Dropout(dropout)
-
-        self.init_input = nn.Parameter(torch.zeros(1, self.input_size, device=args.device))
-
-    def forward(self, encoder_hidden, encoder_cell, eos_idx=-1):
-        batch_size = encoder_hidden.size(0)
-        decoder_input = self.init_input.expand(batch_size, -1)
-        decoder_hidden = encoder_hidden
-        decoder_cell = encoder_cell
-        message = []
-        mask = []
-
-        _mask = torch.ones((1, batch_size), device=args.device)
-        log_probs = 0.
-        
-        for _ in range(args.msg_max_len):
-            mask.append(_mask)
-            decoder_hidden, decoder_cell = \
-                self.lstm(decoder_input, (decoder_hidden, decoder_cell))
-            probs = F.softmax(self.out(decoder_hidden), dim=1)
-
-            if self.training:
-                predict = cat_softmax(probs, mode=args.msg_mode, tau=args.tau, hard=(not args.soft), dim=1)
-            else:
-                predict = F.one_hot(torch.argmax(probs, dim=1), 
-                                    num_classes=self.output_size).to(_mask.dtype)
-            
-            log_probs += torch.log((probs * predict).sum(dim=1)).dot(_mask.squeeze())
-            _mask = _mask * (1 - predict[:, eos_idx])
-            
-            message.append(predict)
-            deocder_input = predict
-        
-        message = torch.stack(message)
-        mask = torch.stack(mask)
-
-        return message, mask, log_probs

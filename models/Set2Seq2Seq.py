@@ -6,7 +6,7 @@ import random
 from utils.conf import args
 from models.Losses import mask_NLL_loss, seq_cross_entropy_loss
 from models.Encoders import SetEncoder, SeqEncoder
-from models.Decoders import SeqDecoder, MSGGeneratorLSTM
+from models.Decoders import SeqDecoder
 from models.Utils import weight_init
 
 
@@ -119,17 +119,17 @@ class Set2Seq2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
-        self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size)
-
+        self.msg_embedding = None
+        
         # Speaking agent
         self.speaker = SpeakingAgent(
-            self.voc_size, self.msg_vocsize, self.embedding, None,
+            self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
             self.hidden_size, self.dropout
         )
         # Listening agent
         self.listener = ListeningAgent(
             self.msg_vocsize, self.hidden_size, self.voc_size,
-            self.dropout, self.embedding.weight, None
+            self.dropout, self.embedding.weight, self.msg_embedding
         )
         
 
@@ -143,7 +143,7 @@ class Set2Seq2Seq(nn.Module):
         message, msg_logits, msg_mask = self.speaker(input_var, input_mask)
 
         spk_entropy = (F.softmax(msg_logits, dim=2) * msg_logits).sum(dim=2).sum(dim=0)
-        log_msg_prob = torch.sum(msg_logits, dim=1)
+        log_msg_prob = torch.sum(msg_logits * message, dim=1)
 
         seq_logits = self.listener(message, msg_mask, target_max_len)
 

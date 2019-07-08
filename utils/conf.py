@@ -8,13 +8,13 @@ from torch import optim
 default values for argparser
 '''
 defaults = {
-    'DEVICE': 2,
+    'DEVICE': 1,
     'LEARNING_RATE':1e-4,
     'DROPOUT_RATIO': 0.2,
     'CLIP': 50.0,
-    'TEACHER_FORCING_RATIO': 0.0,
+    'TEACHER_FORCING_RATIO': 0.5,
     'SPEAKER_LEARNING_RATIO': 5.0,
-    'LISTENER_LEARNING_RATIO': 1.0,
+    'LISTENER_LEARNING_RATIO': 0.0,
     'NUM_ITERS': 40000,
     'PRINT_EVERY': 1,
     'SAVE_EVERY': 1000,
@@ -38,9 +38,9 @@ defaults = {
     'MAX_LEN_WORD': 5,
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 1024,
-    'MSG_MODE': 'GUBMEL', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
+    'MSG_MODE': 'GUMBEL', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
     'MSG_TAU': 1.,
-    'L_RESET_FREQ': 20,
+    'L_RESET_FREQ': -1,
     'SIM_CHK_FREQ': 1000,
     'SIM_CHK_K': 50,
 }

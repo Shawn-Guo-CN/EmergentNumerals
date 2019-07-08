@@ -12,26 +12,13 @@ from analysis.cal_topological_similarity import cal_topological_sim
 from analysis.get_input_message_pairs import reproduce_msg_output
 
 
-def msg_tau_schedule(best_acc):
-    if best_acc >= 0.95:
-        args.tau = 0.05
-    elif best_acc >= 0.9:
-        args.tau = 0.1
-    elif best_acc >= 0.8:
-        args.tau = 0.5
-    elif best_acc >= 0.6:
-        args.tau = 1.
-    else:
-        args.tau = 2.
-
-
 def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=args.clip):
     # Zero gradients
     m_optimizer.zero_grad()
     s_optimizer.zero_grad()
     l_optimizer.zero_grad()
 
-    model.speaker.eval()
+    # model.speaker.eval()
 
     # Forward pass through model
     loss, log_msg_prob, baseline, print_losses, \
@@ -153,7 +140,7 @@ def train():
         print('building model...')
         model = Set2Seq2Seq(voc.num_words).to(args.device)
         model_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)
-        speaker_optimiser = args.optimiser(model.speaker.parameters(), 
+        speaker_optimiser = args.optimiser(model.speaker.decoder.parameters(), 
                                         lr=args.learning_rate * args.speaker_ratio)
         listner_optimiser = args.optimiser(model.listener.parameters(),
                                         lr=args.learning_rate * args.listener_ratio)
@@ -181,9 +168,6 @@ def train():
 
     print('training...')
     for iter in range(start_iteration, args.iter_num+1):
-        if args.msg_mode == 'GUMBEL':
-            msg_tau_schedule(max_dev_tok_acc)
-
         for idx, data_batch in enumerate(train_set):
             seq_acc, tok_acc, loss = train_epoch(model,
                 data_batch,
