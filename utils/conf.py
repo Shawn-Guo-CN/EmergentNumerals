@@ -17,7 +17,7 @@ defaults = {
     'LISTENER_LEARNING_RATIO': 0.0,
     'NUM_ITERS': 40000,
     'PRINT_EVERY': 1,
-    'SAVE_EVERY': 1000,
+    'SAVE_EVERY': 10000,
     'EVAL_EVERY': 10,
     'OPTIMISER': optim.Adam,
     'LOSS_FUNCTION': nn.CrossEntropyLoss(reduce=False),
