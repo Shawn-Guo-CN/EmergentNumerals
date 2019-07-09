@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import pandas as pd
+import math
 import analysis.distances as distances
 
 def sim_check(
@@ -10,6 +11,9 @@ def sim_check(
     msg_dis_measure='edit',
     corr_measure='pearson'
 ):
+    in_np_set = []
+    for in_str in in_set:
+        in_np_set.append(distances.instr2np_array(in_str))
     spk_hset = reproduce_spk_hidden_set(model, batch_set)
     msg_set = reproduce_msg_set(model, batch_set)
 
@@ -21,13 +25,16 @@ def sim_check(
 
     for i in range(len(in_set)-1):
         for j in range(i+1, len(in_set)):
-            mean_distances.append(get_in_dis(in_set[i], in_set[j], measure=in_dis_measure))
+            mean_distances.append(get_in_dis(in_np_set[i], in_np_set[j], measure=in_dis_measure))
             spk_h_distances.append(get_hidden_dis(spk_hset[i], spk_hset[j], measure=spk_hidden_measure))
             msg_distances.append(get_msg_dis(msg_set[i], msg_set[j], measure=msg_dis_measure))
     
     mean_distances = np.asarray(mean_distances)
-    spk_h_distances = np.asarray(spk_h_distances)
-    msg_distances = np.asarray(msg_distances)
+    spk_h_distances = np.asarray(spk_h_distances, dtype=float)
+    msg_distances = np.asarray(msg_distances, dtype=float)
+
+    spk_h_distances = check_distance_set(spk_h_distances)
+    msg_distances = check_distance_set(msg_distances)
 
     dis_table = pd.DataFrame(
             {'MD': mean_distances, 'SHD': spk_h_distances, 'MSD': msg_distances}
@@ -37,6 +44,13 @@ def sim_check(
     mean_msg_corr = dis_table.corr(corr_measure)['MD']['MSD']
 
     return mean_spkh_corr, mean_msg_corr
+
+
+def check_distance_set(distances):
+    if distances.sum() == 0:
+        distances += 0.1
+        distances[-1] -= 0.01
+    return distances
 
 
 def reproduce_spk_hidden_set(model, batch_set):

@@ -3,28 +3,32 @@ import random
 import torch.autograd as autograd
 import torch.nn as nn
 import os
+import numpy as np
+import pandas as pd
 
-from utils.conf import args
+from utils.conf import args, set_random_seed
 from models.Set2Seq2Seq import Set2Seq2Seq
 from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
-from analysis.cal_topological_similarity import cal_topological_sim
-from analysis.get_input_message_pairs import reproduce_msg_output
+from analysis.training_sim_check import sim_check
+
+
+def get_batches4sim_check(voc, dataset_file_path=args.data_file):
+    in_set = FruitSeqDataset.load_stringset(dataset_file_path)
+    batch_set = FruitSeqDataset(voc, batch_size=1, dataset_file_path=dataset_file_path).batches
+    return in_set, batch_set
 
 
 def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=args.clip):
-    # Zero gradients
     m_optimizer.zero_grad()
     s_optimizer.zero_grad()
     l_optimizer.zero_grad()
 
     # model.speaker.eval()
 
-    # Forward pass through model
     loss, log_msg_prob, baseline, print_losses, \
         _, tok_acc, seq_acc , _, s_entropy = model(data_batch)
     
-    # Perform backpropatation
     if args.msg_mode == 'REINFORCE':
         log_msg_prob = (loss.detach() * log_msg_prob).mean()
         log_msg_prob.backward()
@@ -32,12 +36,8 @@ def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=a
         log_msg_prob = ((loss.detach() - baseline.detach()) * log_msg_prob).mean()
         log_msg_prob.backward()
     loss.mean().backward()
-    # Calculate accuracy
-
-    # Clip gradients: gradients are modified in place
+    
     nn.utils.clip_grad_norm_(model.parameters(), clip)
-
-    # Adjust model weights
     m_optimizer.step()
     s_optimizer.step()
     l_optimizer.step()
@@ -64,45 +64,6 @@ def eval_model(model, dataset):
     model.train()
 
     return seq_acc, tok_acc, loss
-
-
-def sim_check_model(model, voc, in_set, batch_set):
-    model.eval()
-    tmp_file_path = './tmp/' + str(random.random()) + '.txt'
-
-    tmp_file = open(tmp_file_path, 'a')
-    for idx, data_batch in enumerate(batch_set):
-        message, output = reproduce_msg_output(model, voc, data_batch, args)
-        print(in_set[idx] + '\t' + message + '\t' + output, file=tmp_file)
-    tmp_file.close()
-
-    corr = cal_topological_sim(
-                msg_file_path=tmp_file_path, 
-                in_dis_measure='hamming',
-                msg_dis_measure='edit',
-                corr_method='pearson'
-            )
-
-    os.remove(tmp_file_path)
-    model.train()
-
-    return corr
-
-
-def prepare_data4sim_check(voc, dataset_file_path=args.dev_file):
-    in_set = random.choices(FruitSeqDataset.load_stringset(dataset_file_path), k=args.sim_chk_k)
-    
-    tmp_file_path = './tmp/' + str(random.random()) + '.txt'
-    tmp_file = open(tmp_file_path, 'a')
-    for in_str in in_set:
-        print(in_str, file=tmp_file)
-    tmp_file.close()
-
-    batch_set = FruitSeqDataset(voc, batch_size=1, dataset_file_path=tmp_file_path).batches
-
-    os.remove(tmp_file_path)
-
-    return in_set, batch_set
 
 
 def train():
@@ -147,7 +108,7 @@ def train():
         print('done')
 
     print('preparing data for testing topological similarity...')
-    sim_chk_inset, sim_chk_batchset = prepare_data4sim_check(voc, args.dev_file)
+    sim_chk_inset, sim_chk_batchset = get_batches4sim_check(voc, args.data_file)
     print('done')
     
     print('initialising...')
@@ -160,11 +121,14 @@ def train():
     training_losses = []
     training_tok_acc = []
     training_seq_acc = []
-    training_sim = []
+    training_in_spkh_sim = []
+    training_in_msg_sim = []
+    eval_tok_acc = []
+    eval_seq_acc = []
     print('done')
 
-    sim = sim_check_model(model, voc, sim_chk_inset, sim_chk_batchset)
-    print('[SIM]Iteration: {}; Sim: {:.4f}'.format(0, sim))
+    in_spk_sim, in_msg_sim = sim_check(model, sim_chk_inset, sim_chk_batchset)
+    print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}'.format(0, in_spk_sim, in_msg_sim))
 
     print('training...')
     for iter in range(start_iteration, args.iter_num+1):
@@ -200,14 +164,17 @@ def train():
                 max_dev_seq_acc = dev_seq_acc
             if dev_tok_acc > max_dev_tok_acc:
                 max_dev_tok_acc = dev_tok_acc
-
+            eval_seq_acc.append(dev_seq_acc)
+            eval_tok_acc.append(dev_tok_acc)
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Seq Acc: {:.4f}; Avg Tok Acc: {:.4f}; Best Seq Acc: {:.4f}".format(
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
 
         if iter % args.sim_chk_freq == 0:
-            sim = sim_check_model(model, voc, sim_chk_inset, sim_chk_batchset)
-            training_sim.append(sim)
-            print('[SIM]Iteration: {}; Sim: {:.4f}'.format(0, sim))
+            in_spk_sim, in_msg_sim = sim_check(model, sim_chk_inset, sim_chk_batchset)
+            training_in_spkh_sim.append(in_spk_sim)
+            training_in_msg_sim.append(in_msg_sim)
+            print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}'.format(0, in_spk_sim, in_msg_sim))
+
 
         if iter % args.l_reset_freq == 0 and not args.l_reset_freq == -1:
             model.listener.reset_params()
@@ -230,7 +197,15 @@ def train():
                 'loss': loss,
                 'voc': voc,
                 'args': args,
-                'records': [training_seq_acc, training_tok_acc, training_losses, training_sim]
+                'records': {
+                    'training_loss': training_losses,
+                    'training_tok_acc': training_tok_acc,
+                    'training_seq_acc': training_seq_acc,
+                    'training_in_spkh_sim': training_in_spkh_sim,
+                    'training_in_msg_sim': training_in_msg_sim,
+                    'eval_tok_acc': eval_tok_acc,
+                    'eval_seq_acc': eval_seq_acc
+                }
             }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
 
 
@@ -269,9 +244,7 @@ def test():
 
 
 if __name__ == '__main__':
-    random.seed(1234)
-    torch.manual_seed(1234)
-    torch.cuda.manual_seed(1234)
+    set_random_seed(1234)
     with autograd.detect_anomaly():
         print('with detect_anomaly')
         if args.test:

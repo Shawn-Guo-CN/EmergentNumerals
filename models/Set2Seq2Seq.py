@@ -166,3 +166,23 @@ class Set2Seq2Seq(nn.Module):
         
         return loss, log_msg_prob, baseline, print_losses, \
                 seq_correct, tok_acc, seq_acc, seq_logits, spk_entropy
+
+    def reproduce_speaker_hidden(self, data_batch):
+        self.eval()
+
+        input_var = data_batch['input']
+        input_mask = data_batch['input_mask']
+        
+        embedded_input = self.embedding(input_var.t())
+        hidden, _ = self.speaker.encoder(embedded_input, input_mask)
+        
+        self.train()
+        return hidden
+
+    def reproduce_message(self, data_batch):
+        self.eval()
+        input_var = data_batch['input']
+        input_mask = data_batch['input_mask']
+        message, _, _ = self.speaker(input_var, input_mask)
+        self.train()
+        return message
