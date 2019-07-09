@@ -4,7 +4,7 @@ import pandas as pd
 import analysis.distances as distances
 
 def sim_check(
-    model, voc, in_set, batch_set,
+    model, in_set, batch_set,
     in_dis_measure='hamming',
     spk_hidden_measure='euclidean',
     msg_dis_measure='edit',
