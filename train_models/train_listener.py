@@ -26,12 +26,12 @@ class Set2Seq2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
-        self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size)
+        self.msg_embedding = None
 
         # Listening agent
         self.listener = ListeningAgent(
             self.msg_vocsize, self.hidden_size, self.voc_size,
-            self.dropout, self.embedding.weight, self.msg_embedding.weight
+            self.dropout, self.embedding.weight, self.msg_embedding
         )
 
     def forward(self, data_batch):

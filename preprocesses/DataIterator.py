@@ -7,9 +7,16 @@ from utils.conf import args
 from preprocesses.Voc import Voc
 
 class FruitSeqDataset(Dataset):
-    def __init__(self, voc, batch_size=args.batch_size, dataset_file_path=args.train_file):
+    def __init__(
+        self, voc, 
+        batch_size=args.batch_size, 
+        dataset_file_path=args.train_file,
+        device=args.device
+    ):
         self.voc = voc
         self.batch_size = batch_size
+        self.device = device
+
         self.batches = self.build_batches(dataset_file_path)
 
     def __len__(self):
@@ -58,17 +65,16 @@ class FruitSeqDataset(Dataset):
                     m[i].append(1)
         return m
 
-    @staticmethod
-    def build_tensor_mask_lens_maxlen(indices_batch):
+    def build_tensor_mask_lens_maxlen(self, indices_batch):
         padded_indices = FruitSeqDataset.pad(indices_batch)
         
-        lens = torch.tensor([len(indices) for indices in indices_batch]).to(args.device)
+        lens = torch.tensor([len(indices) for indices in indices_batch]).to(self.device)
         max_len = max([len(indices) for indices in indices_batch])
         
         mask = FruitSeqDataset.build_mask(padded_indices)
-        mask = torch.ByteTensor(mask).to(args.device)
+        mask = torch.ByteTensor(mask).to(self.device)
 
-        padded_indices = torch.LongTensor(padded_indices).to(args.device)
+        padded_indices = torch.LongTensor(padded_indices).to(self.device)
         
         return padded_indices, mask, lens, max_len
 
@@ -89,9 +95,9 @@ class FruitSeqDataset(Dataset):
             target_indices_batch.sort(key=len, reverse=True)
 
             in_var, in_mask, in_len, _ = \
-                FruitSeqDataset.build_tensor_mask_lens_maxlen(input_indices_batch)
+                self.build_tensor_mask_lens_maxlen(input_indices_batch)
             tgt_var, tgt_mask, _, tgt_max_len = \
-                FruitSeqDataset.build_tensor_mask_lens_maxlen(target_indices_batch)
+                self.build_tensor_mask_lens_maxlen(target_indices_batch)
 
             batches.append({
                 'input': in_var,
@@ -108,12 +114,15 @@ class FruitSeqDataset(Dataset):
 class PairDataset(Dataset):
     def __init__(
             self, voc, reverse=False, 
-            batch_size=args.batch_size, dataset_file_path=args.train_file
+            batch_size=args.batch_size,
+            dataset_file_path=args.train_file,
+            device=args.device
         ):
         self.voc = voc
         self.batch_size = batch_size
         # T for (msg, seq) as io, F for (seq, msg) as io
         self.reverse = reverse
+        self.device = device
 
         self.batches = self.build_batches(dataset_file_path)
 
@@ -168,17 +177,16 @@ class PairDataset(Dataset):
                     m[i].append(1)
         return m
 
-    @staticmethod
-    def build_tensor_mask_lens_maxlen(indices_batch, value=args.pad_index):
+    def build_tensor_mask_lens_maxlen(self, indices_batch, value=args.pad_index):
         padded_indices = PairDataset.pad(indices_batch)
         
-        lens = torch.tensor([len(indices) for indices in indices_batch]).to(args.device)
+        lens = torch.tensor([len(indices) for indices in indices_batch]).to(self.device)
         max_len = max([len(indices) for indices in indices_batch])
         
         mask = PairDataset.build_mask(padded_indices, value)
-        mask = torch.ByteTensor(mask).to(args.device)
+        mask = torch.ByteTensor(mask).to(self.device)
 
-        padded_indices = torch.LongTensor(padded_indices).to(args.device)
+        padded_indices = torch.LongTensor(padded_indices).to(self.device)
         
         return padded_indices, mask, lens, max_len
 
