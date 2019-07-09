@@ -6,7 +6,7 @@ import pandas as pd
 import os
 import random
 
-from utils.conf import args
+from utils.conf import args, set_random_seed
 from models.Set2Seq import Set2Seq
 from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
@@ -140,6 +140,8 @@ def train():
     training_tok_acc = []
     training_seq_acc = []
     training_sim = []
+    eval_tok_acc = []
+    eval_seq_acc = []
     print('done')
 
     print('training...')
@@ -170,6 +172,8 @@ def train():
 
         if iter % args.eval_freq == 0:
             dev_seq_acc, dev_tok_acc, dev_loss = eval_model(set2seq, dev_set)
+            eval_tok_acc.append(dev_tok_acc)
+            eval_seq_acc.append(dev_seq_acc)
             if dev_seq_acc > max_dev_seq_acc:
                 max_dev_seq_acc = dev_seq_acc
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Seq Acc: {:.4f}; Avg Tok Acc: {:.4f}; Best Seq Acc: {:.4f}".format(
@@ -192,7 +196,14 @@ def train():
                 'loss': loss,
                 'voc': voc,
                 'args': args,
-                'records': [training_seq_acc, training_tok_acc, training_losses, training_sim]
+                'records': {
+                    'traing_loss': training_losses,
+                    'training_tok_acc': training_tok_acc,
+                    'training_seq_acc': training_seq_acc,
+                    'training_sim': training_sim,
+                    'eval_tok_acc': eval_tok_acc,
+                    'eval_seq_acc': eval_seq_acc
+                }
             }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
 
 
@@ -228,6 +239,7 @@ def test():
 
 
 if __name__ == '__main__':
+    set_random_seed(1234)
     if args.test:
         test()
     else:
