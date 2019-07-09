@@ -100,5 +100,7 @@ def get_msg_dis(m1, m2, measure='edit'):
         return distances.editdistance.eval(m1, m2)
     elif measure == 'hamming':
         return distances.msg_ham_dis(m1, m2)
+    elif measure == 'euclidean':
+        return distances.euclid_dis(m1, m2)
     else:
         raise NotImplementedError

@@ -127,7 +127,12 @@ def train():
     eval_seq_acc = []
     print('done')
 
-    in_spk_sim, in_msg_sim = sim_check(model, sim_chk_inset, sim_chk_batchset)
+    in_spk_sim, in_msg_sim = sim_check(
+        model, sim_chk_inset, sim_chk_batchset, 
+        in_dis_measure='euclidean',
+        spk_hidden_measure='euclidean',
+        msg_dis_measure='euclidean'
+    )
     print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}'.format(0, in_spk_sim, in_msg_sim))
 
     print('training...')
@@ -170,7 +175,12 @@ def train():
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
 
         if iter % args.sim_chk_freq == 0:
-            in_spk_sim, in_msg_sim = sim_check(model, sim_chk_inset, sim_chk_batchset)
+            in_spk_sim, in_msg_sim = sim_check(
+                model, sim_chk_inset, sim_chk_batchset, 
+                in_dis_measure='euclidean',
+                spk_hidden_measure='euclidean',
+                msg_dis_measure='euclidean'
+            )
             training_in_spkh_sim.append(in_spk_sim)
             training_in_msg_sim.append(in_msg_sim)
             print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}'.format(0, in_spk_sim, in_msg_sim))
