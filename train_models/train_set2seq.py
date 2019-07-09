@@ -197,7 +197,7 @@ def train():
                 'voc': voc,
                 'args': args,
                 'records': {
-                    'traing_loss': training_losses,
+                    'training_loss': training_losses,
                     'training_tok_acc': training_tok_acc,
                     'training_seq_acc': training_seq_acc,
                     'training_sim': training_sim,
