@@ -26,7 +26,7 @@ class Set2Seq2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
-        self.msg_embedding = None
+        self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size).weight
 
         # Listening agent
         self.listener = ListeningAgent(

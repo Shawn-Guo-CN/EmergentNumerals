@@ -22,7 +22,10 @@ class SpeakingAgent(nn.Module):
         self.hidden_size = hidden_size
 
         self.embedding = embedding
-        self.msg_embedding = msg_embedding
+        if msg_embedding is None:
+            self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size).weight
+        else:
+            self.msg_embedding = msg_embedding
         self.dropout = nn.Dropout(dropout)
 
         self.encoder = SetEncoder(self.voc_size, self.hidden_size)
@@ -63,12 +66,16 @@ class ListeningAgent(nn.Module):
                 torch.randn(self.output_size, self.hidden_size, device=args.device)
             )
 
-        self.msg_embedding = msg_embedding
-        
-        if self.msg_embedding is None:
-            self.encoder = SeqEncoder(self.input_size, self.hidden_size)
+        if msg_embedding is None:
+            self.msg_embedding = nn.Embedding(self.input_size, self.hidden_size).weight
         else:
-            self.encoder = SeqEncoder(self.hidden_size, self.hidden_size)
+            self.msg_embedding = msg_embedding
+        
+        # if self.msg_embedding is None:
+        #     self.encoder = SeqEncoder(self.input_size, self.hidden_size)
+        # else:
+        #     self.encoder = SeqEncoder(self.hidden_size, self.hidden_size)
+        self.encoder = SeqEncoder(self.hidden_size, self.hidden_size)
 
         self.decoder = SeqDecoder(
                 self.output_size, self.hidden_size, self.output_size,
@@ -119,17 +126,17 @@ class Set2Seq2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
-        self.msg_embedding = None
+        self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size)
         
-        # Speaking agent
+        # Speaking agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.speaker = SpeakingAgent(
-            self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
+            self.voc_size, self.msg_vocsize, self.embedding, None,
             self.hidden_size, self.dropout
         )
-        # Listening agent
+        # Listening agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.listener = ListeningAgent(
             self.msg_vocsize, self.hidden_size, self.voc_size,
-            self.dropout, self.embedding.weight, self.msg_embedding
+            self.dropout, self.embedding.weight, None
         )
         
 
