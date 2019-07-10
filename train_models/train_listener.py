@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import os
 
-from utils.conf import args
+from utils.conf import args, set_random_seed
 from models.Set2Seq2Seq import ListeningAgent
 from models.Losses import seq_cross_entropy_loss
 from preprocesses.DataIterator import PairDataset
@@ -136,6 +136,8 @@ def train():
     training_tok_acc = []
     training_seq_acc = []
     training_sim = []
+    eval_tok_acc = []
+    eval_seq_acc = []
     print('done')
 
     print('training...')
@@ -171,10 +173,11 @@ def train():
                 max_dev_seq_acc = dev_seq_acc
             if dev_tok_acc > max_dev_tok_acc:
                 max_dev_tok_acc = dev_tok_acc
-
+            eval_tok_acc.append(dev_tok_acc)
+            eval_seq_acc.append(dev_seq_acc)
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Seq Acc: {:.4f}; Avg Tok Acc: {:.4f}; Best Seq Acc: {:.4f}".format(
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
-
+ 
         if iter % args.save_freq == 0:
             path_join = 'set2seq2seq_' + str(args.num_words) + '_' + args.msg_mode
             path_join += '_hard' if not args.soft else '_soft'
@@ -190,7 +193,8 @@ def train():
                 'loss': loss,
                 'voc': voc,
                 'args': args,
-                'records': [training_seq_acc, training_tok_acc, training_losses, training_sim]
+                'records': [training_seq_acc, training_tok_acc, training_losses, training_sim,
+                                eval_tok_acc, eval_seq_acc]
             }, os.path.join(directory, '{}_{}.tar'.format(iter, 'checkpoint')))
 
 
@@ -226,9 +230,7 @@ def test():
 
 
 if __name__ == '__main__':
-    random.seed(1234)
-    torch.manual_seed(1234)
-    torch.cuda.manual_seed(1234)
+    set_random_seed(12345)
     with autograd.detect_anomaly():
         print('with detect_anomaly')
         if args.test:

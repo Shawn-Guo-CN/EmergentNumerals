@@ -152,7 +152,7 @@ class PairDataset(Dataset):
             return [self.voc.word2index[w] for w in seq] + [args.eos_index]
 
         def _msgstring2indices_(msg):
-            return [int(c) for c in msg] + [args.msg_vocsize-1]
+            return [int(c) for c in msg]
         
         for pair in pair_set:
             # input contains neither SOS or EOS, target contains EOS
