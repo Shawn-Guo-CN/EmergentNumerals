@@ -179,7 +179,7 @@ def train():
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
  
         if iter % args.save_freq == 0:
-            path_join = 'set2seq2seq_' + str(args.num_words) + '_' + args.msg_mode
+            path_join = 'listener_' + str(args.num_words) + '_' + args.msg_mode
             path_join += '_hard' if not args.soft else '_soft'
             directory = os.path.join(args.save_dir, path_join)
             if not os.path.exists(directory):
@@ -230,7 +230,7 @@ def test():
 
 
 if __name__ == '__main__':
-    set_random_seed(12345)
+    set_random_seed(1234)
     with autograd.detect_anomaly():
         print('with detect_anomaly')
         if args.test:
