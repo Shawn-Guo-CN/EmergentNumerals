@@ -148,6 +148,8 @@ def train():
     training_tok_acc = []
     training_seq_acc = []
     training_sim = []
+    eval_tok_acc = []
+    eval_seq_acc = []
     print('done')
 
     print('training...')
@@ -179,6 +181,8 @@ def train():
 
         if iter % args.eval_freq == 0:
             dev_seq_acc, dev_tok_acc, dev_loss = eval_model(model, dev_set)
+            eval_tok_acc.append(dev_tok_acc)
+            eval_seq_acc.append(dev_seq_acc)
             if dev_seq_acc > max_dev_seq_acc:
                 max_dev_seq_acc = dev_seq_acc
             if dev_tok_acc > max_dev_tok_acc:
@@ -189,7 +193,7 @@ def train():
 
         
         if iter % args.save_freq == 0:
-            path_join = 'set2seq2seq_' + str(args.num_words) + '_' + args.msg_mode
+            path_join = 'speaker_' + str(args.num_words) + '_' + args.msg_mode
             path_join += '_hard' if not args.soft else '_soft'
             directory = os.path.join(args.save_dir, path_join)
             if not os.path.exists(directory):
@@ -203,7 +207,14 @@ def train():
                 'loss': loss,
                 'voc': voc,
                 'args': args,
-                'records': [training_seq_acc, training_tok_acc, training_losses, training_sim]
+                'records': {
+                    'training_loss': training_losses,
+                    'training_tok_acc': training_tok_acc,
+                    'training_seq_acc': training_seq_acc,
+                    'training_sim': training_sim,
+                    'eval_tok_acc': eval_tok_acc,
+                    'eval_seq_acc': eval_seq_acc
+                }
             }, os.path.join(directory, '{}_{}.tar'.format(iter, 'checkpoint')))
 
 

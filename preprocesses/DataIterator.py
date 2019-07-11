@@ -149,7 +149,10 @@ class PairDataset(Dataset):
         io_indices = []
 
         def _iostring2indices_(seq):
-            return [self.voc.word2index[w] for w in seq] + [args.eos_index]
+            if self.reverse:
+                return [self.voc.word2index[w] for w in seq]
+            else:
+                return [self.voc.word2index[w] for w in seq] + [args.eos_index]
 
         def _msgstring2indices_(msg):
             return [int(c) for c in msg]
