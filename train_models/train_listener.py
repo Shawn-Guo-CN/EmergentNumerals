@@ -41,7 +41,7 @@ class Set2Seq2Seq(nn.Module):
         target_mask = data_batch['target_mask']
         target_max_len = data_batch['target_max_len']
 
-        msg = F.one_hot(input_var).to(torch.float32)
+        msg = F.one_hot(input_var, num_classes=args.msg_vocsize).to(torch.float32)
         msg_mask = msg_mask.to(torch.float32).unsqueeze(1)
 
         listener_outputs = self.listener(msg, msg_mask, target_max_len)

@@ -81,6 +81,13 @@ def train():
     print_seq_acc = 0.
     print_tok_acc = 0.
     max_dev_seq_acc = 0.
+    training_losses = []
+    training_tok_acc = []
+    training_seq_acc = []
+    training_in_spkh_sim = []
+    training_in_msg_sim = []
+    eval_tok_acc = []
+    eval_seq_acc = []
     print('done')
 
     print('training...')
@@ -102,6 +109,9 @@ def train():
             print("Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg seq acc: {:.4f}; Avg tok acc: {:.4f}".format(
                 iter, iter / args.iter_num * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
                 ))
+            training_seq_acc.append(print_seq_acc_avg)
+            training_tok_acc.append(print_tok_acc_avg)
+            training_losses.append(print_loss_avg)
             print_seq_acc = 0.
             print_tok_acc = 0.
             print_loss = 0.
@@ -110,6 +120,8 @@ def train():
             dev_seq_acc, dev_tok_acc, dev_loss = eval_model(seq2seq, dev_set)
             if dev_seq_acc > max_dev_seq_acc:
                 max_dev_seq_acc = dev_seq_acc
+            eval_seq_acc.append(dev_seq_acc)
+            eval_tok_acc.append(dev_tok_acc)
 
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Seq Acc: {:.4f}; Avg Tok Acc: {:.4f}; Best Seq Acc: {:.4f}".format(
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
@@ -124,7 +136,17 @@ def train():
                 'opt': param_optimizer.state_dict(),
                 'de_opt': decoder_optimizer.state_dict(),
                 'loss': loss,
-                'voc': voc
+                'voc': voc,
+                'args': args,
+                'records': {
+                    'training_loss': training_losses,
+                    'training_tok_acc': training_tok_acc,
+                    'training_seq_acc': training_seq_acc,
+                    'training_in_spkh_sim': training_in_spkh_sim,
+                    'training_in_msg_sim': training_in_msg_sim,
+                    'eval_tok_acc': eval_tok_acc,
+                    'eval_seq_acc': eval_seq_acc
+                }
             }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
 
 
