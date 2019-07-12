@@ -84,8 +84,7 @@ def train():
     training_losses = []
     training_tok_acc = []
     training_seq_acc = []
-    training_in_spkh_sim = []
-    training_in_msg_sim = []
+    training_sim = []
     eval_tok_acc = []
     eval_seq_acc = []
     print('done')
@@ -138,15 +137,8 @@ def train():
                 'loss': loss,
                 'voc': voc,
                 'args': args,
-                'records': {
-                    'training_loss': training_losses,
-                    'training_tok_acc': training_tok_acc,
-                    'training_seq_acc': training_seq_acc,
-                    'training_in_spkh_sim': training_in_spkh_sim,
-                    'training_in_msg_sim': training_in_msg_sim,
-                    'eval_tok_acc': eval_tok_acc,
-                    'eval_seq_acc': eval_seq_acc
-                }
+                'records': [training_seq_acc, training_tok_acc, training_losses, training_sim,
+                            eval_tok_acc, eval_seq_acc]
             }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
 
 
