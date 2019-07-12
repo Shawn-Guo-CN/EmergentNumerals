@@ -190,6 +190,29 @@ class Set2Seq2Seq(nn.Module):
         self.train()
         return hidden
 
+    def reproduce_listener_hidden(self, data_batch):
+        self.eval()
+
+        input_var = data_batch['input']
+        input_mask = data_batch['input_mask']
+        
+        message, _, msg_mask = self.speaker(input_var, input_mask)
+
+        batch_size = message.shape[1]
+        msg_len = msg_mask.squeeze(1).sum(dim=0)
+        message = message.transpose(0, 1)
+
+        if self.listener.msg_embedding is not None:
+            message = F.relu(
+                torch.bmm(message, self.listener.msg_embedding.expand(batch_size, -1, -1))
+            )
+
+        _, hidden, _ = self.listener.encoder(message, msg_len)
+        
+        self.train()
+
+        return hidden
+
     def reproduce_message(self, data_batch):
         self.eval()
         input_var = data_batch['input']
