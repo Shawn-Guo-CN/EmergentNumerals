@@ -21,7 +21,11 @@ class SpeakingAgent(nn.Module):
         self.msg_vocsize = msg_vocsize
         self.hidden_size = hidden_size
 
-        self.embedding = embedding
+        if embedding is None:
+            self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
+        else:
+            self.embedding = embedding
+
         if msg_embedding is None:
             self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size).weight
         else:
@@ -60,11 +64,11 @@ class ListeningAgent(nn.Module):
         self.output_size = output_size
 
         if embedding is not None:
-            self.embedding = embedding
-        else:
             self.embedding = nn.Parameter(
                 torch.randn(self.output_size, self.hidden_size, device=args.device)
             )
+        else:
+            self.embedding = embedding
 
         if msg_embedding is None:
             self.msg_embedding = nn.Embedding(self.input_size, self.hidden_size).weight
@@ -125,18 +129,18 @@ class Set2Seq2Seq(nn.Module):
         self.dropout = dropout
 
         # For embedding inputs
-        self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
-        self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size)
+        self.embedding = None
+        self.msg_embedding = None
         
         # Speaking agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.speaker = SpeakingAgent(
-            self.voc_size, self.msg_vocsize, self.embedding, None,
+            self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
             self.hidden_size, self.dropout
         )
         # Listening agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.listener = ListeningAgent(
             self.msg_vocsize, self.hidden_size, self.voc_size,
-            self.dropout, self.embedding.weight, None
+            self.dropout, self.embedding, self.msg_embedding,
         )
         
 
@@ -180,7 +184,7 @@ class Set2Seq2Seq(nn.Module):
         input_var = data_batch['input']
         input_mask = data_batch['input_mask']
         
-        embedded_input = self.embedding(input_var.t())
+        embedded_input = self.speaker.embedding(input_var.t())
         hidden, _ = self.speaker.encoder(embedded_input, input_mask)
         
         self.train()
