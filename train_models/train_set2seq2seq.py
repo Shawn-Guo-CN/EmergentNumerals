@@ -218,6 +218,7 @@ def train():
                     'training_seq_acc': training_seq_acc,
                     'training_in_spkh_sim': training_in_spkh_sim,
                     'training_in_msg_sim': training_in_msg_sim,
+                    'training_in_lish_sim': training_in_lish_sim,
                     'eval_tok_acc': eval_tok_acc,
                     'eval_seq_acc': eval_seq_acc
                 }
