@@ -214,9 +214,6 @@ class PairDataset(Dataset):
                 target_indices_batch = io_indices[i*self.batch_size:
                                             min((i+1)*self.batch_size, len(msg_indices))]
 
-            input_indices_batch.sort(key=len, reverse=True)
-            target_indices_batch.sort(key=len, reverse=True)
-
             if self.reverse:
                 in_var, in_mask, in_len, _ = \
                     self.build_tensor_mask_lens_maxlen(input_indices_batch)
@@ -350,9 +347,128 @@ class ChooseDataset(Dataset):
         return batches
 
 
+class ChoosePairDataset(Dataset):
+    def __init__(
+        self,  voc, 
+        batch_size=args.batch_size, 
+        dataset_file_path=args.train_file,
+        device=args.device,
+        d_num=args.num_distractors
+    ):
+        super().__init__()
+        self.voc = voc
+        self.batch_size = batch_size
+        self.device = device
+        self.file_path = dataset_file_path
+        self.d_num = d_num # number of disctractors
+
+        self.databatch_set = self.build_batches()
+        self.batch_indices = np.arange(len(self.databatch_set))
+
+    def __len__(self):
+        return len(self.databatch_set)
+
+    def __getitem__(self, idx):
+        correct_batch = self.databatch_set[idx]
+
+        distract_batches = []
+        for _ in range(self.d_num):
+            distract_batches.append(self.generate_distractor_batch(idx))
+        
+        return {
+            'correct': correct_batch,
+            'distracts': distract_batches
+        }
+
+    def generate_distractor_batch(self, tgt_idx):
+        sample_idx = np.random.choice(self.batch_indices)
+        if sample_idx == tgt_idx:
+            return self.reperm_batch(tgt_idx)
+        else:
+            return self.databatch_set[sample_idx]
+
+    def reperm_batch(self, tgt_idx):
+        batch_size = self.databatch_set[tgt_idx]['message'].shape[1]
+
+        original_idx = torch.arange(batch_size, device=self.device)
+        new_idx = torch.randperm(batch_size, device=self.device)
+
+        while not (original_idx == new_idx).sum().eq(0):
+            new_idx = torch.randperm(batch_size, device=self.device)
+
+        shuffled_seq = self.databatch_set[tgt_idx]['sequence'][:, new_idx]
+        shuffled_seq_mask = self.databatch_set[tgt_idx]['seq_mask'][:, new_idx]
+        max_len = self.databatch_set[tgt_idx]['seq_max_len']
+
+        return {
+            'sequence': shuffled_seq,
+            'seq_mask': shuffled_seq_mask,
+            'seq_max_len': max_len
+        }
+
+    def pair_set2msg_io_indices(self, pair_set:list) -> list:
+        msg_indices = []
+        io_indices = []
+
+        def _iostring2indices_(seq):
+            return [self.voc.word2index[w] for w in seq]
+
+        def _msgstring2indices_(msg):
+            return [int(c) for c in msg]
+        
+        for pair in pair_set:
+            msg_indices.append(_msgstring2indices_(pair[0]))
+            io_indices.append(_iostring2indices_(pair[1]))
+        
+        return msg_indices, io_indices
+
+    def build_tensor_mask_lens_maxlen(self, indices_batch, value=args.pad_index):
+        padded_indices = PairDataset.pad(indices_batch)
+        
+        lens = torch.tensor([len(indices) for indices in indices_batch]).to(self.device)
+        max_len = max([len(indices) for indices in indices_batch])
+        
+        mask = PairDataset.build_mask(padded_indices, value)
+        mask = torch.ByteTensor(mask).to(self.device)
+
+        padded_indices = torch.LongTensor(padded_indices).to(self.device)
+        
+        return padded_indices, mask, lens, max_len
+
+    def build_batches(self) -> list:
+        batches = []
+
+        pair_set = PairDataset.load_pairset(self.file_path)
+        msg_indices, io_indices = self.pair_set2msg_io_indices(pair_set)
+
+        num_batches = math.ceil(len(msg_indices) / self.batch_size)
+
+        for i in range(num_batches):
+            msg_indices_batch = msg_indices[i*self.batch_size:
+                                    min((i+1)*self.batch_size, len(io_indices))]
+            seq_indices_batch = io_indices[i*self.batch_size:
+                                        min((i+1)*self.batch_size, len(msg_indices))]
+
+            msg_var, msg_mask, msg_len, _ = \
+                self.build_tensor_mask_lens_maxlen(msg_indices_batch, value=-1)
+            seq_var, seq_mask, _, seq_max_len = \
+                self.build_tensor_mask_lens_maxlen(seq_indices_batch)
+
+            batches.append({
+                'message': msg_var,
+                'msg_mask': msg_mask,
+                'msg_lens': msg_len,
+                'sequence': seq_var,
+                'seq_mask': seq_mask,
+                'seq_max_len': seq_max_len
+            })
+
+        return batches
+
+
 if __name__ == '__main__':
     voc = Voc()
-    batchset = ChooseDataset(voc)
+    batchset = ChoosePairDataset(voc, dataset_file_path='./data/2_perfect/all_data.txt')
 
     print('correct batch:')
     print(batchset[0]['correct'])
