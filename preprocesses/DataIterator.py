@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset
 import math
 import itertools
+import numpy as np
 
 from utils.conf import args
 from preprocesses.Voc import Voc
@@ -84,7 +85,7 @@ class FruitSeqDataset(Dataset):
         string_set = self.load_stringset(file_path)
         input_indices, target_indices = self.string_set2input_target_indices(string_set)
 
-        num_batches = num_batches = math.ceil(len(input_indices) / self.batch_size)
+        num_batches = math.ceil(len(input_indices) / self.batch_size)
 
         for i in range(num_batches):
             input_indices_batch = input_indices[i*self.batch_size:
@@ -239,24 +240,122 @@ class PairDataset(Dataset):
         return batches
 
 
+class ChooseDataset(Dataset):
+    def __init__(
+            self,  voc, 
+            batch_size=args.batch_size, 
+            dataset_file_path=args.train_file,
+            device=args.device,
+            d_num=args.num_distractors
+        ):
+        super().__init__()
+        self.voc = voc
+        self.batch_size = batch_size
+        self.device = device
+        self.file_path = dataset_file_path
+        self.d_num = d_num # number of disctractors
+
+        self.databatch_set = self.build_batches()
+        self.batch_indices = np.arange(len(self.databatch_set))
+
+    def __len__(self):
+        return len(self.databatch_set)
+    
+    def __getitem__(self, idx):
+        correct_batch = self.databatch_set[idx]
+
+        distract_batches = []
+        for _ in range(self.d_num):
+            distract_batches.append(self.generate_distractor_batch(idx))
+        
+        return {
+            'correct': correct_batch,
+            'distracts': distract_batches
+        }
+
+    def generate_distractor_batch(self, tgt_idx):
+        sample_idx = np.random.choice(self.batch_indices)
+        if sample_idx == tgt_idx:
+            return self.reperm_batch(tgt_idx)
+        else:
+            return self.databatch_set[sample_idx]
+
+    def reperm_batch(self, tgt_idx):
+        batch_size = self.databatch_set[tgt_idx]['input'].shape[1]
+
+        original_idx = torch.arange(batch_size, device=self.device)
+        new_idx = torch.randperm(batch_size, device=self.device)
+
+        while not (original_idx == new_idx).sum().eq(0):
+            new_idx = torch.randperm(batch_size, device=self.device)
+
+        shuffled_input = self.databatch_set[tgt_idx]['input'][:, new_idx]
+        shuffled_mask = self.databatch_set[tgt_idx]['input_mask'][:, new_idx]
+        shuffled_lens = self.databatch_set[tgt_idx]['input_lens'][new_idx]
+        max_len = self.databatch_set[tgt_idx]['input_max_len']
+
+        return {
+            'input': shuffled_input,
+            'input_mask': shuffled_mask,
+            'input_lens': shuffled_lens,
+            'input_max_len': max_len
+        }
+
+    def string_set2input_target_indices(self, string_set):
+        input_indices = []
+        def _string2indices_(seq):
+            return [self.voc.word2index[w] for w in seq]
+        for string in string_set:
+            input_indices.append(_string2indices_(string))
+        
+        return input_indices
+        
+
+    def build_tensor_mask_lens_maxlen(self, indices_batch, value=args.pad_index):
+        padded_indices = FruitSeqDataset.pad(indices_batch)
+        
+        lens = torch.tensor([len(indices) for indices in indices_batch]).to(self.device)
+        max_len = max([len(indices) for indices in indices_batch])
+        
+        mask = FruitSeqDataset.build_mask(padded_indices, value)
+        mask = torch.ByteTensor(mask).to(self.device)
+
+        padded_indices = torch.LongTensor(padded_indices).to(self.device)
+        
+        return padded_indices, mask, lens, max_len
+
+    def build_batches(self):
+        batches = []
+
+        string_set = FruitSeqDataset.load_stringset(self.file_path)
+        input_indices = self.string_set2input_target_indices(string_set)
+
+        num_batches = math.ceil(len(input_indices) / self.batch_size)
+
+        for i in range(num_batches):
+            input_indices_batch = input_indices[i*self.batch_size:
+                                        min((i+1)*self.batch_size, len(input_indices))]
+            input_indices_batch.sort(key=len, reverse=True)
+
+            in_var, in_mask, in_len, in_max_len = \
+                self.build_tensor_mask_lens_maxlen(input_indices_batch)
+
+            batches.append({
+                'input': in_var,
+                'input_mask': in_mask,
+                'input_lens': in_len,
+                'input_max_len': in_max_len
+            })
+
+        return batches
+
+
 if __name__ == '__main__':
     voc = Voc()
-    batchset = PairDataset(voc, reverse=False)
+    batchset = ChooseDataset(voc)
 
-    print('input:')
-    print(batchset[5]['input'])
-    print('input shape:')
-    print(batchset[5]['input'].shape)
-    print('input_mask:')
-    print(batchset[5]['input_mask'])
-    print('input_mask shape:')
-    print(batchset[5]['input_mask'].shape)
-    print('input_lens')
-    print(batchset[5]['input_lens'])
+    print('correct batch:')
+    print(batchset[0]['correct'])
 
-    print('target:')
-    print(batchset[5]['target'])
-    print('target mask:')
-    print(batchset[5]['target_mask'])
-    print('target_max_len:')
-    print(batchset[5]['target_max_len'])
+    print('first distract:')
+    print(batchset[0]['distracts'][0])

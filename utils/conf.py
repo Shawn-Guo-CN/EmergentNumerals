@@ -44,6 +44,7 @@ defaults = {
     'L_RESET_FREQ': -1,
     'SIM_CHK_FREQ': 1000,
     'SIM_CHK_K': 50,
+    'NUM_DISCTRACTOR': 4,
 }
 
 '''
@@ -138,6 +139,8 @@ parser.add_argument('--sim-chk-freq', type=int, default=defaults['SIM_CHK_FREQ']
         help='frequence of checking topological similarity during traing')
 parser.add_argument('--sim-chk-k', type=int, default=defaults['SIM_CHK_K'],
         help='number of sample data used to check topological similarity')
+parser.add_argument('--num-distractors', type=int, default=defaults['NUM_DISCTRACTOR'],
+        help='number of distractors in a training sample')
 args = parser.parse_args()
 
 args.device = torch.device("cuda:" + str(args.device) \
