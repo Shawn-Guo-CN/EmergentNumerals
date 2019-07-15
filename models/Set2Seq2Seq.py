@@ -223,11 +223,11 @@ class Set2Seq2Seq(nn.Module):
         self.speaker = SpeakingAgent(
             self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
             self.hidden_size, self.dropout
-        )
+        ).to(self.listener.msg_embedding.device)
 
     def reset_listener(self):
         del self.listener
         self.listener = ListeningAgent(
             self.msg_vocsize, self.hidden_size, self.voc_size,
             self.dropout, self.embedding, self.msg_embedding,
-        )
+        ).to(self.speaker.embedding.weight.device)

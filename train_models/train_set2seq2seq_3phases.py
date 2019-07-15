@@ -101,7 +101,7 @@ def knowledge_generation_phase(model, learn_set):
 
     for data in learn_set:
         message = model.reproduce_message(data)
-        message = message.argmax(dim=0)
+        message = message.argmax(dim=2)
         msg_set.append(message.detach())
         msg_masks.append(torch.ones_like(message, device=message.device))
     model.train()
