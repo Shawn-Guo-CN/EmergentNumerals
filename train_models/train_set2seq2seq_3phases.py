@@ -122,7 +122,7 @@ def _speaker_learn_(model, data_batch, target, tgt_mask):
     return loss, tok_acc, seq_acc
 
 
-def speaker_learning_phase(model, s_optimizer, input_set, target_set, tgt_mask_set, 
+def speaker_learning_phase(model, m_optimizer, s_optimizer, input_set, target_set, tgt_mask_set, 
     generation_idx=0, clip=args.clip):
     assert len(input_set) == len(target_set)
     assert len(target_set) == len(tgt_mask_set)
@@ -133,16 +133,18 @@ def speaker_learning_phase(model, s_optimizer, input_set, target_set, tgt_mask_s
 
     for iter in range(1, args.num_spklearn_iter+1):
         for idx, data_batch in enumerate(input_set):
+            m_optimizer.zero_grad()
             s_optimizer.zero_grad()
             loss, tok_acc, seq_acc = \
                 _speaker_learn_(model, data_batch, target_set[idx], tgt_mask_set[idx])
             loss.mean().backward()
-            nn.utils.clip_grad_norm_(model.speaker.parameters(), clip)            
+            nn.utils.clip_grad_norm_(model.speaker.parameters(), clip)
+            m_optimizer.step()
             s_optimizer.step()
             print_loss += loss
             print_seq_acc += seq_acc
             print_tok_acc += tok_acc
-        
+            
         if iter % args.print_freq == 0:
             print_loss_avg = print_loss / (args.print_freq * len(input_set))
             print_seq_acc_avg = print_seq_acc / (args.print_freq * len(input_set))
@@ -150,6 +152,9 @@ def speaker_learning_phase(model, s_optimizer, input_set, target_set, tgt_mask_s
             print("Generation: {} Speaker Learning Phase; Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg seq acc: {:.4f}; Avg tok acc: {:.4f}".format(
                 generation_idx, iter, iter / args.num_play_iter * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
                 ))
+            print_loss = 0.
+            print_seq_acc = 0.
+            print_tok_acc = 0.
 
 
 def train_generation(
@@ -171,7 +176,13 @@ def train_generation(
         model.reset_speaker()
         model.reset_listener()
 
-        speaker_learning_phase(model, s_optimizer, \
+        m_optimizer = args.optimiser(model.parameters(), lr=args.learning_rate)
+        s_optimizer = args.optimiser(model.speaker.parameters(), 
+                                        lr=args.learning_rate * args.speaker_ratio)
+        l_optimizer = args.optimiser(model.listener.parameters(), 
+                                        lr=args.learning_rate * args.speaker_ratio)
+
+        speaker_learning_phase(model, m_optimizer, s_optimizer, \
             learn_set, reproduced_msg_set, reproduced_msg_masks, generation_idx, clip)
         print('Generation: {} Speaker Learning Phase Done.'.format(generation_idx))
 
