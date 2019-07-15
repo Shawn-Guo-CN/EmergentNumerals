@@ -47,7 +47,7 @@ defaults = {
     'NUM_DISCTRACTOR': 4,
     'NUM_GENERATION': 50,
     'NUM_PLAYITER': 250,
-    'NUM_SPKLEARNITER': 250,
+    'NUM_SPKLEARNITER': 50,
 }
 
 '''

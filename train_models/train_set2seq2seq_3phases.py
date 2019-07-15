@@ -159,14 +159,19 @@ def speaker_learning_phase(model, m_optimizer, s_optimizer, input_set, target_se
 
 def train_generation(
         model, train_set, dev_set, learn_set, sim_chk_inset, sim_chk_batchset, 
-        m_optimizer, s_optimizer, l_optimizer,
         clip=args.clip, generation_idx=0
     ):
+
+    m_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)
+    s_optimiser = args.optimiser(model.speaker.decoder.parameters(), 
+                                        lr=args.learning_rate * args.speaker_ratio)
+    l_optimiser = args.optimiser(model.listener.parameters(),
+                                        lr=args.learning_rate * args.listener_ratio)
 
     training_losses, training_tok_acc, training_seq_acc, training_in_spkh_sim, training_in_msg_sim, \
         training_in_lish_sim, eval_tok_acc, eval_seq_acc = \
             game_play_phase(model, train_set, dev_set, sim_chk_inset, sim_chk_batchset,
-                            m_optimizer, s_optimizer, l_optimizer, clip, generation_idx)
+                            m_optimiser, s_optimiser, l_optimiser, clip, generation_idx)
 
     if not generation_idx == args.num_generation:
         reproduced_msg_set, reproduced_msg_masks = \
@@ -176,13 +181,13 @@ def train_generation(
         model.reset_speaker()
         model.reset_listener()
 
-        m_optimizer = args.optimiser(model.parameters(), lr=args.learning_rate)
-        s_optimizer = args.optimiser(model.speaker.parameters(), 
-                                        lr=args.learning_rate * args.speaker_ratio)
-        l_optimizer = args.optimiser(model.listener.parameters(), 
-                                        lr=args.learning_rate * args.speaker_ratio)
+        m_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)
+        s_optimiser = args.optimiser(model.speaker.decoder.parameters(), 
+                                            lr=args.learning_rate * args.speaker_ratio)
+        l_optimiser = args.optimiser(model.listener.parameters(),
+                                            lr=args.learning_rate * args.listener_ratio)
 
-        speaker_learning_phase(model, m_optimizer, s_optimizer, \
+        speaker_learning_phase(model, m_optimiser, s_optimiser, \
             learn_set, reproduced_msg_set, reproduced_msg_masks, generation_idx, clip)
         print('Generation: {} Speaker Learning Phase Done.'.format(generation_idx))
 
@@ -274,11 +279,6 @@ def train():
     else:
         print('building model...')
         model = Set2Seq2Seq(voc.num_words).to(args.device)
-        model_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)
-        speaker_optimiser = args.optimiser(model.speaker.decoder.parameters(), 
-                                        lr=args.learning_rate * args.speaker_ratio)
-        listner_optimiser = args.optimiser(model.listener.parameters(),
-                                        lr=args.learning_rate * args.listener_ratio)
         print('done')
 
     print('preparing data for testing topological similarity...')
@@ -310,8 +310,7 @@ def train():
     print('training...')
     for iter in range(start_iteration, args.num_generation+1):
         training_records = train_generation(
-            model, train_set, dev_set, learn_set, sim_chk_inset, sim_chk_batchset, 
-            model_optimiser, speaker_optimiser, listner_optimiser, 
+            model, train_set, dev_set, learn_set, sim_chk_inset, sim_chk_batchset,
             generation_idx=iter
         )
 
