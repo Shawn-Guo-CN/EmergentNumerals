@@ -45,6 +45,9 @@ defaults = {
     'SIM_CHK_FREQ': 1000,
     'SIM_CHK_K': 50,
     'NUM_DISCTRACTOR': 4,
+    'NUM_GENERATION': 50,
+    'NUM_PLAYITER': 250,
+    'NUM_SPKLEARNITER': 250,
 }
 
 '''
@@ -141,6 +144,12 @@ parser.add_argument('--sim-chk-k', type=int, default=defaults['SIM_CHK_K'],
         help='number of sample data used to check topological similarity')
 parser.add_argument('--num-distractors', type=int, default=defaults['NUM_DISCTRACTOR'],
         help='number of distractors in a training sample')
+parser.add_argument('--num-generation', type=int, default=defaults['NUM_GENERATION'],
+        help='number of training generations')
+parser.add_argument('--num-play-iter', type=int, default=defaults['NUM_PLAYITER'],
+        help='number of playing game iterations')
+parser.add_argument('--num-spklearn-iter', type=int, default=defaults['NUM_SPKLEARNITER'],
+        help='number of speaker learning iterations')
 args = parser.parse_args()
 
 args.device = torch.device("cuda:" + str(args.device) \

@@ -114,9 +114,6 @@ class ListeningAgent(nn.Module):
 
         return decoder_logits
 
-    def reset_params(self):
-        self.apply(weight_init)
-
 
 class Set2Seq2Seq(nn.Module):
     def __init__(self, voc_size, msg_length=args.max_msg_len, msg_vocsize=args.msg_vocsize, 
@@ -152,7 +149,7 @@ class Set2Seq2Seq(nn.Module):
         target_max_len = data_batch['target_max_len']
 
         message, msg_logits, msg_mask = self.speaker(input_var, input_mask)
-
+        
         spk_entropy = (F.softmax(msg_logits, dim=2) * msg_logits).sum(dim=2).sum(dim=0)
         log_msg_prob = torch.sum(msg_logits * message, dim=1)
 
@@ -220,3 +217,17 @@ class Set2Seq2Seq(nn.Module):
         message, _, _ = self.speaker(input_var, input_mask)
         self.train()
         return message
+
+    def reset_speaker(self):
+        del self.speaker
+        self.speaker = SpeakingAgent(
+            self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
+            self.hidden_size, self.dropout
+        )
+
+    def reset_listener(self):
+        del self.listener
+        self.listener = ListeningAgent(
+            self.msg_vocsize, self.hidden_size, self.voc_size,
+            self.dropout, self.embedding, self.msg_embedding,
+        )
