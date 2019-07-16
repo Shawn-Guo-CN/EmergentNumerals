@@ -39,7 +39,9 @@ def game_play_phase(
     eval_tok_acc = []
     eval_seq_acc = []
 
-    for iter in range(1, args.num_play_iter+1):
+    num_play_iter = args.num_play_iter+1 if not generation_idx == args.num_generation-1 else args.num_play_iter*3+1
+
+    for iter in range(1, num_play_iter):
         for data_batch in train_set:
             seq_acc, tok_acc, loss = train_epoch(model,
                 data_batch,
@@ -174,7 +176,7 @@ def train_generation(
                             m_optimiser, s_optimiser, l_optimiser, clip, generation_idx)
 
     if not generation_idx == args.num_generation:
-        random.shuffle(learn_set)
+        random.shuffle(learn_set.batches)
         reproduced_msg_set, reproduced_msg_masks = \
             knowledge_generation_phase(model, learn_set)
         print('Generation: {}; Message Reproduction Phase Done.'.format(generation_idx))
