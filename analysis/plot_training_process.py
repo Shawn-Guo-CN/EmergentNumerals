@@ -14,7 +14,7 @@ def load_training_status(file_path:str) -> tuple:
     return records
 
 
-def EMA_smooth(l:list, alpha=0.05) -> list:
+def EMA_smooth(l:list, alpha=0.1) -> list:
     if len(l) == 0:
         return l
     new_l = [l[0]]
@@ -25,29 +25,43 @@ def EMA_smooth(l:list, alpha=0.05) -> list:
 
 def plot_training_into_1_figure(chk_points_paths:list, label_list:list) -> None:
     # seq_accs, tok_accs, losses, sims = [], [], [], []
-    min_len = inf
 
     fig, ((ax0, ax1, ax2), (ax3, ax4, ax5)) = plt.subplots(nrows=2, ncols=3)
     for idx, file_path in enumerate(chk_points_paths):
         t_s_acc, t_t_acc, t_loss, t_sim, e_t_acc, e_s_acc = load_training_status(file_path)
-        records = load_training_status(file_path)
-        t_s_acc = records['training_seq_acc']
-        t_t_acc = records['training_tok_acc']
-        t_loss = records['training_loss']
-        t_sim = records['training_sim']
-        e_t_acc = records['eval_tok_acc']
-        e_s_acc = records['eval_seq_acc']
+        t_s_acc = t_s_acc[:500]
+        t_t_acc = t_t_acc[:500]
+        t_loss = t_loss[:500]
+        t_sim = t_sim[:500]
+        e_t_acc = e_t_acc[:500]
+        e_s_acc = e_s_acc[:500]
+        # records = load_training_status(file_path)
+        # t_s_acc = records['training_seq_acc'][:1000]
+        # t_t_acc = records['training_tok_acc'][:1000]
+        # t_loss = records['training_loss'][:1000]
+        # t_sim = [] # records['training_sim']
+        # # h_sim = records['training_in_spkh_sim']
+        # # m_sim = records['training_in_msg_sim']
+        # # h2_sim = records['training_in_lish_sim']
+        # e_t_acc = records['eval_tok_acc'][:1000]
+        # e_s_acc = records['eval_seq_acc'][:1000]
 
         t_s_acc = EMA_smooth(t_s_acc)
         t_t_acc = EMA_smooth(t_t_acc)
         t_loss  = EMA_smooth(t_loss)
         t_sim   = EMA_smooth(t_sim)
+        # h_sim = EMA_smooth(h_sim)
+        # m_sim = EMA_smooth(m_sim)
+        # h2_sim = EMA_smooth(h2_sim)
         e_t_acc = EMA_smooth(e_t_acc)
         e_s_acc = EMA_smooth(e_s_acc)
 
         linewidth = 1.0
         ax0.plot(e_s_acc, label=label_list[idx], linewidth=linewidth)
         ax1.plot(t_sim, label=label_list[idx], linewidth=linewidth)
+        # ax1.plot(h_sim, label='In - Speaker Hidden')
+        # ax1.plot(m_sim, label='In - Message')
+        # ax1.plot(h2_sim, label='In - Listener Hidden')
         ax2.plot(t_s_acc, label=label_list[idx], linewidth=linewidth)
         ax3.plot(e_t_acc, label=label_list[idx], linewidth=linewidth)
         ax4.plot(t_loss, label=label_list[idx], linewidth=linewidth)
@@ -71,15 +85,17 @@ def plot_training_into_1_figure(chk_points_paths:list, label_list:list) -> None:
 
 def main():
     chk_point_path_list = [
-        './params/listener/comp/2_3000_0711.tar',
-        './params/listener/holistic/2_3000.tar',
-        './params/listener/emergent/2_3000.tar',
+        './params/listener/comp/4_15000_0715.tar',
+        './params/listener/holistic/4_15000_0715.tar',
+        # './params/speaker/emergent/0715_2_1000.tar',
+        './params/listener/seq2seq/4_15000_0715.tar',
     ]
 
     label_list = [
         'compositional',
         'holistic',
-        'emergent'
+        # 'emergent',
+        'seq2seq'
     ]
 
     plot_training_into_1_figure(chk_point_path_list, label_list)

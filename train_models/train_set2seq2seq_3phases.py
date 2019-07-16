@@ -81,7 +81,7 @@ def game_play_phase(
                 model, sim_chk_inset, sim_chk_batchset, 
                 in_dis_measure='euclidean',
                 spk_hidden_measure='euclidean',
-                msg_dis_measure='euclidean'
+                msg_dis_measure='edit'
             )
             training_in_spkh_sim.append(in_spk_sim)
             training_in_msg_sim.append(in_msg_sim)
@@ -149,8 +149,8 @@ def speaker_learning_phase(model, m_optimizer, s_optimizer, input_set, target_se
             print_loss_avg = print_loss / (args.print_freq * len(input_set))
             print_seq_acc_avg = print_seq_acc / (args.print_freq * len(input_set))
             print_tok_acc_avg = print_tok_acc / (args.print_freq * len(input_set))
-            print("Generation: {} Speaker Learning Phase; Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg seq acc: {:.4f}; Avg tok acc: {:.4f}".format(
-                generation_idx, iter, iter / args.num_play_iter * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
+            print("Generation: {}; Speaker Learning Phase; Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg seq acc: {:.4f}; Avg tok acc: {:.4f}".format(
+                generation_idx, iter, iter / args.num_spklearn_iter * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
                 ))
             print_loss = 0.
             print_seq_acc = 0.
@@ -174,12 +174,14 @@ def train_generation(
                             m_optimiser, s_optimiser, l_optimiser, clip, generation_idx)
 
     if not generation_idx == args.num_generation:
+        random.shuffle(learn_set)
         reproduced_msg_set, reproduced_msg_masks = \
             knowledge_generation_phase(model, learn_set)
-        print('Generation: {} Message Reproduction Phase Done.'.format(generation_idx))
+        print('Generation: {}; Message Reproduction Phase Done.'.format(generation_idx))
 
         model.reset_speaker()
         model.reset_listener()
+        print('Generation: {}; Speaker and Listener Reset Done.'.format(generation_idx))
 
         m_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)
         s_optimiser = args.optimiser(model.speaker.decoder.parameters(), 
@@ -189,7 +191,7 @@ def train_generation(
 
         speaker_learning_phase(model, m_optimiser, s_optimiser, \
             learn_set, reproduced_msg_set, reproduced_msg_masks, generation_idx, clip)
-        print('Generation: {} Speaker Learning Phase Done.'.format(generation_idx))
+        print('Generation: {}; Speaker Learning Phase Done.'.format(generation_idx))
 
         del reproduced_msg_set
         del reproduced_msg_masks
@@ -270,11 +272,6 @@ def train():
 
         model = Set2Seq2Seq(voc.num_words).to(args.device)
         model.load_state_dict(checkpoint['model'])
-        model_optimiser = train_args.optimiser(model.parameters(), lr=train_args.learning_rate)
-        speaker_optimiser = train_args.optimiser(model.speaker.parameters(), 
-                                        lr=train_args.learning_rate * train_args.speaker_ratio)
-        listner_optimiser = train_args.optimiser(model.listener.parameters(), 
-                                        lr=train_args.learning_rate * train_args.speaker_ratio)
         print('\tdone')
     else:
         print('building model...')
@@ -332,11 +329,6 @@ def train():
             torch.save({
                 'generation': iter,
                 'model': model.state_dict(),
-                'opt': [
-                    model_optimiser.state_dict(),
-                    speaker_optimiser.state_dict(),
-                    listner_optimiser.state_dict()
-                ],
                 'voc': voc,
                 'args': args,
                 'records': {
