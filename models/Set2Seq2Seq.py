@@ -154,6 +154,8 @@ class Set2Seq2Seq(nn.Module):
         log_msg_prob = torch.sum(msg_logits * message, dim=2).sum(dim=0)
 
         seq_logits = self.listener(message, msg_mask, target_max_len)
+        target_one_hot = F.one_hot(target_var, num_classes=self.voc_size).to(seq_logits.dtype)
+        log_seq_prob = torch.sum(target_one_hot*seq_logits , dim=2).sum(dim=0)
 
         loss_max_len = min(seq_logits.shape[0], target_var.shape[0])
 
@@ -166,13 +168,13 @@ class Set2Seq2Seq(nn.Module):
             msg, _, msg_mask = self.speaker(input_var, input_mask)
             s_logits = self.listener(msg, msg_mask, args.max_seq_len)
             loss_max_len = min(s_logits.shape[0], target_var.shape[0])
-            baseline = seq_cross_entropy_loss(s_logits, target_var, target_mask, loss_max_len)[0]
+            baseline = seq_cross_entropy_loss(s_logits, target_var, target_mask, loss_max_len)[3]
             self.speaker.train()
             self.listener.train()
         else:
             baseline = 0.
         
-        return loss, log_msg_prob, baseline, print_losses, \
+        return loss, log_msg_prob, log_seq_prob, baseline, print_losses, \
                 seq_correct, tok_acc, seq_acc, seq_logits, spk_entropy
 
     def reproduce_speaker_hidden(self, data_batch):

@@ -140,7 +140,7 @@ def speaker_learning_phase(model, m_optimizer, s_optimizer, input_set, target_se
             nn.utils.clip_grad_norm_(model.speaker.parameters(), clip)
             m_optimizer.step()
             s_optimizer.step()
-            print_loss += loss
+            print_loss += loss.mean()
             print_seq_acc += seq_acc
             print_tok_acc += tok_acc
             
@@ -206,7 +206,7 @@ def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=a
 
     # model.speaker.eval()
 
-    loss, log_msg_prob, baseline, print_losses, \
+    loss, log_msg_prob, log_seq_prob, baseline, print_losses, \
         _, tok_acc, seq_acc , _, s_entropy = model(data_batch)
     
     if args.msg_mode == 'REINFORCE':
@@ -232,7 +232,7 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        print_losses, _, t_acc, s_acc = model(data_batch)[3:-2]
+        print_losses, _, t_acc, s_acc = model(data_batch)[4:-2]
         loss += sum(print_losses) / len(print_losses)
         seq_acc += s_acc
         tok_acc += t_acc
