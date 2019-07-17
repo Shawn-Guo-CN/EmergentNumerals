@@ -38,8 +38,8 @@ class Seq2Seq(nn.Module):
 
         embedded_input = self.embedding(input_var.t())
         _, encoder_hidden, encoder_cell = self.encoder(embedded_input, input_lengths)
-        encoder_hidden = encoder_hidden.squeeze()
-        encoder_cell = encoder_cell.squeeze()
+        encoder_hidden = encoder_hidden.squeeze(dim=0)
+        encoder_cell = encoder_cell.squeeze(dim=0)
 
         if self.training:
             decoder_max_len = target_max_len

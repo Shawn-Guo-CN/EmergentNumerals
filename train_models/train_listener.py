@@ -78,7 +78,7 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        loss, baseline, print_losses, tok_correct, seq_correct, t_acc, s_acc = model(data_batch)
+        _, baseline, print_losses, tok_correct, seq_correct, t_acc, s_acc = model(data_batch)
         loss += sum(print_losses) / len(print_losses)
         seq_acc += s_acc
         tok_acc += t_acc
