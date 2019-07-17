@@ -96,8 +96,6 @@ def game_play_phase(
 
 
 def knowledge_generation_phase(model, learn_set):
-    model.eval()
-
     msg_set = []
     msg_masks = []
 
@@ -106,7 +104,6 @@ def knowledge_generation_phase(model, learn_set):
         message = message.argmax(dim=2)
         msg_set.append(message.detach())
         msg_masks.append(torch.ones_like(message, device=message.device))
-    model.train()
 
     return msg_set, msg_masks
 
@@ -182,7 +179,7 @@ def train_generation(
         print('Generation: {}; Message Reproduction Phase Done.'.format(generation_idx))
 
         model.reset_speaker()
-        model.reset_listener()
+        # model.reset_listener()
         print('Generation: {}; Speaker and Listener Reset Done.'.format(generation_idx))
 
         m_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)

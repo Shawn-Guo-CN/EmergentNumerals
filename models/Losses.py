@@ -4,7 +4,7 @@ from utils.conf import args
 
 def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
     n_total = mask.sum().item()
-    loss = (args.loss_function(prediction, golden_standard) * mask.to(prediction.dtype)).mean()
+    loss = (args.loss_function(prediction, golden_standard) * mask.to(prediction.dtype))
     eq_cur = prediction.topk(1)[1].squeeze(1).eq(golden_standard).to(prediction.dtype) \
          * mask.to(prediction.dtype)
     n_correct = eq_cur.sum().item()
@@ -12,7 +12,7 @@ def mask_NLL_loss(prediction, golden_standard, mask, last_eq):
     return loss, eq_cur, n_correct, n_total
 
 def mask_NLL_loss_simple(predict, golden, mask, last_eq):
-    loss = (args.loss_function(predict, golden) * mask.to(predict.dtype)).mean()
+    loss = (args.loss_function(predict, golden) * mask.to(predict.dtype))
     eq_cur = predict.topk(1)[1].squeeze(1).eq(golden).to(predict.dtype) \
         * mask.to(predict.dtype)
     eq_seq = eq_cur + (1 - mask.to(predict.dtype)) * last_eq

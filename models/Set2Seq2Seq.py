@@ -151,7 +151,7 @@ class Set2Seq2Seq(nn.Module):
         message, msg_logits, msg_mask = self.speaker(input_var, input_mask)
         
         spk_entropy = (F.softmax(msg_logits, dim=2) * msg_logits).sum(dim=2).sum(dim=0)
-        log_msg_prob = torch.sum(msg_logits * message, dim=1)
+        log_msg_prob = torch.sum(msg_logits * message, dim=2).sum(dim=0)
 
         seq_logits = self.listener(message, msg_mask, target_max_len)
 
