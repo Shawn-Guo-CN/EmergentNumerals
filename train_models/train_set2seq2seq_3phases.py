@@ -108,6 +108,41 @@ def knowledge_generation_phase(model, learn_set):
     return msg_set, msg_masks
 
 
+def listener_warming_up_phase(model, train_set, dev_set, m_optimizer, s_optimizer, l_optimizer,
+    clip=args.clip, generation_idx=0):
+    print_loss = 0.
+    print_seq_acc = 0.
+    print_tok_acc = 0.
+
+    model.speaker.eval()
+
+    for iter in range(1, args.num_lwarmup_iter):
+        for data_batch in train_set:
+            seq_acc, tok_acc, loss = train_epoch(model,
+                data_batch,
+                m_optimizer,
+                s_optimizer,
+                l_optimizer,
+                clip=clip
+            )
+            print_loss += loss
+            print_seq_acc += seq_acc
+            print_tok_acc += tok_acc
+        
+        if iter % args.print_freq == 0:
+            print_loss_avg = print_loss / (args.print_freq * len(train_set))
+            print_seq_acc_avg = print_seq_acc / (args.print_freq * len(train_set))
+            print_tok_acc_avg = print_tok_acc / (args.print_freq * len(train_set))
+            print("Generation: {}; Warming Up Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg seq acc: {:.4f}; Avg tok acc: {:.4f}".format(
+                generation_idx, iter, iter / args.num_lwarmup_iter * 100, print_loss_avg, print_seq_acc_avg, print_tok_acc_avg
+                ))
+            print_seq_acc = 0.
+            print_tok_acc = 0.
+            print_loss = 0.
+
+    model.speaker.train()
+
+
 def _speaker_learn_(model, data_batch, target, tgt_mask):
     input_var = data_batch['input']
     input_mask = data_batch['input_mask']
@@ -179,7 +214,7 @@ def train_generation(
         print('Generation: {}; Message Reproduction Phase Done.'.format(generation_idx))
 
         model.reset_speaker()
-        # model.reset_listener()
+        model.reset_listener()
         print('Generation: {}; Speaker and Listener Reset Done.'.format(generation_idx))
 
         m_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)
@@ -191,6 +226,9 @@ def train_generation(
         speaker_learning_phase(model, m_optimiser, s_optimiser, \
             learn_set, reproduced_msg_set, reproduced_msg_masks, generation_idx, clip)
         print('Generation: {}; Speaker Learning Phase Done.'.format(generation_idx))
+
+        listener_warming_up_phase(model, train_set, dev_set, m_optimiser, s_optimiser, l_optimiser, clip, generation_idx)
+        print('Generation: {}; Listener Warming Up Phase Done.'.format(generation_idx))
 
         del reproduced_msg_set
         del reproduced_msg_masks

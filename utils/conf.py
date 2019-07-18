@@ -48,6 +48,7 @@ defaults = {
     'NUM_GENERATION': 50,
     'NUM_PLAYITER': 250,
     'NUM_SPKLEARNITER': 20,
+    'NUM_LWARMUPITER':20,
 }
 
 '''
@@ -150,6 +151,8 @@ parser.add_argument('--num-play-iter', type=int, default=defaults['NUM_PLAYITER'
         help='number of playing game iterations')
 parser.add_argument('--num-spklearn-iter', type=int, default=defaults['NUM_SPKLEARNITER'],
         help='number of speaker learning iterations')
+parser.add_argument('--num-lwarmup-iter', type=int, default=defaults['NUM_LWARMUPITER'],
+        help='number of listener warming up iterations')
 args = parser.parse_args()
 
 args.device = torch.device("cuda:" + str(args.device) \
