@@ -23,7 +23,7 @@ def get_batches4sim_check(voc, dataset_file_path=args.data_file):
 def game_play_phase(
         model, train_set, dev_set, sim_chk_inset, sim_chk_batchset, 
         m_optimizer, s_optimizer, l_optimizer,
-        clip=args.clip, generation_idx=0
+        clip=args.clip, generation_idx=0, alpha=0.1
     ):
 
     max_dev_seq_acc = 0.
@@ -39,7 +39,8 @@ def game_play_phase(
     eval_tok_acc = []
     eval_seq_acc = []
 
-    num_play_iter = args.num_play_iter+1 if not generation_idx == args.num_generation-1 else args.num_play_iter*3+1
+    num_play_iter = args.num_play_iter+1 if not generation_idx == args.num_generation else args.num_play_iter*3+1
+    accumulated_acc = 0.
 
     for iter in range(1, num_play_iter):
         for data_batch in train_set:
@@ -53,8 +54,14 @@ def game_play_phase(
             print_loss += loss
             print_seq_acc += seq_acc
             print_tok_acc += tok_acc
+
+        accumulated_acc = accumulated_acc * (1 - alpha) + print_seq_acc * alpha
+        if accumulated_acc > args.early_stop:
+            break_flag = True
+        else: 
+            break_flag = False
         
-        if iter % args.print_freq == 0:
+        if iter % args.print_freq == 0 or break_flag:
             print_loss_avg = print_loss / (args.print_freq * len(train_set))
             print_seq_acc_avg = print_seq_acc / (args.print_freq * len(train_set))
             print_tok_acc_avg = print_tok_acc / (args.print_freq * len(train_set))
@@ -69,7 +76,7 @@ def game_play_phase(
             print_tok_acc = 0.
             print_loss = 0.
 
-        if iter % args.eval_freq == 0:
+        if iter % args.eval_freq == 0 or break_flag:
             dev_seq_acc, dev_tok_acc, dev_loss = eval_model(model, dev_set)
             if dev_seq_acc > max_dev_seq_acc:
                 max_dev_seq_acc = dev_seq_acc
@@ -78,7 +85,7 @@ def game_play_phase(
             print("Generation: {}; [EVAL] Iteration: {}; Loss: {:.4f}; Best Seq Acc: {:.4f}; Avg Seq Acc: {:.4f}; Avg Tok Acc: {:.4f};".format(
                 generation_idx, iter, dev_loss, max_dev_seq_acc, dev_seq_acc, dev_tok_acc))
 
-        if iter % args.sim_chk_freq == 0:
+        if iter % args.sim_chk_freq == 0 or break_flag:
             in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
                 model, sim_chk_inset, sim_chk_batchset, 
                 in_dis_measure='euclidean',
@@ -90,6 +97,9 @@ def game_play_phase(
             training_in_lish_sim.append(in_lis_sim)
             print('Generation: {}; [SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
                 generation_idx, iter, in_spk_sim, in_msg_sim, in_lis_sim))
+        
+        if break_flag:
+            break
 
     return training_losses, training_tok_acc, training_seq_acc, training_in_spkh_sim, training_in_msg_sim, \
          training_in_lish_sim, eval_tok_acc, eval_seq_acc
@@ -116,7 +126,7 @@ def listener_warming_up_phase(model, train_set, dev_set, m_optimizer, s_optimize
 
     model.speaker.eval()
 
-    for iter in range(1, args.num_lwarmup_iter):
+    for iter in range(1, args.num_lwarmup_iter+1):
         for data_batch in train_set:
             seq_acc, tok_acc, loss = train_epoch(model,
                 data_batch,
@@ -214,7 +224,7 @@ def train_generation(
         print('Generation: {}; Message Reproduction Phase Done.'.format(generation_idx))
 
         model.reset_speaker()
-        model.reset_listener()
+        # model.reset_listener()
         print('Generation: {}; Speaker and Listener Reset Done.'.format(generation_idx))
 
         m_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)

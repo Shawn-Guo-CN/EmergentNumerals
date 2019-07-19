@@ -49,6 +49,7 @@ defaults = {
     'NUM_PLAYITER': 250,
     'NUM_SPKLEARNITER': 20,
     'NUM_LWARMUPITER':20,
+    'EARLAY_STOP_THRESHOLD': 0.96,
 }
 
 '''
@@ -153,6 +154,8 @@ parser.add_argument('--num-spklearn-iter', type=int, default=defaults['NUM_SPKLE
         help='number of speaker learning iterations')
 parser.add_argument('--num-lwarmup-iter', type=int, default=defaults['NUM_LWARMUPITER'],
         help='number of listener warming up iterations')
+parser.add_argument('--early-stop', type=float, default=defaults['EARLAY_STOP_THRESHOLD'],
+        help='threshold for early stopping during game playing phase')
 args = parser.parse_args()
 
 args.device = torch.device("cuda:" + str(args.device) \
