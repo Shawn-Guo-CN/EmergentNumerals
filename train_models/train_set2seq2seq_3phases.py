@@ -87,10 +87,7 @@ def game_play_phase(
 
         if iter % args.sim_chk_freq == 0 or break_flag:
             in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
-                model, sim_chk_inset, sim_chk_batchset, 
-                in_dis_measure='euclidean',
-                spk_hidden_measure='euclidean',
-                msg_dis_measure='edit'
+                model, sim_chk_inset, sim_chk_batchset
             )
             training_in_spkh_sim.append(in_spk_sim)
             training_in_msg_sim.append(in_msg_sim)
@@ -342,11 +339,7 @@ def train():
     print('done')
 
     in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
-        model, sim_chk_inset, sim_chk_batchset, 
-        in_dis_measure='euclidean',
-        spk_hidden_measure='euclidean',
-        lis_hidden_measure='euclidean',
-        msg_dis_measure='euclidean'
+        model, sim_chk_inset, sim_chk_batchset
     )
     print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
                 0, in_spk_sim, in_msg_sim, in_lis_sim))
