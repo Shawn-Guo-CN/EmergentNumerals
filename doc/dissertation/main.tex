@@ -59,13 +59,14 @@ Natural language processing (NLP) is an important and long-standing topic in art
 
 Considering the missing original E/P, grounded language learning (GLL) argues that models need a grounded environment to learn and understand language\cite{matuszek2018grounded}. However, natural languages of the time have been developed for at least tens of thousands of years\cite{berwick2016only} and already became very sophisticated. Thus, to verify that computational agents can truly ground symbols in natural languages to correspongding E/P and can complete the specified tasks, it is necessary to facilitate them to discover and develop various kinds of characteristics of natural language during autonomous communication of agents. There are already lots of works, e.g. \cite{hill2017understanding, havrylov2017emergence, yu2018interactive, kottur2017natural}, aiming to facilitate the emergence of ``natural language'' in multi-agent autonomous communication systems. However, one significant limitation of previous works is that, only referential objects/attributes in environments, e.g. shapes and colors, were considered and to which discrete symbols were grounded to.
 
-This project, on the other hand, aims to explore and analyse the grounding of abstractions which are non-referential in the original experiences/perceptions of human beings. However, as it is too huge a topic to tackle, our project is limited to cardinal numerals for the following reasons: i) numeral systems are relatively simple and self-contained\cite{james1999numeral}; ii) concepts related to cardinal numerals are more straightforward to model with numeric representations; iii) functions of emergent cardinal numerals can be formalised and verified more reliably in simulation.
+This project, on the other hand, aims to explore and analyse the grounding of abstractions which are \textcolor{red}{non-referential (?)} in the original experiences/perceptions of human beings. However, as it is too huge a topic to tackle, our project is limited to cardinal numerals for the following reasons: i) numeral systems are relatively simple and self-contained\cite{james1999numeral}; ii) concepts related to cardinal numerals are more straightforward to model with numeric representations; iii) functions of emergent cardinal numerals can be formalised and verified more reliably in simulation.
 
 In this work, our main contributions are given as follows:
 
 \begin{enumerate}
-  \item We are about the first to explore the problem of transmitting numerical concepts which corresponds to function words in natural languages in multi-agent autonomous communication system.
-  \item We transformed iterated learning proposed by \cite{smith2003iterated} to train DL models and successfully facilitate computational agents to transmit numerical concepts.
+  \item We propose a language game in which we can define numerals as symbols indicating numbers of replicating tokens when generating outputs.
+  \item Based on the language game, we successfully train agents to transmit numerical concepts which corresponds to function words in natural languages.
+  \item We transformed iterated learning proposed by \cite{smith2003iterated} to train DL models and find that it does help to improve the compoitionality of the emergent language.
   \item We further analyse and discuss the compositionality of the emergent communication protocal and \textcolor{red}{HERE!}.
 \end{enumerate}
 
@@ -115,7 +116,7 @@ However, like we mentioned in Chapter \ref{ch1:intro}, whichever kind of langaug
 
 %------------------------------------------------------------------------------------------%
 
-\chapter{Set Forwarding Game and Models}
+\chapter{Game, Models and Evaluation Methods}
 \label{ch3:game_model}
 
 In this chapter, we first describe the proposed language game and the definition of numerals in our game. We then introduce the architecture of models we used and also the iterated learning for training models.
@@ -126,17 +127,32 @@ In this chapter, we first describe the proposed language game and the definition
 Unlike traditional simulation methods in evolutionary linguistics introduced in Section \ref{sec2.1:evolang}, there are 3 necessary components in our architecture and they are given as follows:
 
 \begin{itemize}
-  \item \textit{Environment}: To imply our linguistic assumption as well as make the size of environment limited and thus analysable, all perceptions in the established environment are sequences of objects represented by one-hot vectors. For ease of analysis, we denote these objects as $o \in \{ A, B, C, D\}$ in the following sections.
-  \item \textit{Agents}: There are 2 kinds of agents in our project: i) \textit{speakers} $S_t$ that can observe objects in the environment and emit messages $m_i$; ii) \textit{listeners} $L_t$ that can receive the messages and generate a sequence of obejcts.
-  \item \textit{Dynamics}: In this project, the dynamics mean not only the manually designed reward function for agents but also the training mechanism, i.e. iterated learning. The details will be introduced in Subsection \ref{ssec3.2.4:loss_reward}. It worth mentioning that one premise of our project is that all the linguistic hypotheses are purely implied by dynamics.
+  \item \textit{Environment}: To imply our linguistic assumption as well as make the size of environment limited and thus analysable, all perceptions in the established environment are sequences of objects represented by one-hot vectors. For ease of demonstration, we denote these objects as $o \in \{ A, B, C, D\}$ in the following sections.
+  \item \textit{Agents}: There are 2 kinds of agents in our project: i) \textit{speakers} $S$ that can observe objects in the environment and emit messages $m_i$; ii) \textit{listeners} $L$ that can receive the messages and generate a sequence of obejcts.
+  \item \textit{Dynamics}: In this project, the dynamics mean not only the manually designed reward function for agents but also the training mechanism, e.g. iterated learning and blank vocabulary. The details will be introduced in Subsection \ref{ssec3.2.4:loss_reward} and Subsection \ref{ssec3.2.2:3phase}. It worth mentioning that one premise of our project is that all the linguistic hypotheses are purely implied by dynamics.
 \end{itemize}
-
-The details of agents and dynamics are introduced in Section \ref{sec3.2:models}.
 
 \subsection{Game Procedure}
 \label{ssec3.1.1:game_procedure}
 
-The overall view of the proposed game is illustrated in Figure given as follow.
+The overall view of the proposed game is illustrated in Figure \ref{fig2:game_procedure} given as follow.
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.8\textwidth]{graphs/task_illustration.pdf}
+  \caption{Diagram of Game Playing Procedure.}
+  \label{fig2:game_procedure}
+\end{figure}
+
+According to the steps of playing games at iteration $i$, the components of our games are illustrated as follows:
+\begin{enumerate}
+  \item Perceptions: the perception from environments is a \textbf{set} of objecst, i.e. $s_i=\{o_{i_1}, o_{i_2}, \dots\}$.
+  \item Speaker observation and message generation: after observing and encoding the perception, speaker $S$ would generate a message $m_i=\{s_{i_1}, s_{i_2}, \dots, s_{M}\}$ where $M$ is the maximum length of messages and $s_k$ are selected from a randomly initialised vocabulary such that the symbols in the initial vocabulary are meaningless;
+  \item Listener receiving message and perception reproduction: after receiving and encoding the message $m_i$, the listener would generate a \textbf{sequence} $\hat{s}_i = \{\hat{o}_{i_1}, \hat{o}_{i_2}, \dots\}$ whose symbols are identical to those in the original perception $s_i$;
+  \item Reward and parameter update: by comparing $s_i$ and $\hat{s}_i$, we take the cross-entropy between them as the reward for both listener and speaker and update parameters of both speaker and listener with respect to it.\footnote{Different ways of updating parameters are instroduced in Section \ref{sec3.2:models}.}
+\end{enumerate}
+
+One thing that needs to be highlighted is that the perceptions $s_i$ are sets and thus order of objects would not make any diffrence. Further, we argue that the only important feature that need to be transmitted is actually the numbers of different objects which correponds to the function of numerals in natural language.
 
 \subsection{Numerals in the Game}
 \label{ssec3.1.2:numeral_in_game}
@@ -155,6 +171,11 @@ The overall view of the proposed game is illustrated in Figure given as follow.
 
 \subsection{Loss and Reward}
 \label{ssec3.2.4:loss_reward}
+
+\section{Evaluation Methods}
+\label{sec3.3:evaluation}
+
+
 
 %------------------------------------------------------------------------------------------%
 
