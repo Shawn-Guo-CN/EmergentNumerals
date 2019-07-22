@@ -63,7 +63,7 @@ class ListeningAgent(nn.Module):
         self.hidden_size = hidden_size
         self.output_size = output_size
 
-        if embedding is not None:
+        if embedding is None:
             self.embedding = nn.Parameter(
                 torch.randn(self.output_size, self.hidden_size, device=args.device)
             )
@@ -75,10 +75,6 @@ class ListeningAgent(nn.Module):
         else:
             self.msg_embedding = msg_embedding
         
-        # if self.msg_embedding is None:
-        #     self.encoder = SeqEncoder(self.input_size, self.hidden_size)
-        # else:
-        #     self.encoder = SeqEncoder(self.hidden_size, self.hidden_size)
         self.encoder = SeqEncoder(self.hidden_size, self.hidden_size)
 
         self.decoder = SeqDecoder(
