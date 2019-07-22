@@ -27,9 +27,7 @@ class SpeakingAgent(nn.Module):
             self.embedding = embedding
 
         if msg_embedding is None:
-            self.msg_embedding = nn.Parameter(
-                torch.randn(self.msg_vocsize, self.hidden_size, device=args.device)
-            )
+            self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size).weight
         else:
             self.msg_embedding = msg_embedding
         
@@ -67,16 +65,12 @@ class ListeningAgent(nn.Module):
         self.output_size = output_size
 
         if embedding is None:
-            self.embedding = nn.Parameter(
-                torch.randn(self.output_size, self.hidden_size, device=args.device)
-            )
+            self.embedding = nn.Embedding(self.output_size, self.hidden_size).weight
         else:
             self.embedding = embedding
 
         if msg_embedding is None:
-            self.msg_embedding = nn.Parameter(
-                torch.randn(self.input_size, self.hidden_size, device=args.device)
-            )
+            self.msg_embedding = nn.Embedding(self.input_size, self.hidden_size).weight
         else:
             self.msg_embedding = msg_embedding
         

@@ -18,15 +18,13 @@ class Seq2Seq(nn.Module):
         # universal modules
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
         self.dropout = nn.Dropout(dropout)
-        self.out_embedding = nn.Parameter(
-            nn.Embedding(self.voc_size, self.hidden_size).weight
-        )
+        self.out_embedding = nn.Embedding(self.voc_size, self.hidden_size).weight
         
         # encoder and decoder
         self.encoder = SeqEncoder(self.hidden_size, self.hidden_size)
         self.decoder = SeqDecoder(
-            self.voc_size, self.hidden_size, self.voc_size,
-            embedding=self.out_embedding
+                self.voc_size, self.hidden_size, self.voc_size,
+                embedding=self.out_embedding
             )
 
     def forward(self, data_batch):
