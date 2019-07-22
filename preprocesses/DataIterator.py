@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 import math
 import itertools
 import numpy as np
+import random
 
 from utils.conf import args
 from preprocesses.Voc import Voc
@@ -261,13 +262,18 @@ class ChooseDataset(Dataset):
     def __getitem__(self, idx):
         correct_batch = self.databatch_set[idx]
 
-        distract_batches = []
-        for _ in range(self.d_num):
-            distract_batches.append(self.generate_distractor_batch(idx))
+        candidate_batches = []
+        golden_idx = random.randint(0, self.d_num)
+        for i in range(self.d_num+1):
+            if i == golden_idx:
+                candidate_batches.append(self.databatch_set[idx])
+            else:
+                candidate_batches.append(self.generate_distractor_batch(idx))
         
         return {
             'correct': correct_batch,
-            'distracts': distract_batches
+            'candidates': candidate_batches,
+            'label': golden_idx
         }
 
     def generate_distractor_batch(self, tgt_idx):
