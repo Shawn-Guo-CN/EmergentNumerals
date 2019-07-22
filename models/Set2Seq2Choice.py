@@ -35,7 +35,6 @@ class ListeningAgent(nn.Module):
         
         self.msg_encoder = SeqEncoder(self.hidden_size, self.hidden_size)
         self.can_encoder = SetEncoder(self.hidden_size, self.hidden_size)
-        self.choose = nn.Linear(2 * self.hidden_size, 1)
 
     def forward(self, message, msg_mask, candidates):
         batch_size = message.shape[1]
@@ -49,7 +48,7 @@ class ListeningAgent(nn.Module):
             )
 
         _, msg_encoder_hidden, _ = self.msg_encoder(message, msg_len)
-        msg_encoder_hidden = msg_encoder_hidden.squeeze(0).expand(len(candidates), -1, -1).transpose(0, 1)
+        msg_encoder_hidden = msg_encoder_hidden.transpose(0, 1).transpose(1, 2)
 
         can_encoder_hiddens = []
         for candidate in candidates:
@@ -61,10 +60,7 @@ class ListeningAgent(nn.Module):
 
         can_encoder_hiddens = torch.stack(can_encoder_hiddens).transpose(0, 1)
 
-        choose_input = F.relu(
-            torch.cat((msg_encoder_hidden, can_encoder_hiddens), dim=2)
-        )
-        choose_logits = self.choose(choose_input).squeeze(2)
+        choose_logits = torch.bmm(can_encoder_hiddens, msg_encoder_hidden).squeeze(2)
         return choose_logits
 
 

@@ -53,3 +53,12 @@ def seq_cross_entropy_loss(predict_digits, target, target_mask, target_max_len):
     seq_acc = round(float(n_correct_seqs) / float(batch_size), 6)
 
     return loss, print_losses, tok_correct, seq_correct, tok_acc, seq_acc
+
+def choice_cross_entropy_loss(predict_logits, golden_label):
+    batch_size = predict_logits.shape[0]
+    golden_standard = (golden_label * torch.ones([batch_size], device=predict_logits.device)).to(torch.long)
+    loss = args.loss_function(predict_logits, golden_standard)
+    eq_cur = predict_logits.topk(1)[1].squeeze(1).eq(golden_standard)
+    n_correct = eq_cur.sum().item()
+    acc = round(float(n_correct) / float(batch_size), 6)
+    return loss, loss.mean().item(), acc, eq_cur
