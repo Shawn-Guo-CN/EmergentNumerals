@@ -27,9 +27,12 @@ class SpeakingAgent(nn.Module):
             self.embedding = embedding
 
         if msg_embedding is None:
-            self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size).weight
+            self.msg_embedding = nn.Parameter(
+                torch.randn(self.msg_vocsize, self.hidden_size, device=args.device)
+            )
         else:
             self.msg_embedding = msg_embedding
+        
         self.dropout = nn.Dropout(dropout)
 
         self.encoder = SetEncoder(self.voc_size, self.hidden_size)
@@ -71,7 +74,9 @@ class ListeningAgent(nn.Module):
             self.embedding = embedding
 
         if msg_embedding is None:
-            self.msg_embedding = nn.Embedding(self.input_size, self.hidden_size).weight
+            self.msg_embedding = nn.Parameter(
+                torch.randn(self.input_size, self.hidden_size, device=args.device)
+            )
         else:
             self.msg_embedding = msg_embedding
         
