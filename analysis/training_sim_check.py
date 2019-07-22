@@ -6,7 +6,7 @@ import analysis.distances as distances
 
 def sim_check(
     model, in_set, batch_set,
-    in_dis_measure='euclidean',
+    in_dis_measure='hamming',
     spk_hidden_measure='euclidean',
     msg_dis_measure='edit',
     lis_hidden_measure='euclidean',
