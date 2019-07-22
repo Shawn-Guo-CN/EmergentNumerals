@@ -26,7 +26,9 @@ class Set2Seq2Seq(nn.Module):
 
         # For embedding inputs
         self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
-        self.msg_embedding = nn.Embedding(self.msg_vocsize, self.hidden_size).weight
+        self.msg_embedding = nn.Parameter(
+            torch.randn(self.msg_vocsize, self.hidden_size, device=args.device)
+        )
 
         # Listening agent
         self.listener = ListeningAgent(
