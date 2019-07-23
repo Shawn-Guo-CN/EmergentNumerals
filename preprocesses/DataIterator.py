@@ -333,7 +333,8 @@ class ChooseDataset(Dataset):
         string_set = FruitSeqDataset.load_stringset(self.file_path)
         input_indices = self.string_set2input_target_indices(string_set)
 
-        num_batches = math.ceil(len(input_indices) / self.batch_size)
+        # ceil/floor
+        num_batches = math.floor(len(input_indices) / self.batch_size)
 
         for i in range(num_batches):
             input_indices_batch = input_indices[i*self.batch_size:

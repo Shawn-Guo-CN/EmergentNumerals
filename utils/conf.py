@@ -38,7 +38,7 @@ defaults = {
     'NUM_WORD': 2, # Number of different characters
     'MAX_LEN_WORD': 5,
     'HIDDEN_SIZE': 256,
-    'BATCH_SIZE': 1024,
+    'BATCH_SIZE': 128,
     'MSG_MODE': 'GUMBEL', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
     'MSG_TAU': 1.,
     'L_RESET_FREQ': -1,
