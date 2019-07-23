@@ -151,8 +151,7 @@ def train():
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Acc: {:.4f}; Best Acc: {:.4f}".format(
                 iter, dev_loss, dev_acc, max_dev_acc))
 
-        # TODO: remove the False flag later
-        if iter % args.sim_chk_freq == 0 and False:
+        if iter % args.sim_chk_freq == 0:
             in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
                 model, sim_chk_inset, sim_chk_batchset
             )
