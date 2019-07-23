@@ -17,7 +17,7 @@ Unlike traditional simulation methods in evolutionary linguistics introduced in 
 \subsection{Game Procedure}
 \label{ssec3.1.1:game_procedure}
 
-The overall view of the proposed game is illustrated in Figure \ref{fig2:game_procedure} given as follow.
+The overall view of the proposed Set-Forward game is illustrated in Figure \ref{fig2:game_procedure} given as follow.
 
 \begin{figure}[!h]
   \centering
@@ -28,7 +28,7 @@ The overall view of the proposed game is illustrated in Figure \ref{fig2:game_pr
 
 According to the steps of playing games at iteration $i$, the components of our games are illustrated as follows:
 \begin{enumerate}
-  \item Perceptions: the perception from environments is a \textbf{set} of objecst, i.e. $s_i=\{o_{i_1}, o_{i_2}, \dots\}$.
+  \item Perceptions: the perception from environments is a \textbf{set} of objects, i.e. $s_i=\{o_{i_1}, o_{i_2}, \dots\}$.
   \item Speaker observation and message generation: after observing and encoding the perception, speaker $S$ would generate a message $m_i=\{s_{i_1}, s_{i_2}, \dots, s_{M}\}$ where $M$ is the maximum length of messages and $s_k$ are selected from a randomly initialised vocabulary such that the symbols in the initial vocabulary are meaningless;
   \item Listener receiving message and perception reproduction: after receiving and encoding the message $m_i$, the listener would generate a \textbf{sequence} $\hat{s}_i = \{\hat{o}_{i_1}, \hat{o}_{i_2}, \dots\}$ whose symbols are identical to those in the original perception $s_i$;
   \item Reward and parameter update: by comparing $s_i$ and $\hat{s}_i$, we take the cross-entropy between them as the reward for both listener and speaker and update parameters of both speaker and listener with respect to it.\footnote{Different ways of updating parameters are instroduced in Section \ref{sec3.2:models}.}
@@ -39,22 +39,56 @@ One thing that needs to be highlighted is that the perceptions $s_i$ are sets an
 \subsection{Functions of Numerals in the Game}
 \label{ssec3.1.2:numeral_in_game}
 
-\cite{Siegelmann1992NN} shows that Recurrent Neural Networks are Turing-complete, as LSTM is a super set of RNN, it is safe to claim that LSTM is also Turing-complete.
+Broadly speaking, numerals are words that can describe the numerical quantities and usually act as determiners to specify the quantities of nouns, e.g. "two dogs" and "three people". Also, under most scenarios, numerals correpond to non-referential concepts\cite{da2016wow}. Considering the objective of listeners $L$ in our language game, we define a numeral as a symbol $s^n$ at \textbf{position} $i$ indicating a function that reproduce some object $o_i$ exactly $n$ times:
+
+\begin{equation}
+  s^n: o_i \rightarrow \{\overbrace{o_i, \dots, o_i}^{n \mbox{ elements}}\}
+  \label{eq:3.1numeral_define}
+\end{equation}
+
+Note that, the meaning of a symbol is not only decided by itself but also its position in message, as $L$ would encode meanings of symbols according to their appearance in messages. Also, in our models, there is no specific mechanism to separate the meanings of symbols from their positions.
+
+From the side of speakers $S$, a numeral preferred to be defined as a symbol $s^n$ at \textbf{position} $i$ that represents the numbers of specific object $o_i$. Thus, we expect $S$ would first learn to count the number of different objects and then encode them into a sequence of discrete symbols. As \cite{Siegelmann1992NN} shows that Recurrent Neural Networks (RNNs) are Turing-complete and Long-short Term Memory (LSTM) model proposed by \cite{hochreiter1997long} is a super set of RNN, it is safe to claim that LSTM is also Turing-complete and thus capable of counting numbers of objects.
+
+\subsection{A Variant: Set-Select Game}
+\label{ssec:3.1.3:refer_game}
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.8\textwidth]{graphs/setrefer_game.pdf}
+  \caption{Diagram of Referential Game Playing Procedure.}
+  \label{fig3:refer_game_procedure}
+\end{figure}
+
+We illustrate the Set-Select game, a variant of Set-Forward game, in Figure \ref{fig3:refer_game_procedure} given above. The only difference is that listeners need to select the correct set of objects among a bunch of distractors\footnote{A distractor is a set that contains different numbers of objects as the correct one.} instead of generating it. 
 
 \section{Proposed Models}
 \label{sec3.2:models}
 
-\subsection{Set2Seq2Seq Models}
-\label{ssec3.2.1:set2seq2seq}
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.9\textwidth]{graphs/set2seq2_.pdf}
+  \caption{Overall Diagram of Model Architectures for Playing Games.}
+  \label{fig4:model_arch}
+\end{figure}
 
-\subsection{Numeral Iterated Learning}
-\label{ssec3.2.2:3phase}
+\subsection{Speaker}
+\label{ssec3.2.1:speaker}
+
+\subsection{Listener in Set2Seq2Seq Model}
+\label{ssec3.2.2:set2seq2seq}
+
+\subsection{Listener in Set2Seq2Choice Model}
+\label{ssec3.2.3:set2seq2choice}
 
 \subsection{Baseline Models}
-\label{ssec3.2.3:baselines}
+\label{ssec3.2.4:baselines}
+
+\subsection{Numeral Iterated Learning}
+\label{ssec3.2.5:iterated_learning}
 
 \subsection{Loss and Reward}
-\label{ssec3.2.4:loss_reward}
+\label{ssec3.2.6:loss_reward}
 
 \section{Evaluation Methods}
 \label{sec3.3:evaluation}
