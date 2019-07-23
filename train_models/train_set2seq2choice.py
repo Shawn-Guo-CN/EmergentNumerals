@@ -28,17 +28,15 @@ def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=a
          baseline, spk_entropy = model(data_batch)
     
     if args.msg_mode == 'REINFORCE':
-        log_msg_prob = (c_correct.detach() * log_msg_prob)
-        log_msg_prob.mean().backward()
-        log_choose_prob = (c_correct.detach() * log_choose_prob)
-        log_choose_prob.mean().backward()
+        (c_correct.detach() * log_msg_prob + 0.05 * spk_entropy).mean().backward()
+        (c_correct.detach() * log_choose_prob).mean().backward()
     elif args.msg_mode == 'SCST':
-        log_msg_prob = ((c_correct.detach()-baseline.detach()) * log_msg_prob)
-        log_msg_prob.mean().backward()
-        log_choose_prob = ((c_correct.detach()-baseline.detach()) * log_choose_prob)
-        log_choose_prob.mean().backward()
+        ((c_correct.detach()-baseline.detach()) * log_msg_prob).mean().backward()
+        ((c_correct.detach()-baseline.detach()) * log_choose_prob).mean().backward()
     elif args.msg_mode == 'GUMBEL':
         loss.mean().backward()
+    else:
+        raise NotImplementedError
     
     nn.utils.clip_grad_norm_(model.parameters(), clip)
     m_optimizer.step()

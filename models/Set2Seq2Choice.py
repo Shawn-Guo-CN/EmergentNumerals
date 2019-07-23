@@ -115,7 +115,7 @@ class Set2Seq2Choice(nn.Module):
             self.listener.eval()
             _msg_, _, _msg_mask_ = self.speaker(input_var, input_mask)
             _choose_logits = self.listener(_msg_, _msg_mask_, candidates)
-            baseline, _, _ = choice_cross_entropy_loss(_choose_logits, golden_label)
+            _, _, _, baseline = choice_cross_entropy_loss(_choose_logits, golden_label)
             self.speaker.train()
             self.listener.train()
         else:
