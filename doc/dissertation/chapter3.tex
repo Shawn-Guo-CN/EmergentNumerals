@@ -1,0 +1,60 @@
+\chapter{Game, Models and Evaluation Methods}
+\label{ch3:game_model}
+
+In this chapter, we first describe the proposed language game and the definition of numerals in our game. We then introduce the architecture of models we used and also the iterated learning for training models.
+
+\section{Game Description}
+\label{sec3.1:game_description}
+
+Unlike traditional simulation methods in evolutionary linguistics introduced in Section \ref{sec2.1:evolang}, there are 3 necessary components in our architecture and they are given as follows:
+
+\begin{itemize}
+  \item \textit{Environment}: To imply our linguistic assumption as well as make the size of environment limited and thus analysable, all perceptions in the established environment are sequences of objects represented by one-hot vectors. For ease of demonstration, we denote these objects as $o \in \{ A, B, C, D\}$ in the following sections.
+  \item \textit{Agents}: There are 2 kinds of agents in our project: i) \textit{speakers} $S$ that can observe objects in the environment and emit messages $m_i$; ii) \textit{listeners} $L$ that can receive the messages and generate a sequence of obejcts.
+  \item \textit{Dynamics}: In this project, the dynamics mean not only the manually designed reward function for agents but also the training mechanism, e.g. iterated learning and blank vocabulary. The details will be introduced in Subsection \ref{ssec3.2.4:loss_reward} and Subsection \ref{ssec3.2.2:3phase}. It worth mentioning that one premise of our project is that all the linguistic hypotheses are purely implied by dynamics.
+\end{itemize}
+
+\subsection{Game Procedure}
+\label{ssec3.1.1:game_procedure}
+
+The overall view of the proposed game is illustrated in Figure \ref{fig2:game_procedure} given as follow.
+
+\begin{figure}[!h]
+  \centering
+  \includegraphics[width=0.8\textwidth]{graphs/task_illustration.pdf}
+  \caption{Diagram of Game Playing Procedure.}
+  \label{fig2:game_procedure}
+\end{figure}
+
+According to the steps of playing games at iteration $i$, the components of our games are illustrated as follows:
+\begin{enumerate}
+  \item Perceptions: the perception from environments is a \textbf{set} of objecst, i.e. $s_i=\{o_{i_1}, o_{i_2}, \dots\}$.
+  \item Speaker observation and message generation: after observing and encoding the perception, speaker $S$ would generate a message $m_i=\{s_{i_1}, s_{i_2}, \dots, s_{M}\}$ where $M$ is the maximum length of messages and $s_k$ are selected from a randomly initialised vocabulary such that the symbols in the initial vocabulary are meaningless;
+  \item Listener receiving message and perception reproduction: after receiving and encoding the message $m_i$, the listener would generate a \textbf{sequence} $\hat{s}_i = \{\hat{o}_{i_1}, \hat{o}_{i_2}, \dots\}$ whose symbols are identical to those in the original perception $s_i$;
+  \item Reward and parameter update: by comparing $s_i$ and $\hat{s}_i$, we take the cross-entropy between them as the reward for both listener and speaker and update parameters of both speaker and listener with respect to it.\footnote{Different ways of updating parameters are instroduced in Section \ref{sec3.2:models}.}
+\end{enumerate}
+
+One thing that needs to be highlighted is that the perceptions $s_i$ are sets and thus order of objects would not make any diffrence. Further, we argue that the only important feature that need to be transmitted is actually the numbers of different objects which correponds to the function of numerals in natural language.
+
+\subsection{Functions of Numerals in the Game}
+\label{ssec3.1.2:numeral_in_game}
+
+\cite{Siegelmann1992NN} shows that Recurrent Neural Networks are Turing-complete, as LSTM is a super set of RNN, it is safe to claim that LSTM is also Turing-complete.
+
+\section{Proposed Models}
+\label{sec3.2:models}
+
+\subsection{Set2Seq2Seq Models}
+\label{ssec3.2.1:set2seq2seq}
+
+\subsection{Numeral Iterated Learning}
+\label{ssec3.2.2:3phase}
+
+\subsection{Baseline Models}
+\label{ssec3.2.3:baselines}
+
+\subsection{Loss and Reward}
+\label{ssec3.2.4:loss_reward}
+
+\section{Evaluation Methods}
+\label{sec3.3:evaluation}
