@@ -136,7 +136,24 @@ class Set2Seq2Choice(nn.Module):
         return hidden
 
     def reproduce_listener_hidden(self, data_batch):
-        return NotImplementedError
+        correct_data = data_batch['correct']
+
+        input_var = correct_data['input']
+        input_mask = correct_data['input_mask']
+        message, _, msg_mask = self.speaker(input_var, input_mask)
+
+        batch_size = message.shape[1]
+        msg_len = msg_mask.squeeze(1).sum(dim=0)
+        message = message.transpose(0, 1)
+
+        if self.listener.msg_embedding is not None:
+            message = F.relu(
+                torch.bmm(message, self.listener.msg_embedding.expand(batch_size, -1, -1))
+            )
+
+        _, msg_encoder_hidden, _ = self.listener.msg_encoder(message, msg_len)
+
+        return msg_encoder_hidden
 
     def reproduce_message(self, data_batch):
         self.eval()
@@ -155,4 +172,7 @@ class Set2Seq2Choice(nn.Module):
 
     def reset_listener(self):
         del self.listener
-        return NotImplementedError
+        self.listener = ListeningAgent(
+            self.voc_size, self.msg_vocsize, self.hidden_size,
+            self.dropout, self.embedding, self.msg_embedding,
+        ).to(self.speaker.embedding.weight.device)
