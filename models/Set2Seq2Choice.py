@@ -115,7 +115,7 @@ class Set2Seq2Choice(nn.Module):
             self.listener.eval()
             _msg_, _, _msg_mask_ = self.speaker(input_var, input_mask)
             _choose_logits = self.listener(_msg_, _msg_mask_, candidates)
-            baseline, _, _ = choice_cross_entropy_loss(_choose_logits, golden_label)
+            _, _, _, baseline = choice_cross_entropy_loss(_choose_logits, golden_label)
             self.speaker.train()
             self.listener.train()
         else:
@@ -125,9 +125,9 @@ class Set2Seq2Choice(nn.Module):
 
     def reproduce_speaker_hidden(self, data_batch):
         self.eval()
-
-        input_var = data_batch['input']
-        input_mask = data_batch['input_mask']
+        correct_data = data_batch['correct']
+        input_var = correct_data['input']
+        input_mask = correct_data['input_mask']
         
         embedded_input = self.speaker.embedding(input_var.t())
         hidden, _ = self.speaker.encoder(embedded_input, input_mask)
@@ -157,8 +157,9 @@ class Set2Seq2Choice(nn.Module):
 
     def reproduce_message(self, data_batch):
         self.eval()
-        input_var = data_batch['input']
-        input_mask = data_batch['input_mask']
+        correct_data = data_batch['correct']
+        input_var = correct_data['input']
+        input_mask = correct_data['input_mask']
         message, _, _ = self.speaker(input_var, input_mask)
         self.train()
         return message

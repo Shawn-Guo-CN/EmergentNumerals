@@ -15,12 +15,11 @@ from analysis.training_sim_check import sim_check
 
 def get_batches4sim_check(voc, dataset_file_path=args.data_file):
     in_set = FruitSeqDataset.load_stringset(dataset_file_path)
-    batch_set = ChooseDataset(voc, batch_size=1, dataset_file_path=dataset_file_path).databatch_set
+    batch_set = ChooseDataset(voc, batch_size=1, dataset_file_path=dataset_file_path)
     return in_set, batch_set
 
 
-def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=args.clip):
-    m_optimizer.zero_grad()
+def train_epoch(model, data_batch, s_optimizer, l_optimizer, clip=args.clip):
     s_optimizer.zero_grad()
     l_optimizer.zero_grad()
 
@@ -28,20 +27,17 @@ def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=a
          baseline, spk_entropy = model(data_batch)
     
     if args.msg_mode == 'REINFORCE':
-        log_msg_prob = (c_correct.detach() * log_msg_prob)
-        log_msg_prob.mean().backward()
-        log_choose_prob = (c_correct.detach() * log_choose_prob)
-        log_choose_prob.mean().backward()
+        (c_correct.detach() * log_msg_prob + 0.05 * spk_entropy).mean().backward()
+        (c_correct.detach() * log_choose_prob).mean().backward()
     elif args.msg_mode == 'SCST':
-        log_msg_prob = ((c_correct.detach()-baseline.detach()) * log_msg_prob)
-        log_msg_prob.mean().backward()
-        log_choose_prob = ((c_correct.detach()-baseline.detach()) * log_choose_prob)
-        log_choose_prob.mean().backward()
+        ((c_correct.detach()-baseline.detach()) * log_msg_prob).mean().backward()
+        ((c_correct.detach()-baseline.detach()) * log_choose_prob).mean().backward()
     elif args.msg_mode == 'GUMBEL':
         loss.mean().backward()
+    else:
+        raise NotImplementedError
     
     nn.utils.clip_grad_norm_(model.parameters(), clip)
-    m_optimizer.step()
     s_optimizer.step()
     l_optimizer.step()
 
@@ -74,7 +70,6 @@ def train():
     print('loading data and building batches...')
     train_set = ChooseDataset(voc, dataset_file_path=args.train_file)
     dev_set = ChooseDataset(voc, dataset_file_path=args.dev_file)
-    # test_set = ChooseDataset(voc, dataset_file_path=TEST_FILE_PATH)
     print('done')
         
     if args.param_file is not None:
@@ -91,20 +86,16 @@ def train():
 
         model = Set2Seq2Choice(voc.num_words).to(args.device)
         model.load_state_dict(checkpoint['model'])
-        model_optimiser = train_args.optimiser(model.parameters(), lr=train_args.learning_rate)
         speaker_optimiser = train_args.optimiser(model.speaker.parameters(), 
-                                        lr=train_args.learning_rate * train_args.speaker_ratio)
+                                        lr=train_args.learning_rate)
         listner_optimiser = train_args.optimiser(model.listener.parameters(), 
-                                        lr=train_args.learning_rate * train_args.speaker_ratio)
+                                        lr=train_args.learning_rate)
         print('\tdone')
     else:
         print('building model...')
         model = Set2Seq2Choice(voc.num_words).to(args.device)
-        model_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)
-        speaker_optimiser = args.optimiser(model.speaker.decoder.parameters(), 
-                                        lr=args.learning_rate * args.speaker_ratio)
-        listner_optimiser = args.optimiser(model.listener.parameters(),
-                                        lr=args.learning_rate * args.listener_ratio)
+        speaker_optimiser = args.optimiser(model.speaker.parameters(), lr=args.learning_rate)
+        listner_optimiser = args.optimiser(model.listener.parameters(), lr=args.learning_rate)
         print('done')
 
     print('preparing data for testing topological similarity...')
@@ -124,11 +115,11 @@ def train():
     eval_acc = []
     print('done')
 
-    # in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
-    #     model, sim_chk_inset, sim_chk_batchset
-    # )
-    # print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
-    #             0, in_spk_sim, in_msg_sim, in_lis_sim))
+    in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
+        model, sim_chk_inset, sim_chk_batchset
+    )
+    print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
+                0, in_spk_sim, in_msg_sim, in_lis_sim))
 
     print('training...')
     for iter in range(start_iteration, args.iter_num+1):
@@ -136,7 +127,6 @@ def train():
             acc, loss = train_epoch(
                 model,
                 data_batch,
-                model_optimiser,
                 speaker_optimiser,
                 listner_optimiser
             )
@@ -173,7 +163,7 @@ def train():
                 0, in_spk_sim, in_msg_sim, in_lis_sim))
         
         if iter % args.save_freq == 0:
-            path_join = 'set2seq2seq_' + str(args.num_words) + '_' + args.msg_mode
+            path_join = 'set2seq2choice_' + str(args.num_words) + '_' + args.msg_mode
             path_join += '_hard' if not args.soft else '_soft'
             directory = os.path.join(args.save_dir, path_join)
             if not os.path.exists(directory):
@@ -182,7 +172,6 @@ def train():
                 'iteration': iter,
                 'model': model.state_dict(),
                 'opt': [
-                    model_optimiser.state_dict(),
                     speaker_optimiser.state_dict(),
                     listner_optimiser.state_dict()
                 ],
@@ -197,7 +186,7 @@ def train():
                     'training_in_lish_sim': training_in_lish_sim,
                     'eval_acc': eval_acc,
                 }
-            }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
+            }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_acc, 'checkpoint')))
 
 
 def test():
@@ -217,20 +206,15 @@ def test():
         print('rebuilding model...')
         model = Set2Seq2Choice(voc.num_words).to(args.device)
         model.load_state_dict(checkpoint['model'])
-        param_optimizer = train_args.optimiser(model.parameters(), lr=args.learning_rate)
-        decoder_optimizer = train_args.optimiser(model.speaker.decoder.parameters(), 
-                                        lr=args.learning_rate * args.decoder_ratio)
-        param_optimizer.load_state_dict(checkpoint['opt'])
-        decoder_optimizer.load_state_dict(checkpoint['de_opt'])
         print('done')
 
     print('loading test data...')
     test_set = ChooseDataset(voc, dataset_file_path=args.test_file)
     print('done')
     
-    test_seq_acc, test_tok_acc, test_loss = eval_model(model, test_set)
-    print("[TEST]Loss: {:.4f}; Seq-level Accuracy: {:.4f}; Tok-level Accuracy: {:.4f}".format(
-                test_loss, test_seq_acc * 100, test_tok_acc * 100)
+    test_acc, test_loss = eval_model(model, test_set)
+    print("[TEST]Loss: {:.4f}; Accuracy: {:.4f};".format(
+                test_loss, test_acc * 100)
          )
 
 
