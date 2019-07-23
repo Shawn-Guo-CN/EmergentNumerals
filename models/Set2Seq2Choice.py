@@ -125,9 +125,9 @@ class Set2Seq2Choice(nn.Module):
 
     def reproduce_speaker_hidden(self, data_batch):
         self.eval()
-
-        input_var = data_batch['input']
-        input_mask = data_batch['input_mask']
+        correct_data = data_batch['correct']
+        input_var = correct_data['input']
+        input_mask = correct_data['input_mask']
         
         embedded_input = self.speaker.embedding(input_var.t())
         hidden, _ = self.speaker.encoder(embedded_input, input_mask)
@@ -157,8 +157,9 @@ class Set2Seq2Choice(nn.Module):
 
     def reproduce_message(self, data_batch):
         self.eval()
-        input_var = data_batch['input']
-        input_mask = data_batch['input_mask']
+        correct_data = data_batch['correct']
+        input_var = correct_data['input']
+        input_mask = correct_data['input_mask']
         message, _, _ = self.speaker(input_var, input_mask)
         self.train()
         return message

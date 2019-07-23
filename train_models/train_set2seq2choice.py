@@ -15,7 +15,7 @@ from analysis.training_sim_check import sim_check
 
 def get_batches4sim_check(voc, dataset_file_path=args.data_file):
     in_set = FruitSeqDataset.load_stringset(dataset_file_path)
-    batch_set = ChooseDataset(voc, batch_size=1, dataset_file_path=dataset_file_path).databatch_set
+    batch_set = ChooseDataset(voc, batch_size=1, dataset_file_path=dataset_file_path)
     return in_set, batch_set
 
 
@@ -70,7 +70,6 @@ def train():
     print('loading data and building batches...')
     train_set = ChooseDataset(voc, dataset_file_path=args.train_file)
     dev_set = ChooseDataset(voc, dataset_file_path=args.dev_file)
-    # test_set = ChooseDataset(voc, dataset_file_path=TEST_FILE_PATH)
     print('done')
         
     if args.param_file is not None:
@@ -116,11 +115,11 @@ def train():
     eval_acc = []
     print('done')
 
-    # in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
-    #     model, sim_chk_inset, sim_chk_batchset
-    # )
-    # print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
-    #             0, in_spk_sim, in_msg_sim, in_lis_sim))
+    in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
+        model, sim_chk_inset, sim_chk_batchset
+    )
+    print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
+                0, in_spk_sim, in_msg_sim, in_lis_sim))
 
     print('training...')
     for iter in range(start_iteration, args.iter_num+1):
@@ -164,7 +163,7 @@ def train():
                 0, in_spk_sim, in_msg_sim, in_lis_sim))
         
         if iter % args.save_freq == 0:
-            path_join = 'set2seq2seq_' + str(args.num_words) + '_' + args.msg_mode
+            path_join = 'set2seq2choice_' + str(args.num_words) + '_' + args.msg_mode
             path_join += '_hard' if not args.soft else '_soft'
             directory = os.path.join(args.save_dir, path_join)
             if not os.path.exists(directory):

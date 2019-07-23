@@ -278,6 +278,9 @@ class ChooseDataset(Dataset):
 
     def generate_distractor_batch(self, tgt_idx):
         sample_idx = np.random.choice(self.batch_indices)
+        while self.batch_size == 1 and sample_idx == tgt_idx:
+            sample_idx = np.random.choice(self.batch_indices)
+        
         if sample_idx == tgt_idx:
             return self.reperm_batch(tgt_idx)
         else:
@@ -334,7 +337,10 @@ class ChooseDataset(Dataset):
         input_indices = self.string_set2input_target_indices(string_set)
 
         # ceil/floor
-        num_batches = math.floor(len(input_indices) / self.batch_size)
+        if len(input_indices) < self.batch_size:
+            num_batches = 1
+        else:
+            num_batches = math.floor(len(input_indices) / self.batch_size)
 
         for i in range(num_batches):
             input_indices_batch = input_indices[i*self.batch_size:
