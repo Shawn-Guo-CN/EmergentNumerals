@@ -57,7 +57,7 @@ def game_play_phase(
             print_loss_avg = print_loss / (args.print_freq * len(train_set))
             print_acc_avg = print_acc / (args.print_freq * len(train_set))
             print("Generation: {}; Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg acc: {:.4f};".format(
-                generation_idx, iter, iter / args.iter_num * 100, print_loss_avg, print_acc_avg))
+                generation_idx, iter, iter / args.num_play_iter * 100, print_loss_avg, print_acc_avg))
             training_acc.append(print_acc_avg)
             training_losses.append(print_loss_avg)
             print_acc = 0.
