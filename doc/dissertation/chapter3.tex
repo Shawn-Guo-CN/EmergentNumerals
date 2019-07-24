@@ -11,7 +11,7 @@ Unlike traditional simulation methods in evolutionary linguistics introduced in 
 \begin{itemize}
   \item \textit{Environment}: To imply our linguistic assumption as well as make the size of environment limited and thus analysable, all perceptions in the established environment are sequences of objects represented by one-hot vectors. For ease of demonstration, we denote these objects as $o \in \{ A, B, C, D\}$ in the following sections.
   \item \textit{Agents}: There are 2 kinds of agents in our project: i) \textit{speakers} $S$ that can observe objects in the environment and emit messages $m_i$; ii) \textit{listeners} $L$ that can receive the messages and generate a sequence of obejcts.
-  \item \textit{Dynamics}: In this project, the dynamics mean not only the manually designed reward function for agents but also the training mechanism, e.g. iterated learning and blank vocabulary. The details will be introduced in Subsection \ref{ssec3.2.4:loss_reward} and Subsection \ref{ssec3.2.2:3phase}. It worth mentioning that one premise of our project is that all the linguistic hypotheses are purely implied by dynamics.
+  \item \textit{Dynamics}: In this project, the dynamics mean not only the manually designed reward function for agents but also the training mechanism, e.g. iterated learning and blank vocabulary. The details will be introduced in Subsection \ref{ssec3.2.4:loss_learning} and Subsection \ref{ssec3.2.5:iterated_learning}. It worth mentioning that one premise of our project is that all the linguistic hypotheses are purely implied by dynamics.
 \end{itemize}
 
 \subsection{Game Procedure}
@@ -72,8 +72,34 @@ We illustrate the Set-Select game, a variant of Set-Forward game, in Figure \ref
   \label{fig4:model_arch}
 \end{figure}
 
+We illustrate the overall architecture of our models in Figure \ref{fig4:model_arch} given above, in which it is straightforward to see that a speaker $S$ consists of a set encoder and a standard LSTM sequence decoder that can generate messages. As for a listeners $L$, it would first encode messages with a LSTM sequence encoder and get the feature vector $h^l_m$. Then, in the Set-Forward game, $L$ would take $h^l_m$ as the initial hidden state and predict a sequence of objects with a LSTM sequence decoder. As for in Set-Select game, $L$ would compare $h^l_m$ with a bunch of sets which are encoded by set encoders of $L$ and select the one shown to $S$ based on the dot product between $h^l_m$ and feature vectors of each set.
+
+Further details are shown in the following subsections.
+
 \subsection{Speaker}
 \label{ssec3.2.1:speaker}
+
+The architecture of our speaking agents is very similar to the Seq-to-Seq model proposed by \cite{sutskever2014sequence} except that replace the encoder for input sequences with a set encoder whose details would be introduced in the following subsubsection. As Seq-to-Seq model is quite popular nowadays, we skip details about how to generate sequences which correpond to the messages in our games, and focus on how to encode sets of objects.
+
+\subsubsection{Set Encoder}
+\label{sssec3.2.1.1:set_encoder}
+
+Our set encoder shares an almost same architecture of inputting sets proposed by \cite{vinyals2015order}. However, as there is an addition in softmax function and it would introduce counting bias into the feature representation of sets, we replace equation (5) in \cite{vinyals2015order} with the following operation in order to avoid exposing counting system to models:
+
+\begin{equation}
+  a_{i,t} = \sigma(e_{i,t})
+  \label{eq3.2.1.1:sigmoid_to_replace_softmax}
+\end{equation}
+where $\sigma$ is sigmoid function.
+
+In our implementation, the number of attention operations is set to be the same as the number of all types of objects, as we want to help models to represent number of each kind of objects as features in the vector representation of input set.
+
+\subsubsection{Message Generator}
+\label{sssec3.2.1.2:msg_generator}
+
+To generate the message $m_i$, we follow \cite{havrylov2017emergence} and adopt a LSTM-based sequence decoder with 2 different kinds of sampling mechanisms: i)direct sampling that directly sample from the correponding categorical distribution specified by $softmax(Wh_k + b)$; ii) GUMBEL-softmax estimator proposed by \cite{jang2016categorical} with straight-through trick introduced in \cite{bengio2013estimating}. Beside, the learning mechanisms also vary for these 2 different sampling methods, which is further discussed in Subsection \ref{ssec3.2.4:loss_learning}.
+
+Note that the length of each message $m_i$ is fixed to $|M|$ and symbols $s_{i_1},\dots,s_{i_|M|}$ are all from an initially meaningless vocabulary whose size is $|L|$. The effect of $|L|$ and $|M|$ on the emergent language is further discussed in Chapter \ref{ch4:results_analysis}.
 
 \subsection{Listener in Set2Seq2Seq Model}
 \label{ssec3.2.2:set2seq2seq}
@@ -81,14 +107,14 @@ We illustrate the Set-Select game, a variant of Set-Forward game, in Figure \ref
 \subsection{Listener in Set2Seq2Choice Model}
 \label{ssec3.2.3:set2seq2choice}
 
-\subsection{Baseline Models}
-\label{ssec3.2.4:baselines}
+\subsection{Loss/Reward and Learning}
+\label{ssec3.2.4:loss_learning}
 
 \subsection{Numeral Iterated Learning}
 \label{ssec3.2.5:iterated_learning}
 
-\subsection{Loss and Reward}
-\label{ssec3.2.6:loss_reward}
+\subsection{Baseline Models}
+\label{ssec3.2.6:baselines}
 
 \section{Evaluation Methods}
 \label{sec3.3:evaluation}
