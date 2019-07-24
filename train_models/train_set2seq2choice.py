@@ -159,7 +159,7 @@ def train():
             training_in_msg_sim.append(in_msg_sim)
             training_in_lish_sim.append(in_lis_sim)
             print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
-                0, in_spk_sim, in_msg_sim, in_lis_sim))
+                iter, in_spk_sim, in_msg_sim, in_lis_sim))
         
         if iter % args.save_freq == 0:
             path_join = 'set2seq2choice_' + str(args.num_words) + '_' + args.msg_mode
