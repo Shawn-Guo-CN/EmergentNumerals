@@ -190,8 +190,8 @@ def train_generation(
 
         model.reset_speaker()
         print('Generation: {}; Speaker Reset Done.'.format(generation_idx))
-        # model.reset_listener()
-        # print('Generation: {}; Listener Reset Done.'.format(generation_idx))
+        model.reset_listener()
+        print('Generation: {}; Listener Reset Done.'.format(generation_idx))
 
         m_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)
         s_optimiser = args.optimiser(model.speaker.decoder.parameters(), 
