@@ -163,6 +163,7 @@ args.device = torch.device("cuda:" + str(args.device) \
 args.optimiser = defaults['OPTIMISER'] if args.optimiser == 'adam' else None
 args.loss_function = defaults['LOSS_FUNCTION'] if args.loss_function == 'cross_entropy' else None
 args.param_file = None if len(args.param_file) == 0 else args.param_file
+args.max_seq_len = args.num_words * args.max_len_word + 1
 
 
 def set_random_seed(seed:int):

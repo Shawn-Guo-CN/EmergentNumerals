@@ -63,6 +63,8 @@ class ListeningAgent(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
+        assert args.max_seq_len == args.num_words * args.max_len_word + 1
+        self.max_out_len = args.max_seq_len
 
         if embedding is None:
             self.embedding = nn.Embedding(self.output_size, self.hidden_size).weight
@@ -99,7 +101,7 @@ class ListeningAgent(nn.Module):
         if self.training:
             decoder_max_len = target_max_len
         else:
-            decoder_max_len = args.max_seq_len
+            decoder_max_len = self.max_out_len
 
         _, decoder_logits, _ = self.decoder(
             encoder_hidden,
@@ -167,7 +169,7 @@ class Set2Seq2Seq(nn.Module):
             self.speaker.eval()
             self.listener.eval()
             msg, _, msg_mask = self.speaker(input_var, input_mask)
-            s_logits = self.listener(msg, msg_mask, args.max_seq_len)
+            s_logits = self.listener(msg, msg_mask)
             loss_max_len = min(s_logits.shape[0], target_var.shape[0])
             baseline = seq_cross_entropy_loss(s_logits, target_var, target_mask, loss_max_len)[3]
             self.speaker.train()
