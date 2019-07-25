@@ -15,11 +15,15 @@ class SpeakingAgent(nn.Module):
             self, voc_size, msg_vocsize, embedding, msg_embedding,
             hidden_size=args.hidden_size,
             dropout=args.dropout_ratio,
+            msg_length=args.max_msg_len,
+            msg_mode=args.msg_mode
         ):
         super().__init__()
         self.voc_size = voc_size
         self.msg_vocsize = msg_vocsize
         self.hidden_size = hidden_size
+        self.msg_length = msg_length
+        self.msg_mode = msg_mode
 
         if embedding is None:
             self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
@@ -44,9 +48,8 @@ class SpeakingAgent(nn.Module):
         embedded_input = self.embedding(input_var.t())
         encoder_hidden, encoder_cell = self.encoder(embedded_input, input_mask)
         message, logits, mask = self.decoder(
-                encoder_hidden, encoder_cell,
-                mode=args.msg_mode,
-                max_len=args.max_msg_len,
+                encoder_hidden, encoder_cell, self.msg_length,
+                mode=self.msg_mode,
             )
 
         return message, logits, mask
@@ -106,7 +109,7 @@ class ListeningAgent(nn.Module):
         _, decoder_logits, _ = self.decoder(
             encoder_hidden,
             encoder_cell,
-            max_len=decoder_max_len
+            decoder_max_len
         )
 
         return decoder_logits
@@ -114,9 +117,10 @@ class ListeningAgent(nn.Module):
 
 class Set2Seq2Seq(nn.Module):
     def __init__(self, voc_size, msg_length=args.max_msg_len, msg_vocsize=args.msg_vocsize, 
-                    hidden_size=args.hidden_size, dropout=args.dropout_ratio):
+                    hidden_size=args.hidden_size, dropout=args.dropout_ratio, msg_mode=args.msg_mode):
         super().__init__()
         self.voc_size = voc_size
+        self.msg_mode = msg_mode
         self.msg_length = msg_length
         self.msg_vocsize = msg_vocsize
         self.hidden_size = hidden_size
@@ -129,7 +133,7 @@ class Set2Seq2Seq(nn.Module):
         # Speaking agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.speaker = SpeakingAgent(
             self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
-            self.hidden_size, self.dropout
+            self.hidden_size, self.dropout, self.msg_length, self.msg_mode
         )
         # Listening agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.listener = ListeningAgent(
@@ -165,7 +169,7 @@ class Set2Seq2Seq(nn.Module):
         loss, print_losses, tok_correct, seq_correct, tok_acc, seq_acc\
             = seq_cross_entropy_loss(seq_logits, target_var, target_mask, loss_max_len)
 
-        if self.training and args.msg_mode == 'SCST':
+        if self.training and self.msg_mode == 'SCST':
             self.speaker.eval()
             self.listener.eval()
             msg, _, msg_mask = self.speaker(input_var, input_mask)
@@ -227,7 +231,7 @@ class Set2Seq2Seq(nn.Module):
         del self.speaker
         self.speaker = SpeakingAgent(
             self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
-            self.hidden_size, self.dropout
+            self.hidden_size, self.dropout, self.msg_length, self.msg_mode
         ).to(self.listener.msg_embedding.device)
 
     def reset_listener(self):

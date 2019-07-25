@@ -57,8 +57,7 @@ class SeqDecoder(nn.Module):
         self.out = nn.Linear(hidden_size, output_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, encoder_hidden, encoder_cell, 
-                max_len=args.max_seq_len,
+    def forward(self, encoder_hidden, encoder_cell, max_len
                 init_input=None,
                 mode='GUMBEL',
                 sample_hard=True,

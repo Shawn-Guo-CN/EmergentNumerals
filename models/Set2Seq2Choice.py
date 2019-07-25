@@ -66,9 +66,10 @@ class ListeningAgent(nn.Module):
 
 class Set2Seq2Choice(nn.Module):
     def __init__(self, voc_size, msg_length=args.max_msg_len, msg_vocsize=args.msg_vocsize, 
-                    hidden_size=args.hidden_size, dropout=args.dropout_ratio):
+                    hidden_size=args.hidden_size, dropout=args.dropout_ratio, msg_mode=args.msg_mode):
         super().__init__()
         self.voc_size = voc_size
+        self.msg_mode = msg_mode
         self.msg_length = msg_length
         self.msg_vocsize = msg_vocsize
         self.hidden_size = hidden_size
@@ -81,7 +82,7 @@ class Set2Seq2Choice(nn.Module):
         # Speaking agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.speaker = SpeakingAgent(
             self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
-            self.hidden_size, self.dropout
+            self.hidden_size, self.dropout, self.msg_length, self.msg_mode
         )
         # Listening agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.listener = ListeningAgent(
@@ -110,7 +111,7 @@ class Set2Seq2Choice(nn.Module):
         
         loss, print_loss, acc, c_correct = choice_cross_entropy_loss(choose_logits, golden_label)
 
-        if self.training and args.msg_mode == 'SCST':
+        if self.training and self.msg_mode == 'SCST':
             self.speaker.eval()
             self.listener.eval()
             _msg_, _, _msg_mask_ = self.speaker(input_var, input_mask)
@@ -168,7 +169,7 @@ class Set2Seq2Choice(nn.Module):
         del self.speaker
         self.speaker = SpeakingAgent(
             self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
-            self.hidden_size, self.dropout
+            self.hidden_size, self.dropout, self.msg_length, self.msg_mode
         ).to(self.listener.msg_embedding.device)
 
     def reset_listener(self):
