@@ -124,16 +124,11 @@ def train():
 
     print('training...')
     for iter in range(start_iteration, args.iter_num+1):
-        if len(eval_acc) > 10:
-                tau = tau_scheduler(sum(eval_acc[-10:]) / 10.)
-            else:
-                tau = tau_scheduler(0.)
-
         for idx, data_batch in enumerate(train_set):
             acc, loss = train_epoch(
                 model,
                 data_batch,
-                tau,
+                args.tau,
                 speaker_optimiser,
                 listner_optimiser
             )
