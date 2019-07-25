@@ -91,14 +91,14 @@ class Set2Seq2Choice(nn.Module):
         )
         
 
-    def forward(self, data_batch):
+    def forward(self, data_batch, msg_tau=1.0):
         correct_data = data_batch['correct']
         candidates = data_batch['candidates']
         golden_label = data_batch['label']
 
         input_var = correct_data['input']
         input_mask = correct_data['input_mask']
-        message, msg_logits, msg_mask = self.speaker(input_var, input_mask)
+        message, msg_logits, msg_mask = self.speaker(input_var, input_mask, tau=msg_tau)
         
         spk_entropy = (F.softmax(msg_logits, dim=2) * msg_logits).sum(dim=2).sum(dim=0)
         if self.training:

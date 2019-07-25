@@ -41,15 +41,15 @@ class SpeakingAgent(nn.Module):
         # The output size of decoder is the size of vocabulary for communication
         self.decoder = SeqDecoder(
             self.msg_vocsize, self.hidden_size, self.msg_vocsize,
-            embedding=self.msg_embedding
+            embedding=self.msg_embedding, role='msg'
         )
 
-    def forward(self, input_var, input_mask):
+    def forward(self, input_var, input_mask, tau=1.0):
         embedded_input = self.embedding(input_var.t())
         encoder_hidden, encoder_cell = self.encoder(embedded_input, input_mask)
         message, logits, mask = self.decoder(
                 encoder_hidden, encoder_cell, self.msg_length,
-                mode=self.msg_mode,
+                mode=self.msg_mode, sample_tau=tau
             )
 
         return message, logits, mask
@@ -83,7 +83,7 @@ class ListeningAgent(nn.Module):
 
         self.decoder = SeqDecoder(
                 self.output_size, self.hidden_size, self.output_size,
-                embedding=self.embedding
+                embedding=self.embedding, role='out'
             )
 
     def forward(self, message, msg_mask, target_max_len):
@@ -142,14 +142,14 @@ class Set2Seq2Seq(nn.Module):
         )
         
 
-    def forward(self, data_batch):
+    def forward(self, data_batch, msg_tau=1.0):
         input_var = data_batch['input']
         input_mask = data_batch['input_mask']
         target_var = data_batch['target']
         target_mask = data_batch['target_mask']
         target_max_len = data_batch['target_max_len']
 
-        message, msg_logits, msg_mask = self.speaker(input_var, input_mask)
+        message, msg_logits, msg_mask = self.speaker(input_var, input_mask, tau=msg_tau)
         
         spk_entropy = (F.softmax(msg_logits, dim=2) * msg_logits).sum(dim=2).sum(dim=0)
         if self.training:

@@ -38,12 +38,14 @@ class SeqDecoder(nn.Module):
             hidden_size,
             output_size,
             dropout=args.dropout_ratio,
-            embedding=None
+            embedding=None,
+            role='msg', # role can be 'msg' or 'out'
         ):
         super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
+        self.role = role
 
         self.embedding = embedding
 
@@ -57,10 +59,11 @@ class SeqDecoder(nn.Module):
         self.out = nn.Linear(hidden_size, output_size)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, encoder_hidden, encoder_cell, max_len
+    def forward(self, encoder_hidden, encoder_cell, max_len,
                 init_input=None,
-                mode='GUMBEL',
+                mode=args.msg_mode,
                 sample_hard=True,
+                sample_tau=args.tau,
                 eos_idx=None
         ):
         batch_size = encoder_hidden.shape[0]
@@ -88,8 +91,8 @@ class SeqDecoder(nn.Module):
             logit = self.out(decoder_hidden)
             logits.append(logit)
 
-            if self.training:
-                predict = decoding_sampler(logit, mode=mode, tau=args.tau, hard=sample_hard)
+            if self.training and self.role == 'msg':
+                predict = decoding_sampler(logit, mode=mode, tau=sample_tau, hard=sample_hard)
             else:
                 predict = F.one_hot(torch.argmax(logit, dim=1), 
                                     num_classes=self.output_size).to(mask.dtype)

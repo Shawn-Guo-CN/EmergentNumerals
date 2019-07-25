@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from utils.conf import args, set_random_seed
+from utils.schedulers import tau_scheduler
 from models.Set2Seq2Choice import Set2Seq2Choice
 from preprocesses.DataIterator import ChooseDataset, FruitSeqDataset
 from preprocesses.Voc import Voc
@@ -19,12 +20,12 @@ def get_batches4sim_check(voc, dataset_file_path=args.data_file):
     return in_set, batch_set
 
 
-def train_epoch(model, data_batch, s_optimizer, l_optimizer, clip=args.clip):
+def train_epoch(model, data_batch, tau, s_optimizer, l_optimizer, clip=args.clip):
     s_optimizer.zero_grad()
     l_optimizer.zero_grad()
 
     loss, print_loss, acc, c_correct, log_msg_prob, log_choose_prob,\
-         baseline, spk_entropy = model(data_batch)
+         baseline, spk_entropy = model(data_batch, tau)
     
     if args.msg_mode == 'REINFORCE':
         (c_correct.detach() * log_msg_prob + 0.05 * spk_entropy).mean().backward()
@@ -123,10 +124,16 @@ def train():
 
     print('training...')
     for iter in range(start_iteration, args.iter_num+1):
+        if len(eval_acc) > 10:
+                tau = tau_scheduler(sum(eval_acc[-10:]) / 10.)
+            else:
+                tau = tau_scheduler(0.)
+
         for idx, data_batch in enumerate(train_set):
             acc, loss = train_epoch(
                 model,
                 data_batch,
+                tau,
                 speaker_optimiser,
                 listner_optimiser
             )
