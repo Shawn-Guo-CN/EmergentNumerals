@@ -185,7 +185,11 @@ class Set2Seq2Seq(nn.Module):
                 seq_correct, tok_acc, seq_acc, seq_logits, spk_entropy
 
     def reproduce_speaker_hidden(self, data_batch):
-        self.eval()
+        if self.training:
+            self.eval()
+            resume_flag = True
+        else:
+            resume_flag = False
 
         input_var = data_batch['input']
         input_mask = data_batch['input_mask']
@@ -193,11 +197,16 @@ class Set2Seq2Seq(nn.Module):
         embedded_input = self.speaker.embedding(input_var.t())
         hidden, _ = self.speaker.encoder(embedded_input, input_mask)
         
-        self.train()
+        if resume_flag:
+            self.train()
         return hidden
 
     def reproduce_listener_hidden(self, data_batch):
-        self.eval()
+        if self.training:
+            self.eval()
+            resume_flag = True
+        else:
+            resume_flag = False
 
         input_var = data_batch['input']
         input_mask = data_batch['input_mask']
@@ -215,16 +224,22 @@ class Set2Seq2Seq(nn.Module):
 
         _, hidden, _ = self.listener.encoder(message, msg_len)
         
-        self.train()
+        if resume_flag:
+            self.train()
 
         return hidden
 
     def reproduce_message(self, data_batch):
-        self.eval()
+        if self.training:
+            self.eval()
+            resume_flag = True
+        else:
+            resume_flag = False
         input_var = data_batch['input']
         input_mask = data_batch['input_mask']
         message, _, _ = self.speaker(input_var, input_mask)
-        self.train()
+        if resume_flag:
+            self.train()
         return message
 
     def reset_speaker(self):

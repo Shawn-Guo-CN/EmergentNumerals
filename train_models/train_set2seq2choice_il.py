@@ -71,7 +71,7 @@ def game_play_phase(
             print("Generation: {}; [EVAL]Iteration: {}; Loss: {:.4f}; Avg Acc: {:.4f}; Best Acc: {:.4f}".format(
                 generation_idx, iter, dev_loss, dev_acc, max_dev_acc))
 
-        if iter % args.sim_chk_freq == 0:
+        if iter % args.sim_chk_freq == 0 or break_flag:
             in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
                 model, sim_chk_inset, sim_chk_batchset
             )
