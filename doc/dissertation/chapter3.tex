@@ -11,7 +11,7 @@ Unlike traditional simulation methods in evolutionary linguistics introduced in 
 \begin{itemize}
   \item \textit{Environment}: To imply our linguistic assumption as well as make the size of environment limited and thus analysable, all perceptions in the established environment are sequences of objects represented by one-hot vectors. For ease of demonstration, we denote these objects as $o \in \{ A, B, C, D\}$ in the following sections.
   \item \textit{Agents}: There are 2 kinds of agents in our project: i) \textit{speakers} $S$ that can observe objects in the environment and emit messages $m_i$; ii) \textit{listeners} $L$ that can receive the messages and generate a sequence of obejcts.
-  \item \textit{Dynamics}: In this project, the dynamics mean not only the manually designed reward function for agents but also the training mechanism, e.g. iterated learning and blank vocabulary. The details will be introduced in Subsection \ref{ssec3.2.4:loss_learning} and Subsection \ref{ssec3.2.5:iterated_learning}. It worth mentioning that one premise of our project is that all the linguistic hypotheses are purely implied by dynamics.
+  \item \textit{Dynamics}: In this project, the dynamics mean not only the manually designed reward function for agents but also the training mechanism, e.g. iterated learning and blank vocabulary. The details will be introduced in Subsection \ref{ssec3.2.3:loss_learning} and Subsection \ref{ssec3.2.5:iterated_learning}. It worth mentioning that one premise of our project is that all the linguistic hypotheses are purely implied by dynamics.
 \end{itemize}
 
 \subsection{Game Procedure}
@@ -28,9 +28,9 @@ The overall view of the proposed Set-Forward game is illustrated in Figure \ref{
 
 According to the steps of playing games at iteration $i$, the components of our games are illustrated as follows:
 \begin{enumerate}
-  \item Perceptions: the perception from environments is a \textbf{set} of objects, i.e. $s_i=\{o_{i_1}, o_{i_2}, \dots\}$.
-  \item Speaker observation and message generation: after observing and encoding the perception, speaker $S$ would generate a message $m_i=\{s_{i_1}, s_{i_2}, \dots, s_{M}\}$ where $M$ is the maximum length of messages and $s_k$ are selected from a randomly initialised vocabulary such that the symbols in the initial vocabulary are meaningless;
-  \item Listener receiving message and perception reproduction: after receiving and encoding the message $m_i$, the listener would generate a \textbf{sequence} $\hat{s}_i = \{\hat{o}_{i_1}, \hat{o}_{i_2}, \dots\}$ whose symbols are identical to those in the original perception $s_i$;
+  \item Perceptions: the perception from environments is a \textbf{set} of objects, i.e. $s_i=\{o_{i_1}, o_{i_2}, \dots\ o_{i_n}\}$ where $n$ is the number of elements.
+  \item Speaker observation and message generation: after observing and encoding the perception, speaker $S$ would generate a message $m_i=\{s_{i_1}, s_{i_2}, \dots, s_{|M|}\}$ where $|M|$ is the maximum length of messages and $s_k, k \in {1, \dots, |V|}$ are selected from a randomly initialised vocabulary such that the symbols in the initially meaningless vocabulary whose size is $|V|$;
+  \item Listener receiving message and perception reproduction: after receiving and encoding the message $m_i$, the listener would generate a \textbf{sequence} $\hat{s}_i = \{\hat{o}_{i_1}, \hat{o}_{i_2}, \dots\ \hat{o}_{i_n}\}$ whose symbols are identical to those in the original perception $s_i$;
   \item Reward and parameter update: by comparing $s_i$ and $\hat{s}_i$, we take the cross-entropy between them as the reward for both listener and speaker and update parameters of both speaker and listener with respect to it.\footnote{Different ways of updating parameters are instroduced in Section \ref{sec3.2:models}.}
 \end{enumerate}
 
@@ -60,7 +60,7 @@ From the side of speakers $S$, a numeral preferred to be defined as a symbol $s^
   \label{fig3:refer_game_procedure}
 \end{figure}
 
-We illustrate the Set-Select game, a variant of Set-Forward game, in Figure \ref{fig3:refer_game_procedure} given above. The only difference is that listeners need to select the correct set of objects among a bunch of distractors\footnote{A distractor is a set that contains different numbers of objects as the correct one.} instead of generating it. 
+We illustrate the Set-Select game, a referential variant of Set-Forward game, in Figure \ref{fig3:refer_game_procedure} given above. The only difference is that listeners need to select the correct set of objects among a bunch of distractors\footnote{A distractor is a set that contains different numbers of objects as the correct one.} instead of generating it. 
 
 \section{Proposed Models}
 \label{sec3.2:models}
@@ -97,24 +97,67 @@ In our implementation, the number of attention operations is set to be the same 
 \subsubsection{Message Generator}
 \label{sssec3.2.1.2:msg_generator}
 
-To generate the message $m_i$, we follow \cite{havrylov2017emergence} and adopt a LSTM-based sequence decoder with 2 different kinds of sampling mechanisms: i)direct sampling that directly sample from the correponding categorical distribution specified by $softmax(Wh_k + b)$; ii) GUMBEL-softmax estimator proposed by \cite{jang2016categorical} with straight-through trick introduced in \cite{bengio2013estimating}. Beside, the learning mechanisms also vary for these 2 different sampling methods, which is further discussed in Subsection \ref{ssec3.2.4:loss_learning}.
+To generate the message $m_i$, we follow \cite{havrylov2017emergence} and adopt a LSTM-based sequence decoder with 2 different kinds of sampling mechanisms: i)direct sampling that directly sample from the correponding categorical distribution specified by $softmax(Wh_k + b)$; ii) GUMBEL-softmax estimator proposed by \cite{jang2016categorical} with straight-through trick introduced in \cite{bengio2013estimating}. Beside, the learning mechanisms also vary for these 2 different sampling methods, which is further discussed in Subsection \ref{ssec3.2.3:loss_learning}.
 
-Note that the length of each message $m_i$ is fixed to $|M|$ and symbols $s_{i_1},\dots,s_{i_|M|}$ are all from an initially meaningless vocabulary whose size is $|L|$. The effect of $|L|$ and $|M|$ on the emergent language is further discussed in Chapter \ref{ch4:results_analysis}.
+Note that the length of each message $m_i$ is fixed to $|M|$ and symbols $s_{i_1},\dots,s_{i_|M|}$ are all one-hot vectors that represent different discrete symbols. The effect of number of all discrete message symbols $|V|$ and length of messages $|M|$ on the emergent language is further discussed in Chapter \ref{ch4:results_analysis}.
 
-\subsection{Listener in Set2Seq2Seq Model}
-\label{ssec3.2.2:set2seq2seq}
+\subsection{Listeners}
+\label{ssec3.2.2:listeners}
 
-\subsection{Listener in Set2Seq2Choice Model}
-\label{ssec3.2.3:set2seq2choice}
+The architectures of listening agents are specifically designed for handling different kinds of tasks/games and thua vary from Set-Forward game to Set-Select game.
+
+\noindent\textbf{Listener in Set-Forward Game}: The listener in Set-Forward game has exactly the same architecture as Seq-to-Seq model proposed by \cite{sutskever2014sequence}.
+
+\noindent\textbf{Listener in Set-Select Game}: The listener in Set-Select game would also first encoder messages with a LSTM like it is in standard Seq-to-Seq model. However, as it needs to select among a bunch of candidates, it also needs to encoder all these sets with Set Encoder introduced in Subsection \ref{sssec3.2.1.1:set_encoder}. Then, the listener would make predictions based on the dot-products between embedding of message $h^r_m$ and embeddings of each set of objects.
 
 \subsection{Loss/Reward and Learning}
-\label{ssec3.2.4:loss_learning}
+\label{ssec3.2.3:loss_learning}
 
-\subsection{Numeral Iterated Learning}
-\label{ssec3.2.5:iterated_learning}
+\textbf{In Set-Forward game}, as the predictions of listeners are a sequence of objects $\hat{s}_i=\{\hat{o}_{i_1}, \dots, \hat{o}_{i_n}\}$, we use cross-entropy between the original set and the predicted sequence as the objective function that needs to be minimised. Formally,
+
+\begin{equation}
+  \mathcal{L}_{\theta^S, \theta^L}(o_{i_1}, \dots, o_{i_n}) =\mathbb{E}_{m_i\sim p_{\theta^S}(\cdot|s_i)} \left[ -\sum_{k=1}^{n} o_{i_k} \log(p(\hat{o}_{i_k}|m_i, \hat{o}_{-i_k})) \right]
+  \label{eq3.2.3.1:cross_entropy_seq}
+\end{equation}
+where $\hat{o}_{-i_k}$ represent all predicted objects preceding $\hat{o}_{i_k}$.
+
+\noindent\textbf{In Set-Select game}, we still use the cross entropy between the correct candidate and  as the loss to minimise, i.e.
+
+\begin{equation}
+  \mathcal{L}_{\theta^S, \theta^L}(s_i) = \mathbb{E}_{m_i\sim p_{\theta^S}(\cdot|s_i)} \left[-\sum_{k=1}^{C} s_i log(p(c_k)) \right]
+  \label{eq3.2.3.2:cross_entropy_choose}
+\end{equation}
+where $c_k$ is the predicted logit score for candidate $k$ among $C$ candidates.
+
+In the case that we use GUMBEL-softmax for sampling messages from speaker $S$, parameters $\theta^S$ and $\theta^L$ are learnt by back-propogation. In the case that we use direct sampling, $\theta^L$ is still learnt by back-propogation, where as $\theta^S$ is learnt by REINFORCE estimator \cite{williams1992simple} with cross-entropy scores as rewards.
+
+\subsection{Neural Iterated Learning}
+\label{ssec3.2.4:iterated_learning}
+
+The evolutionary linguistic community has already studied the origins and measurements of language compositionality since \cite{kirby2002emergence} which points out a cultual evolutionary account of the origins of compositionality and proposes iterated learning to model this procedure. Thus, to facilitate the emergence of compositionality among the autonomous communication between agents, we transform the Bayesian iterated learning to so called Neural Iterated Learning(NIL).
+
+Following the overall architecture of iterated learning, we also train agents generation by generation. In the begging of each generation $t$, we would instantiate a new speaker $S_t$ and a new listener $L_t$ and then execute the following 3 phases:
+
+\begin{enumerate}
+  \item \textbf{Speaker Learning phase}: During this phase, we would train $S_t$ with the set-message pairs generated by $S_{t-1}$, and the numbe of learning rounds is set to be fixed. Note that there is no such phase in the initial generation, as there is no set-message pair for training $S_t$.
+  \item \textbf{Game Playing phase}: During this phase, we would let $S_t$ and $L_t$ cooperate to complete the game and update $\theta^S_t$ and $\theta^L_t$ with loss/reward illustrated in previous section, and use early-stopping to avoid overfitting.
+  \item \textbf{Knowledge Generation phase}: During this phase, we would feed all $s_i$ in training set into $S_t$ and get correponding messages $m_i$. Then, we would keep the sampled ``language'' for $S_{t+1}$ to learn.
+\end{enumerate}
 
 \subsection{Baseline Models}
-\label{ssec3.2.6:baselines}
+\label{ssec3.2.5:baselines}
+
+To get the upper bounds of our multi-agent communication systems, we remove the communication between speaker and listener to be the baseline models.
+
+In Set-Forward game, our baseline is Set-to-Seq model which first encodes the input set $s_i$ with the set encoder introduced in subsection \ref{sssec3.2.1.1:set_encoder} and then directly generate the predicted sequence $\hat{s}_i$ following the sequence generation in standard seq-to-seq model.
+
+As for in Set-Select game, our baseline is Set-to-Choose model, in which speaker directly tranmit representation vector $h^s_s$ of set $s_i$ to listener. And, listener compare $h^s_s$ with all candiadate sets to make a selection.
 
 \section{Evaluation Methods}
 \label{sec3.3:evaluation}
+
+With the recent rapid development of GLL, measuring the compositionality of emergent communication protocol attracts more and more attention nowadays, e.g. \cite{andreas2019measuring}, \cite{lowe2019pitfalls}.
+
+However, as the setting of our game is simple and the space size is limited, we follow \cite{brighton2006understanding} and take the topological similarity between meaning space (space of all sets of objects) and message space as the measurement of compositionality. In order to calculate the topological compositionality, we need define the disctance measurement for meaning space and message space respectively. Thus, for an input set $s_i$, we could first count the number of each kind of object and then concatenate the Arabic numerals as the meaning sequence. Take a set $s_i={A, A, A, B, B}$ for example, the corresponding meaning sequence would be ``32'' as there are 3 $A$ and 2 $B$ in $s_i$.\footnote{Again, the appearring order of objects would not effect the meaning sequence of a set.} As for the message space, we also use edit disctance following \cite{brighton2006understanding}.
+
+Meaningwhile, as we could perfectly ecode the meaning of a set into natural language, we could take the speaker as a machine translation model that translates a meaning represented in natural langauge into emergent language invented by computational themselves. Based on this point of view, we could also use BLEU score proposed by \cite{papineni2002bleu} as a measurement of compositionality. \textcolor{red}{GIVE MORE DETAILS HERE!}
