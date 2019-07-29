@@ -1,5 +1,41 @@
 \chapter{Experiment Results and Discussion}
 \label{ch4:results_analysis}
 
-\section{Future Works}
-\label{sec4.2:future_work}
+\section{Emergence of Language \& Iterated Learning}
+\label{sec4.1:emergence_il}
+
+First of all, we have to verify that the agents can successfully address the problems by communicating with discrete symbols, so that they communicate meaningful things with each other. Thus, we train both ``Set2Seq2Seq'' and ``Set2Seq2Choice'' on different game settings, and the performance of models are given in Table \ref{tab4.1:game_performance}.
+
+\begin{table}[!h]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        Model                           & Sampling Method & Performance & Game Setting      \\ \hline
+        \multirow{3}{*}{Set2Seq2Seq}    & GUMBEL          & 99.89\%     & \multirow{3}{1.5in}{$|M|=8$, $|V|=10$, $|\mathcal{O}|=6$, $|N_{o}|=10$} \\ \cline{2-3}
+                                        & REINFORCE       & 89.89\%     &                   \\ \cline{2-3}
+                                        & SCST            & 98.67\%     &                   \\ \hline
+        \multirow{3}{*}{Set2Seq2Choice} & GUMBEL          & 100\%       & \multirow{3}{1.5in}{$|M|=6$, $|V|=10$, $|\mathcal{O}|=4$, $|N_{o}|=10$} \\ \cline{2-3}
+                                        & REINFORCE       & 76.45\%     &                   \\ \cline{2-3}
+                                        & SCST            & 83.26\%     &                   \\ \hline
+        \end{tabular}
+    \caption{Performance of Models and Corresponding Game Settings.}
+    \label{tab4.1:game_performance}
+\end{table}
+
+In the above table, $|M|$ is the length of messages, $|V|$ is the size of vocabulary\footnote{Note that the meaning of ``vocabulary" is not like it is in traditional NLP, but refers to the set of initially meaningless symbols that can be used for commmunication.} for message, $|\mathcal{O}|$ is the number of all kinds of objects and $|N_o|$ is the maximum number of a single kind of object.
+
+Besides the ``REINFORCE'' and ``GUMBEL'' sampling methods introduced in subsection \ref{sssec3.2.1.2:msg_generator}, we also tried the self-critic sequence training proposed by \cite{rennie2017self} as a baseline for REINFORCE algorithm, which is denoted by ``SCST''.
+
+Based on the performance shown in Table \ref{tab4.1:game_performance}, it is clear that GUMBEL is the most stable training mechanism on all different settings. Thus, unless specifically stated, the following experiments and discussions are all based on training with GUMBEL method.
+
+\section{Structure of Emergent Language}
+\label{sec4.2:structure_emergent_lan}
+
+\section{Sample Complexity of Languages}
+\label{sec4.3:sample_complexity}
+
+\section{Effects of Different Representations}
+\label{sec4.4:represent_effect}
+
+\section{Discussion}
+\label{sec4.5:discuss}

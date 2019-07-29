@@ -9,9 +9,9 @@ In this chapter, we first describe the proposed language game and the definition
 Unlike traditional simulation methods in evolutionary linguistics introduced in Section \ref{sec2.1:evolang}, there are 3 necessary components in our architecture and they are given as follows:
 
 \begin{itemize}
-  \item \textit{Environment}: To imply our linguistic assumption as well as make the size of environment limited and thus analysable, all perceptions in the established environment are sequences of objects represented by one-hot vectors. For ease of demonstration, we denote these objects as $o \in \{ A, B, C, D\}$ in the following sections.
+  \item \textit{Environment}: To imply our linguistic assumption as well as make the size of environment limited and thus analysable, all perceptions in the established environment are sequences of objects represented by one-hot vectors. For ease of demonstration, we denote these objects as $o \in \mathcal{O}$ where $\mathcal{O} = \{A, B, C, \dots\}$ is the universal set of all kinds of objects in the following sections.
   \item \textit{Agents}: There are 2 kinds of agents in our project: i) \textit{speakers} $S$ that can observe objects in the environment and emit messages $m_i$; ii) \textit{listeners} $L$ that can receive the messages and generate a sequence of obejcts.
-  \item \textit{Dynamics}: In this project, the dynamics mean not only the manually designed reward function for agents but also the training mechanism, e.g. iterated learning and blank vocabulary. The details will be introduced in Subsection \ref{ssec3.2.3:loss_learning} and Subsection \ref{ssec3.2.5:iterated_learning}. It worth mentioning that one premise of our project is that all the linguistic hypotheses are purely implied by dynamics.
+  \item \textit{Dynamics}: In this project, the dynamics mean not only the manually designed reward function for agents but also the training mechanism, e.g. iterated learning and blank vocabulary. The details will be introduced in Subsection \ref{ssec3.2.3:loss_learning} and Subsection \ref{ssec3.2.4:iterated_learning}. It worth mentioning that one premise of our project is that all the linguistic hypotheses are purely implied by dynamics.
 \end{itemize}
 
 \subsection{Game Procedure}
@@ -99,16 +99,16 @@ In our implementation, the number of attention operations is set to be the same 
 
 To generate the message $m_i$, we follow \cite{havrylov2017emergence} and adopt a LSTM-based sequence decoder with 2 different kinds of sampling mechanisms: i)direct sampling that directly sample from the correponding categorical distribution specified by $softmax(Wh_k + b)$; ii) GUMBEL-softmax estimator proposed by \cite{jang2016categorical} with straight-through trick introduced in \cite{bengio2013estimating}. Beside, the learning mechanisms also vary for these 2 different sampling methods, which is further discussed in Subsection \ref{ssec3.2.3:loss_learning}.
 
-Note that the length of each message $m_i$ is fixed to $|M|$ and symbols $s_{i_1},\dots,s_{i_|M|}$ are all one-hot vectors that represent different discrete symbols. The effect of number of all discrete message symbols $|V|$ and length of messages $|M|$ on the emergent language is further discussed in Chapter \ref{ch4:results_analysis}.
+Note that the length of each message $m_i$ is fixed to $ $ and symbols $s_{i_1},\dots,s_{i_|M|}$ are all one-hot vectors that represent different discrete symbols. The effect of number of all discrete message symbols $|V|$ and length of messages $|M|$ on the emergent language is further discussed in Chapter \ref{ch4:results_analysis}.
 
 \subsection{Listeners}
 \label{ssec3.2.2:listeners}
 
 The architectures of listening agents are specifically designed for handling different kinds of tasks/games and thua vary from Set-Forward game to Set-Select game.
 
-\noindent\textbf{Listener in Set-Forward Game}: The listener in Set-Forward game has exactly the same architecture as Seq-to-Seq model proposed by \cite{sutskever2014sequence}.
+\noindent\textbf{Listener in Set-Forward Game}: The listener in Set-Forward game has exactly the same architecture as Seq-to-Seq model proposed by \cite{sutskever2014sequence}. And, when combined with speaker model, the overall model is called as ``Set2Seq2Seq''.
 
-\noindent\textbf{Listener in Set-Select Game}: The listener in Set-Select game would also first encoder messages with a LSTM like it is in standard Seq-to-Seq model. However, as it needs to select among a bunch of candidates, it also needs to encoder all these sets with Set Encoder introduced in Subsection \ref{sssec3.2.1.1:set_encoder}. Then, the listener would make predictions based on the dot-products between embedding of message $h^r_m$ and embeddings of each set of objects.
+\noindent\textbf{Listener in Set-Select Game}: The listener in Set-Select game would also first encoder messages with a LSTM like it is in standard Seq-to-Seq model. However, as it needs to select among a bunch of candidates, it also needs to encoder all these sets with Set Encoder introduced in Subsection \ref{sssec3.2.1.1:set_encoder}. Then, the listener would make predictions based on the dot-products between embedding of message $h^r_m$ and embeddings of each set of objects. Similarly, when combined with speaker model, the overall model is called as ``Set2Seq2Choice''.
 
 \subsection{Loss/Reward and Learning}
 \label{ssec3.2.3:loss_learning}
@@ -160,4 +160,4 @@ With the recent rapid development of GLL, measuring the compositionality of emer
 
 However, as the setting of our game is simple and the space size is limited, we follow \cite{brighton2006understanding} and take the topological similarity between meaning space (space of all sets of objects) and message space as the measurement of compositionality. In order to calculate the topological compositionality, we need define the disctance measurement for meaning space and message space respectively. Thus, for an input set $s_i$, we could first count the number of each kind of object and then concatenate the Arabic numerals as the meaning sequence. Take a set $s_i={A, A, A, B, B}$ for example, the corresponding meaning sequence would be ``32'' as there are 3 $A$ and 2 $B$ in $s_i$.\footnote{Again, the appearring order of objects would not effect the meaning sequence of a set.} As for the message space, we also use edit disctance following \cite{brighton2006understanding}.
 
-Meaningwhile, as we could perfectly ecode the meaning of a set into natural language, we could take the speaker as a machine translation model that translates a meaning represented in natural langauge into emergent language invented by computational themselves. Based on this point of view, we could also use BLEU score proposed by \cite{papineni2002bleu} as a measurement of compositionality. \textcolor{red}{GIVE MORE DETAILS HERE!}
+Meaningwhile, as we could perfectly ecode the meaning of a set into natural language, we could take the speaker as a machine translation model that translates a meaning represented in natural langauge into emergent language invented by computational themselves. Based on this point of view, we could also use BLEU score proposed by \cite{papineni2002bleu} as a measurement of semantic similarities between messages.
