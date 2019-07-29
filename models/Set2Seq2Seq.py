@@ -15,11 +15,15 @@ class SpeakingAgent(nn.Module):
             self, voc_size, msg_vocsize, embedding, msg_embedding,
             hidden_size=args.hidden_size,
             dropout=args.dropout_ratio,
+            msg_length=args.max_msg_len,
+            msg_mode=args.msg_mode
         ):
         super().__init__()
         self.voc_size = voc_size
         self.msg_vocsize = msg_vocsize
         self.hidden_size = hidden_size
+        self.msg_length = msg_length
+        self.msg_mode = msg_mode
 
         if embedding is None:
             self.embedding = nn.Embedding(self.voc_size, self.hidden_size)
@@ -37,16 +41,15 @@ class SpeakingAgent(nn.Module):
         # The output size of decoder is the size of vocabulary for communication
         self.decoder = SeqDecoder(
             self.msg_vocsize, self.hidden_size, self.msg_vocsize,
-            embedding=self.msg_embedding
+            embedding=self.msg_embedding, role='msg'
         )
 
-    def forward(self, input_var, input_mask):
+    def forward(self, input_var, input_mask, tau=1.0):
         embedded_input = self.embedding(input_var.t())
         encoder_hidden, encoder_cell = self.encoder(embedded_input, input_mask)
         message, logits, mask = self.decoder(
-                encoder_hidden, encoder_cell,
-                mode=args.msg_mode,
-                max_len=args.max_msg_len,
+                encoder_hidden, encoder_cell, self.msg_length,
+                mode=self.msg_mode, sample_tau=tau
             )
 
         return message, logits, mask
@@ -63,6 +66,8 @@ class ListeningAgent(nn.Module):
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = output_size
+        assert args.max_seq_len == args.num_words * args.max_len_word + 1
+        self.max_out_len = args.max_seq_len
 
         if embedding is None:
             self.embedding = nn.Embedding(self.output_size, self.hidden_size).weight
@@ -78,7 +83,7 @@ class ListeningAgent(nn.Module):
 
         self.decoder = SeqDecoder(
                 self.output_size, self.hidden_size, self.output_size,
-                embedding=self.embedding
+                embedding=self.embedding, role='out'
             )
 
     def forward(self, message, msg_mask, target_max_len):
@@ -99,12 +104,12 @@ class ListeningAgent(nn.Module):
         if self.training:
             decoder_max_len = target_max_len
         else:
-            decoder_max_len = args.max_seq_len
+            decoder_max_len = self.max_out_len
 
         _, decoder_logits, _ = self.decoder(
             encoder_hidden,
             encoder_cell,
-            max_len=decoder_max_len
+            decoder_max_len
         )
 
         return decoder_logits
@@ -112,9 +117,10 @@ class ListeningAgent(nn.Module):
 
 class Set2Seq2Seq(nn.Module):
     def __init__(self, voc_size, msg_length=args.max_msg_len, msg_vocsize=args.msg_vocsize, 
-                    hidden_size=args.hidden_size, dropout=args.dropout_ratio):
+                    hidden_size=args.hidden_size, dropout=args.dropout_ratio, msg_mode=args.msg_mode):
         super().__init__()
         self.voc_size = voc_size
+        self.msg_mode = msg_mode
         self.msg_length = msg_length
         self.msg_vocsize = msg_vocsize
         self.hidden_size = hidden_size
@@ -127,7 +133,7 @@ class Set2Seq2Seq(nn.Module):
         # Speaking agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.speaker = SpeakingAgent(
             self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
-            self.hidden_size, self.dropout
+            self.hidden_size, self.dropout, self.msg_length, self.msg_mode
         )
         # Listening agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.listener = ListeningAgent(
@@ -136,14 +142,14 @@ class Set2Seq2Seq(nn.Module):
         )
         
 
-    def forward(self, data_batch):
+    def forward(self, data_batch, msg_tau=1.0):
         input_var = data_batch['input']
         input_mask = data_batch['input_mask']
         target_var = data_batch['target']
         target_mask = data_batch['target_mask']
         target_max_len = data_batch['target_max_len']
 
-        message, msg_logits, msg_mask = self.speaker(input_var, input_mask)
+        message, msg_logits, msg_mask = self.speaker(input_var, input_mask, tau=msg_tau)
         
         spk_entropy = (F.softmax(msg_logits, dim=2) * msg_logits).sum(dim=2).sum(dim=0)
         if self.training:
@@ -163,11 +169,11 @@ class Set2Seq2Seq(nn.Module):
         loss, print_losses, tok_correct, seq_correct, tok_acc, seq_acc\
             = seq_cross_entropy_loss(seq_logits, target_var, target_mask, loss_max_len)
 
-        if self.training and args.msg_mode == 'SCST':
+        if self.training and self.msg_mode == 'SCST':
             self.speaker.eval()
             self.listener.eval()
             msg, _, msg_mask = self.speaker(input_var, input_mask)
-            s_logits = self.listener(msg, msg_mask, args.max_seq_len)
+            s_logits = self.listener(msg, msg_mask)
             loss_max_len = min(s_logits.shape[0], target_var.shape[0])
             baseline = seq_cross_entropy_loss(s_logits, target_var, target_mask, loss_max_len)[3]
             self.speaker.train()
@@ -179,7 +185,11 @@ class Set2Seq2Seq(nn.Module):
                 seq_correct, tok_acc, seq_acc, seq_logits, spk_entropy
 
     def reproduce_speaker_hidden(self, data_batch):
-        self.eval()
+        if self.training:
+            self.eval()
+            resume_flag = True
+        else:
+            resume_flag = False
 
         input_var = data_batch['input']
         input_mask = data_batch['input_mask']
@@ -187,11 +197,16 @@ class Set2Seq2Seq(nn.Module):
         embedded_input = self.speaker.embedding(input_var.t())
         hidden, _ = self.speaker.encoder(embedded_input, input_mask)
         
-        self.train()
+        if resume_flag:
+            self.train()
         return hidden
 
     def reproduce_listener_hidden(self, data_batch):
-        self.eval()
+        if self.training:
+            self.eval()
+            resume_flag = True
+        else:
+            resume_flag = False
 
         input_var = data_batch['input']
         input_mask = data_batch['input_mask']
@@ -209,23 +224,29 @@ class Set2Seq2Seq(nn.Module):
 
         _, hidden, _ = self.listener.encoder(message, msg_len)
         
-        self.train()
+        if resume_flag:
+            self.train()
 
         return hidden
 
     def reproduce_message(self, data_batch):
-        self.eval()
+        if self.training:
+            self.eval()
+            resume_flag = True
+        else:
+            resume_flag = False
         input_var = data_batch['input']
         input_mask = data_batch['input_mask']
         message, _, _ = self.speaker(input_var, input_mask)
-        self.train()
+        if resume_flag:
+            self.train()
         return message
 
     def reset_speaker(self):
         del self.speaker
         self.speaker = SpeakingAgent(
             self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
-            self.hidden_size, self.dropout
+            self.hidden_size, self.dropout, self.msg_length, self.msg_mode
         ).to(self.listener.msg_embedding.device)
 
     def reset_listener(self):

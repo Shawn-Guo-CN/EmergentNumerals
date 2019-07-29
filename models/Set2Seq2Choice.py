@@ -66,9 +66,10 @@ class ListeningAgent(nn.Module):
 
 class Set2Seq2Choice(nn.Module):
     def __init__(self, voc_size, msg_length=args.max_msg_len, msg_vocsize=args.msg_vocsize, 
-                    hidden_size=args.hidden_size, dropout=args.dropout_ratio):
+                    hidden_size=args.hidden_size, dropout=args.dropout_ratio, msg_mode=args.msg_mode):
         super().__init__()
         self.voc_size = voc_size
+        self.msg_mode = msg_mode
         self.msg_length = msg_length
         self.msg_vocsize = msg_vocsize
         self.hidden_size = hidden_size
@@ -81,7 +82,7 @@ class Set2Seq2Choice(nn.Module):
         # Speaking agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.speaker = SpeakingAgent(
             self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
-            self.hidden_size, self.dropout
+            self.hidden_size, self.dropout, self.msg_length, self.msg_mode
         )
         # Listening agent, msg_embedding needs to be set as self.msg_embedding.weight
         self.listener = ListeningAgent(
@@ -90,14 +91,14 @@ class Set2Seq2Choice(nn.Module):
         )
         
 
-    def forward(self, data_batch):
+    def forward(self, data_batch, msg_tau=1.0):
         correct_data = data_batch['correct']
         candidates = data_batch['candidates']
         golden_label = data_batch['label']
 
         input_var = correct_data['input']
         input_mask = correct_data['input_mask']
-        message, msg_logits, msg_mask = self.speaker(input_var, input_mask)
+        message, msg_logits, msg_mask = self.speaker(input_var, input_mask, tau=msg_tau)
         
         spk_entropy = (F.softmax(msg_logits, dim=2) * msg_logits).sum(dim=2).sum(dim=0)
         if self.training:
@@ -110,7 +111,7 @@ class Set2Seq2Choice(nn.Module):
         
         loss, print_loss, acc, c_correct = choice_cross_entropy_loss(choose_logits, golden_label)
 
-        if self.training and args.msg_mode == 'SCST':
+        if self.training and self.msg_mode == 'SCST':
             self.speaker.eval()
             self.listener.eval()
             _msg_, _, _msg_mask_ = self.speaker(input_var, input_mask)
@@ -124,7 +125,11 @@ class Set2Seq2Choice(nn.Module):
         return loss, print_loss, acc, c_correct, log_msg_prob, log_choose_prob, baseline, spk_entropy
 
     def reproduce_speaker_hidden(self, data_batch):
-        self.eval()
+        if self.training:
+            self.eval()
+            resume_flag = True
+        else:
+            resume_flag = False
         correct_data = data_batch['correct']
         input_var = correct_data['input']
         input_mask = correct_data['input_mask']
@@ -132,10 +137,16 @@ class Set2Seq2Choice(nn.Module):
         embedded_input = self.speaker.embedding(input_var.t())
         hidden, _ = self.speaker.encoder(embedded_input, input_mask)
         
-        self.train()
+        if resume_flag:
+            self.train()
         return hidden
 
     def reproduce_listener_hidden(self, data_batch):
+        if self.training:
+            self.eval()
+            resume_flag = True
+        else:
+            resume_flag = False
         correct_data = data_batch['correct']
 
         input_var = correct_data['input']
@@ -153,22 +164,30 @@ class Set2Seq2Choice(nn.Module):
 
         _, msg_encoder_hidden, _ = self.listener.msg_encoder(message, msg_len)
 
+        if resume_flag:
+            self.train()
+
         return msg_encoder_hidden
 
     def reproduce_message(self, data_batch):
-        self.eval()
+        if self.training:
+            self.eval()
+            resume_flag = True
+        else:
+            resume_flag = False
         correct_data = data_batch['correct']
         input_var = correct_data['input']
         input_mask = correct_data['input_mask']
         message, _, _ = self.speaker(input_var, input_mask)
-        self.train()
+        if resume_flag:
+            self.train()
         return message
 
     def reset_speaker(self):
         del self.speaker
         self.speaker = SpeakingAgent(
             self.voc_size, self.msg_vocsize, self.embedding, self.msg_embedding,
-            self.hidden_size, self.dropout
+            self.hidden_size, self.dropout, self.msg_length, self.msg_mode
         ).to(self.listener.msg_embedding.device)
 
     def reset_listener(self):
