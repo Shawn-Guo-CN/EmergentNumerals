@@ -1,4 +1,4 @@
-\chapter{Game, Models and Evaluation Methods}
+\chapter{Game, Models and Measurements}
 \label{ch3:game_model}
 
 In this chapter, we first describe the proposed language game and the definition of numerals in our game. We then introduce the architecture of models we used and also the iterated learning for training models.
@@ -153,11 +153,18 @@ In Set-Forward game, our baseline is Set-to-Seq model which first encodes the in
 
 As for in Set-Select game, our baseline is Set-to-Choose model, in which speaker directly tranmit representation vector $h^s_s$ of set $s_i$ to listener. And, listener compare $h^s_s$ with all candiadate sets to make a selection.
 
-\section{Evaluation Methods}
-\label{sec3.3:evaluation}
+\section{Measurements}
+\label{sec3.3:measurements}
 
 With the recent rapid development of GLL, measuring the compositionality of emergent communication protocol attracts more and more attention nowadays, e.g. \cite{andreas2019measuring}, \cite{lowe2019pitfalls}.
 
-However, as the setting of our game is simple and the space size is limited, we follow \cite{brighton2006understanding} and take the topological similarity between meaning space (space of all sets of objects) and message space as the measurement of compositionality. In order to calculate the topological compositionality, we need define the disctance measurement for meaning space and message space respectively. Thus, for an input set $s_i$, we could first count the number of each kind of object and then concatenate the Arabic numerals as the meaning sequence. Take a set $s_i={A, A, A, B, B}$ for example, the corresponding meaning sequence would be ``32'' as there are 3 $A$ and 2 $B$ in $s_i$.\footnote{Again, the appearring order of objects would not effect the meaning sequence of a set.} As for the message space, we also use edit disctance following \cite{brighton2006understanding}.
+However, as the setting of our game is simple and the space size is limited, we follow \cite{brighton2006understanding} and take the topological similarity between meaning space (space of all sets of objects) and message space as the measurement of compositionality. In order to calculate the topological compositionality, we need define the disctance measurement for meaning space and message space respectively. Thus, for an input set $s_i$, we could first count the number of each kind of object and then concatenate the Arabic numerals as the meaning sequence. Take a set $s_i={A, A, A, B, B}$ for example, the corresponding meaning sequence would be ``32'' as there are 3 $A$ and 2 $B$ in $s_i$.\footnote{Again, the appearring order of objects would not effect the meaning sequence of a set.} As for the message space, we have several different settings which are further illustrated in subsection \ref{ssec4.2.2:topo_sim}, and edit disctance as in \cite{brighton2006understanding} is also included.
 
-Meaningwhile, as we could perfectly ecode the meaning of a set into natural language, we could take the speaker as a machine translation model that translates a meaning represented in natural langauge into emergent language invented by computational themselves. Based on this point of view, we could also use BLEU score proposed by \cite{papineni2002bleu} as a measurement of semantic similarities between messages.
+Meaningwhile, as we could perfectly ecode the meaning of a set into natural language, we could take the speaker as a machine translation model that translates a meaning represented in natural langauge into emergent language invented by computational themselves. Based on this point of view, we could also use BLEU score proposed by \cite{papineni2002bleu} as a measurement of semantic similarities between messages. In our case, the BLEU score between $m_i$ and $m_j$ is calculated as follow:
+
+\begin{equation}
+  BLEU(m_i, m_j) = 1 - \sum_{n=1}^{N} \omega_n \cdot \frac{\mbox{Number of common } n\mbox{-grams}}{\mbox{Number of total different } n\mbox{-grams}}
+  \label{eq3.3.1:bleu_score}
+\end{equation}
+
+where $n$ is the size of $n$-grams and $\omega_n$ is the weight for similarity based on $n$-grams.

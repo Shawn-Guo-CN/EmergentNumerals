@@ -1,8 +1,8 @@
 \chapter{Experiment Results and Discussion}
 \label{ch4:results_analysis}
 
-\section{Emergence of Language \& Iterated Learning}
-\label{sec4.1:emergence_il}
+\section{Emergence of Language}
+\label{sec4.1:emergence}
 
 First of all, we have to verify that the agents can successfully address the problems by communicating with discrete symbols, so that they communicate meaningful things with each other. Thus, we train both ``Set2Seq2Seq'' and ``Set2Seq2Choice'' on different game settings, and the performance of models are given in Table \ref{tab4.1:game_performance}.
 
@@ -31,8 +31,97 @@ Based on the performance shown in Table \ref{tab4.1:game_performance}, it is cle
 \section{Structure of Emergent Language}
 \label{sec4.2:structure_emergent_lan}
 
-\section{Sample Complexity of Languages}
+\subsection{Emergent Languages in Various Games}
+\label{ssec4.2.1:emergent_languages}
+
+After verifying that computational agents could always complete games through commmunication, we are curious about the messages produced during their communication. However, unlike what was shown by the previous works in GLL, e.g. \cite{hill2017understanding} and \cite{mordatch2018emergence}, the emergent language during both Set-Forward and Set-Select games are not ``perfectly'' compositional. One reason of this phenomenon is that $|M| > |\mathcal{O}|$ in our game settings, as we want to avoid the effects brought by fine-tuning hyperparameters.
+
+To have give an intuitional demonstration of the emergent language, we list all messages transmitted in a Set-Forward game where $|\mathcal{O}|=2, |N_o|=5, |M|=4, |V|=10$ in Table \ref{tab4.2:emregent_langauge_generation} given as follow. In the table, the first row and first column are the basic elements of meanings and each cell is the corresponding message for that meaning. Take cell ``1A2B'' for example, the original input set is $s_i=\{A,A,B,B,B\}$ and the corresponding message $m_i$ is ``7751''. Note that the numbers in the message do not correspond to the numerals in natural langauge.
+
+\begin{table}[!h]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+        \hline
+           & 0A   & 1A   & 2A   & 3A   & 4A   & 5A   \\ \hline
+        0B &      & 7377 & 7317 & 3711 & 3111 & 3353 \\ \hline
+        1B & 7737 & 7731 & 7111 & 1715 & 1151 & 5135 \\ \hline
+        2B & 7773 & 7751 & 7181 & 7515 & 1585 & 5551 \\ \hline
+        3B & 7775 & 7754 & 7815 & 7545 & 8515 & 4515 \\ \hline
+        4B & 7787 & 7874 & 7841 & 8851 & 8455 & 4455 \\ \hline
+        5B & 7788 & 7888 & 7844 & 8848 & 8444 & 4444 \\ \hline
+        \end{tabular}
+    \caption{An emergent language in a Set-Forward game.}
+    \label{tab4.2:emregent_langauge_generation}
+\end{table}
+
+As we can see from Table \ref{tab4.2:emregent_langauge_generation}, there is no clear compositional structure in it. To better define the compositional elements, we argue that if a language is said to be perfect compositional, then it should satisify the following 2 properties:
+
+\begin{itemize}
+    \item \textbf{Mutual Exclusivity}: Symbols describing different values of a same property should be mutually exclusive to each other. For example, ``green'' and ``red'' are both used to describe color of an object and they should not appear at the same time as an object can not be green and red at the same time.
+    \item \textbf{Orthogonality}: Appearance of symbols for describing a property should be independent from the appearance of symbols used to describe another property. For example, the appearance of symbols used for describing colors of objects should be independent from the appearance of symbols used for describing shapes of objects.
+\end{itemize}
+
+Based on the above assumptions, we could see that the emergent language shown in Table \ref{tab4.2:emregent_langauge_generation} satisifies neither of mutual exclusivity or orthogonality.
+
+However, as Set-Forward game is a generation task, the agents may transmit more than numeric concepts in order that listeners could generate the original input. Thus, to verify whether this is the case, we illustrate an emergent language in a Set-Select game whose settings are exactly the same as the Set-Forward game illustrated above. The meanings and corresponding messages are shown in Table given as follow.
+
+\begin{table}[!h]
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+        \hline
+           & 0A   & 1A   & 2A   & 3A   & 4A   & 5A   \\ \hline
+        0B &      & 3335 & 3352 & 3522 & 5232 & 5222 \\ \hline
+        1B & 3333 & 3313 & 3435 & 3555 & 5533 & 5522 \\ \hline
+        2B & 3323 & 3033 & 3131 & 3445 & 5453 & 5555 \\ \hline
+        3B & 3232 & 3023 & 3003 & 1311 & 4443 & 4545 \\ \hline
+        4B & 2323 & 2302 & 0302 & 0130 & 1131 & 1441 \\ \hline
+        5B & 2232 & 2202 & 0222 & 0022 & 1000 & 1111 \\ \hline
+        \end{tabular}
+    \caption{An emergent language in a Set-Select game.}
+    \label{tab4.3:emregent_langauge_referential}
+\end{table}
+
+Based on the message contents in Table \ref{tab4.3:emregent_langauge_referential}, we could find that the referential game does not make the emergent langauge perfectly compositional.
+
+\subsection{Topological Similarities}
+\label{ssec4.2.2:topo_sim}
+
+As introduced in subsection \ref{sec3.3:measurements}, we measure the topological similarity between meaning space and message space under a language as the compositionality of it. We list compositionality scores under different kinds of measurements in Talbe \ref{tab4.4:topo_sim_lans} given as follow.
+
+\begin{table}[!h]
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+                      & Ham+Edit & Ham+BLEU & Euclid+Edit & Euclid+BLEU \\ \hline
+        Compositional & 1.00     & 0.61     & 0.38        & 0.24        \\ \hline
+        Set-Forward   & 0.32     & 0.27     & 0.60        & 0.65        \\ \hline
+        Set-Select    & 0.13     & 0.16     & 0.45        & 0.52        \\ \hline
+        Holistic      & -0.04    & -0.04    & 0.01        & 0.00        \\ \hline
+    \end{tabular}
+    \caption{Topological similarity scores of different languages.}
+    \label{tab4.4:topo_sim_lans}
+\end{table}
+
+\noindent\textbf{Ham+Edit}: We first follow the distance measurements in \cite{brighton2006understanding}: i) use hamming distances between meaning sequences as the similarity measurement for meaning space; ii) use edit distances between corresponding messages as the simialrity measurement for message space.
+
+\noindent\textbf{Ham+BLEU}: In this setting, we use: i) hamming for meaning space too; ii) BLEU score illustrated in Section \ref{sec3.3:measurements} as the the similarity measurement for message space.
+
+\noindent\textbf{Euclid+Edit}: In this setting, we use: i) Euclidean distance as the measurement for meaning space, e.g. Euclidean distance between ``4A2B'' and ``1A3B'' is $\sqrt{(4-1)^2 + (2-3)^2}=\sqrt{10}$; ii) edit distance for message space.
+
+\noindent\textbf{Euclid+BLEU}: In this setting, we use: i) Euclidean distance for meaning space; ii) BLEU score illustrated in Section \ref{sec3.3:measurements} for message space.
+
+To get the upper bound and lower bound of compositionalities, we specifically designed: i) a perfectly compositional langauge, in which the message is exactly the same as meaning sequence, e.g. ``4A2B'' is represented as ``4829'' ($\mbox{A}\rightarrow 8, \mbox{B} \rightarrow 9$); ii) a holistic language, in which messages are randomly generated.
+
+\section{Sample Complexity \& Iterated Learning}
 \label{sec4.3:sample_complexity}
+
+\subsection{For Listener}
+\label{ssec4.3.1:learning_listener}
+
+\subsection{For Speaker}
+\label{ssec4.3.2:learning_speaker}
+
+\subsection{Improvement by Iterated Learning}
+\label{ssec4.3.:iterated_learning_improve}
 
 \section{Effects of Different Representations}
 \label{sec4.4:represent_effect}
