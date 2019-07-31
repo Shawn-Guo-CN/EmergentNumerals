@@ -47,19 +47,19 @@ def game_play_phase(
             print_loss += loss
             print_acc += acc
 
-        accumulated_acc = accumulated_acc * (1 - alpha) + print_acc * alpha
-        if accumulated_acc > args.early_stop:
-            break_flag = True
-        else: 
-            break_flag = False
-        
-        if iter % args.print_freq == 0 or break_flag:
+        break_flag = False
+        if iter % args.print_freq == 0:
             print_loss_avg = print_loss / (args.print_freq * len(train_set))
             print_acc_avg = print_acc / (args.print_freq * len(train_set))
             print("Generation: {}; Iteration: {}; Percent complete: {:.1f}%; Avg loss: {:.4f}; Avg acc: {:.4f};".format(
                 generation_idx, iter, iter / args.num_play_iter * 100, print_loss_avg, print_acc_avg))
             training_acc.append(print_acc_avg)
             training_losses.append(print_loss_avg)
+            
+            accumulated_acc = accumulated_acc * (1 - alpha) + print_acc_avg * alpha
+            if accumulated_acc > args.early_stop:
+                break_flag = True
+            
             print_acc = 0.
             print_loss = 0.
         
