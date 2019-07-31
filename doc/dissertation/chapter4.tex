@@ -211,7 +211,23 @@ Compared our results in Section \ref{sec4.1:emergence} to \ref{sec4.3:learning_s
 
 To be specific, in our games, listeners need to generate object sequences or select the correct object sequence according to features representing each kind of objects. For example, the feature representation of set $\{A, B, A\}$ would be a sequence $\{[1 0], [0 1], [1 0]\}$ (assume that $|\mathcal{O}|=2, |N_o|=5$), and the corresponding message would be $\{2, 1\}=\{[0 0 1 0 0 0], [0 1 0 0 0 0]\}$ (assume that $|M|=|\mathcal{O}|=2, |V|=|N_o|=5$). Thus, to understand the message, the listneer needs to correctly count the numbers of each kind of obects in the set and ground symbols to the counting results. During this procedure, there are 2 gaps between meanings (or perceptions) and messages: i) from meaning to numeric concpets; ii) from numeric concepts.
 
-To verfy which step imports bias towards emergent language, we slightly change the representation of sets in Set-Select game, i.e. we directly encode the numbers of each kind of objects as one-hot vectors and concatenate them to be the representation of the whole set. Take set $\{A, B, A\}$ as example, its representation would be \textbf{vector} $[0 0 1 0 0 0; 0 1 0 0 0 0]$, whereas its message is still the \textbf{sequence} $\{[0 0 1 0 0 0], [0 1 0 0 0 0]\}$. 
+To verfy which step imports bias towards emergent language, we slightly change the representation of sets in Set-Select game, i.e. we directly encode the numbers of each kind of objects as one-hot vectors and concatenate them to be the representation of the whole set. Take set $\{A, B, A\}$ as example, its representation would be \textbf{vector} $[0 0 1 0 0 0; 0 1 0 0 0 0]$, whereas its message is still the \textbf{sequence} $\{[0 0 1 0 0 0], [0 1 0 0 0 0]\}$. Then, it is straightforward that mapping from messages to meanings is a linear transformation and thus it should be easy for neural networks to fit.
+
+First of all, we test the learning speed of manually designed langauges with different topological simialrity scores on both speaker and listener side, and the results are shown in Figure \ref{fig4.5:learning_speed_joshua}.
+
+\begin{figure}[!h]
+    \centering
+    \subfigure[Listener learning speed]{
+        \includegraphics[width=0.48\textwidth]{graphs/listener_learning_joshua.pdf}
+    }
+    \subfigure[Speaker learning speed]{
+        \includegraphics[width=0.48\textwidth]{graphs/speaker_learning_joshua.pdf}
+    }
+    \caption{Learning speed of languages with different compositionalities with linear feature representations.}
+    \label{fig4.5:learning_speed_joshua}
+\end{figure}
+
+
 
 \section{Further Discussion}
 \label{sec4.5:discuss}
