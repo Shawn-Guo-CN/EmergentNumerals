@@ -459,7 +459,10 @@ class ChoosePairDataset(Dataset):
         pair_set = PairDataset.load_pairset(self.file_path)
         msg_indices, io_indices = self.pair_set2msg_io_indices(pair_set)
 
-        num_batches = math.ceil(len(msg_indices) / self.batch_size)
+        if len(io_indices) < self.batch_size:
+            num_batches = 1
+        else:
+            num_batches = math.floor(len(io_indices) / self.batch_size)
 
         for i in range(num_batches):
             msg_indices_batch = msg_indices[i*self.batch_size:
