@@ -164,16 +164,25 @@ The $p$-values for compositional language as well as emergent languages in both 
 \subsection{Generalisation of Emergent Language}
 \label{ssec4.2.4:emergent_lan_generalise}
 
-To verify whether the emergent language can be generalised to unseen sets, we train the randomly initialised listeners with several kinds of languages: i) compositional language; ii) an emergent language invented by other agents; iii) holistic language. And, the game settings are $|M|=8$, $|V|=10$, $|\mathcal{O}|=4$, $|N_{o}|=10$. Learning and performance curves of these languages are all given in Figure \ref{fig4.0:listener_learning_generalise}.
+To verify whether the emergent language can be generalised to unseen sets, we train the randomly initialised listeners with several kinds of languages: i) compositional language; ii) an emergent language invented by other agents; iii) holistic language. And, the game settings are $|M|=8$, $|V|=10$, $|\mathcal{O}|=4$, $|N_{o}|=10$. Learning and performance curves of these languages on Set-Forward and Set-Select games are given in  Figure \ref{fig4.0:listener_learning_generalise_gen} and Figure \ref{fig4.00:listener_learning_generalise_ref} respectively.
+
+\begin{figure}[!h]
+    \centering
+    \includegraphics[width=\textwidth]{graphs/listener_learning_generalise_gen.pdf}
+    \caption{Learning and performance curves of different languages in Set-Forward game.}
+    \label{fig4.0:listener_learning_generalise_gen}
+\end{figure}
 
 \begin{figure}[!h]
     \centering
     \includegraphics[width=\textwidth]{graphs/listener_learning_generalise.pdf}
-    \caption{Learning and performance curves of different languages in Set-Select game.}
-    \label{fig4.0:listener_learning_generalise}
+    \caption{Learning and performance curves of different languages in Set-Select game. Lines of ``emergent'' and ``emergent-forward'' overlap with each other.}
+    \label{fig4.00:listener_learning_generalise_ref}
 \end{figure}
 
 It is quite suprising that, although we cannot see any significant pattern in the emergent language, it actually can be generalised to unseen sets of objects by listeners, as illustrated by the performance of listeners on evaluation dataset. Also, listener trained with emergent language converges faster on evaluation performance as well as training loss, although length of emergent messages ($|M|=8$) are longer than that of compositional language ($|M|=4$).
+
+Besides, we also train listeners in Set-Forward and Set-Select with languages emerged in the other game, i.e. ``emergent-select'' in Figure \ref{fig4.0:listener_learning_generalise_gen} and ``emergent-forward'' in Figure \ref{fig4.00:listener_learning_generalise_ref}. From the evaluation accuracy in Figure \ref{fig4.00:listener_learning_generalise_ref}, we could see that the emergent language in Set-Forward game can be well generalised to unseen samples by listeners in Set-Select game. However, listeners in Set-Forward game cannot generalise emergent language from Set-Select game, which is illustrated by the evaluation accuracies in Figure \ref{fig4.0:listener_learning_generalise_gen}. This phenomenon demonstrates that the information encoded by speakers in Set-Forward games are richer than the information encoded by speakers in Set-Select games, or to say this demonstrates that speakers in Set-Forward games may encode more than only numeric concepts.
 
 Sum up from all above, although we cannot find observable patterns in emergent languages under various game settings, the emergent languages are actually easier for agents to learn and also can be generlaised to unseen sets of objects. Thus, based on the previous topological similarity measurements and significance test, we claim that the emergent languages do capture the underlying structure of meanins space and encode them into sequences consisting of discrete variables.
 
@@ -236,7 +245,7 @@ Thus, we adapt iterated learning into our project, which is illustrated in Subse
 \begin{figure}[!h]
     \centering
     \includegraphics[width=\textwidth]{graphs/il_improvement.pdf}
-    \caption{Topological similarity curves of iterated learning and normal training in Set-Select game.\textcolor{red}{Change the axis titles and subfigures later!!!}}
+    \caption{Topological similarity curves of iterated learning and normal training in Set-Select game.}
     \label{fig4.4:il_improve}
 \end{figure}
 
