@@ -3,8 +3,21 @@ from matplotlib import colors
 import numpy as np
 
 
-MSG_FILE = './data/input_msg_pairs.txt'
+class Voc(object):
+    def __init__(self):
+        self.mapping = {}
+    
+    def get_value(self, key):
+        if key in self.mapping.keys():
+            return self.mapping[key]
+        else:
+            self.mapping[key] = len(self.mapping)
+            return self.mapping[key]
+
+
+MSG_FILE = './data/rebuilt_language_2.txt'
 PAD_VALUE = -1
+VOC = Voc()
 
 
 def load_msgs(file=open(MSG_FILE, 'r')):
@@ -14,25 +27,20 @@ def load_msgs(file=open(MSG_FILE, 'r')):
     for line in file.readlines():
         idx += 1
         line = line.strip()
-        in_str, msg_str, out_str = line.split('\t')
-        msg_str = msg_str[:-1]
+        msg_str, in_str = line.split('\t')
         if len(msg_str) > max_len:
             max_len = len(msg_str)
         msg = []
         for c in msg_str:
-            msg.append(int(c))
+            msg.append(VOC.get_value(c))
         A = in_str.count('A')
         B = in_str.count('B')
-        C = in_str.count('C')
-        D = in_str.count('D')
         msg = {
             'array': msg,
             'str': msg_str,
             'in': in_str,
             'A': A,
             'B': B,
-            'C': C,
-            'D': D
         }
         msgs.append(msg)
 
@@ -58,6 +66,8 @@ def build_x_y_c_from_msgs(msgs, max_len):
 def build_heatmap_data_from_msgs(msgs, max_len):
     hm_data = []
 
+    hm_data.append(PAD_VALUE * np.ones(4))
+
     for mid, msg in enumerate(msgs):
         line_data = []
         for cid in range(len(msg['array'])):
@@ -72,16 +82,17 @@ msgs, max_len = load_msgs()
 # msgs = sorted(msgs, key=lambda i: (i['A'], i['D'], i['C'], i['B']))
 # msgs = sorted(msgs, key=lambda i: (i['B'], i['D'], i['C'], i['A']))
 # msgs = sorted(msgs, key=lambda i: (i['C'], i['B'], i['A'], i['D']))
-msgs = sorted(msgs, key=lambda i: (i['D'], i['B'], i['A'], i['C']))
+msgs = sorted(msgs, key=lambda i: (i['B'], i['A']))
 data = build_heatmap_data_from_msgs(msgs, max_len)
 
 
-cmap = colors.ListedColormap(['white','green','blue','red','yellow'])
-bounds=[-1.5, -0.5, 0.5, 1.5, 2.5, 3.5]
+cmap = colors.ListedColormap(['white','green','blue','red','yellow', 'cyan', 'black', 'orange', 'deeppink'])
+bounds=[-1.5, -0.5, 0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5]
 norm = colors.BoundaryNorm(bounds, cmap.N)
 heatmap = plt.pcolor(data, cmap=cmap, norm=norm)
 
-plt.yticks(np.arange(0, 10001, step=1000))
-plt.colorbar(heatmap, ticks=[-1, 0, 1, 2, 3])
+plt.xticks(np.arange(0, 5, step=1))
+plt.yticks(np.arange(0, 36, step=6))
+plt.colorbar(heatmap, ticks=[-1, 0, 1, 2, 3, 4, 5, 6, 7])
 plt.grid(color='black', linewidth=5)
 plt.show()

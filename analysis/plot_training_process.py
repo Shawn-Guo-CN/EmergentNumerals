@@ -14,7 +14,7 @@ def load_training_status(file_path:str) -> tuple:
     return records
 
 
-def EMA_smooth(l:list, alpha=0.1) -> list:
+def EMA_smooth(l:list, alpha=0.05) -> list:
     if len(l) == 0:
         return l
     new_l = [l[0]]
@@ -26,25 +26,28 @@ def EMA_smooth(l:list, alpha=0.1) -> list:
 def plot_training_into_1_figure(chk_points_paths:list, label_list:list) -> None:
     # seq_accs, tok_accs, losses, sims = [], [], [], []
 
-    fig, ((ax0, ax1, ax2), (ax3, ax4, ax5)) = plt.subplots(nrows=2, ncols=3)
+    # fig, ((ax0, ax1, ax2), (ax3, ax4, ax5)) = plt.subplots(nrows=2, ncols=3)
+    # fig, ((ax0, ax1), (ax2, ax3)) = plt.subplots(nrows=2, ncols=2)
     for idx, file_path in enumerate(chk_points_paths):
-        t_s_acc, t_t_acc, t_loss, t_sim, e_t_acc, e_s_acc = load_training_status(file_path)
-        t_s_acc = t_s_acc[:500]
-        t_t_acc = t_t_acc[:500]
-        t_loss = t_loss[:500]
-        t_sim = t_sim[:500]
-        e_t_acc = e_t_acc[:500]
-        e_s_acc = e_s_acc[:500]
-        # records = load_training_status(file_path)
-        # t_s_acc = records['training_seq_acc'][:1000]
-        # t_t_acc = records['training_tok_acc'][:1000]
-        # t_loss = records['training_loss'][:1000]
-        # t_sim = [] # records['training_sim']
-        # # h_sim = records['training_in_spkh_sim']
-        # # m_sim = records['training_in_msg_sim']
-        # # h2_sim = records['training_in_lish_sim']
-        # e_t_acc = records['eval_tok_acc'][:1000]
-        # e_s_acc = records['eval_seq_acc'][:1000]
+        if idx == 2 or idx == 4:
+            records = load_training_status(file_path)
+            t_s_acc = records['training_seq_acc'][:500]
+            t_t_acc = records['training_tok_acc'][:500]
+            t_loss = records['training_loss'][:500]
+            t_sim = [] # records['training_sim']
+            # h_sim = records['training_in_spkh_sim']
+            # m_sim = records['training_in_msg_sim']
+            # h2_sim = records['training_in_lish_sim']
+            e_t_acc = records['eval_tok_acc'][:500]
+            e_s_acc = records['eval_seq_acc'][:500]
+        else:
+            t_s_acc, t_t_acc, t_loss, t_sim, e_t_acc, e_s_acc = load_training_status(file_path)
+            t_s_acc = t_s_acc[:500]
+            t_t_acc = t_t_acc[:500]
+            t_loss = t_loss[:500]
+            t_sim = t_sim[:500]
+            e_t_acc = e_t_acc[:500]
+            e_s_acc = e_s_acc[:500]
 
         t_s_acc = EMA_smooth(t_s_acc)
         t_t_acc = EMA_smooth(t_t_acc)
@@ -57,45 +60,55 @@ def plot_training_into_1_figure(chk_points_paths:list, label_list:list) -> None:
         e_s_acc = EMA_smooth(e_s_acc)
 
         linewidth = 1.0
-        ax0.plot(e_s_acc, label=label_list[idx], linewidth=linewidth)
-        ax1.plot(t_sim, label=label_list[idx], linewidth=linewidth)
-        # ax1.plot(h_sim, label='In - Speaker Hidden')
-        # ax1.plot(m_sim, label='In - Message')
-        # ax1.plot(h2_sim, label='In - Listener Hidden')
-        ax2.plot(t_s_acc, label=label_list[idx], linewidth=linewidth)
-        ax3.plot(e_t_acc, label=label_list[idx], linewidth=linewidth)
-        ax4.plot(t_loss, label=label_list[idx], linewidth=linewidth)
-        ax5.plot(t_t_acc, label=label_list[idx], linewidth=linewidth)
+        # ax0.plot(e_s_acc, label=label_list[idx], linewidth=linewidth)
+        # ax1.plot(t_sim, label=label_list[idx], linewidth=linewidth)
+        # # ax1.plot(h_sim, label='In - Speaker Hidden')
+        # # ax1.plot(m_sim, label='In - Message')
+        # # ax1.plot(h2_sim, label='In - Listener Hidden')
+        # ax2.plot(t_s_acc, label=label_list[idx], linewidth=linewidth)
+        # ax3.plot(e_t_acc, label=label_list[idx], linewidth=linewidth)
+        # ax4.plot(t_loss, label=label_list[idx], linewidth=linewidth)
+        # ax5.plot(t_t_acc, label=label_list[idx], linewidth=linewidth)
+        plt.plot(t_loss, label=label_list[idx], linewidth=linewidth)
+        plt.xlabel('Number of Iterations')
+        plt.title('Training Loss')
+        plt.legend()
 
         def _set_legend_(ax):
             leg = ax.legend()
             leg_lines = leg.get_lines()
             plt.setp(leg_lines, linewidth=2)
 
-        for ax in [ax0, ax1, ax2, ax3, ax4, ax5]:
-            _set_legend_(ax)
-
-        ax0.title.set_text('Eval Sequence Accuracy')
-        ax1.title.set_text('Topological Similarity')
-        ax2.title.set_text('Training Sequence Accuracy')
-        ax3.title.set_text('Eval Token Accuracy')
-        ax4.title.set_text('Training Loss')
-        ax5.title.set_text('Training Token Accuracy')
+        # for ax in [ax0, ax1, ax2, ax3]:
+        #     _set_legend_(ax)
+        #     ax.set_xlabel('Number of Iterations')
+        #     # ax.set_xticks(range(0, 500, 20))
+        #     # ax.grid()
+        
+        
+        # ax0.title.set_text('Eval Sequence Accuracy')
+        # ax1.title.set_text('Topological Similarity')
+        # ax2.title.set_text('Training Sequence Accuracy')
+        # ax3.title.set_text('Eval Token Accuracy')
+        # ax4.title.set_text('Training Loss')
+        # ax5.title.set_text('Training Token Accuracy')
     plt.show()
 
 def main():
     chk_point_path_list = [
         './params/listener/comp/4_15000_0715.tar',
         './params/listener/holistic/4_15000_0715.tar',
-        # './params/speaker/emergent/0715_2_1000.tar',
+        './params/listener/emergent/4_500_0807.tar',
         './params/listener/seq2seq/4_15000_0715.tar',
+        './params/listener/emergent/4_500_0807_refer.tar',
     ]
 
     label_list = [
         'compositional',
         'holistic',
-        # 'emergent',
-        'seq2seq'
+        'emergent',
+        'seq2seq',
+        'emergent-select',
     ]
 
     plot_training_into_1_figure(chk_point_path_list, label_list)
