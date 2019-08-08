@@ -38,7 +38,7 @@ defaults = {
     'NUM_WORD': 2, # Number of different characters
     'MAX_LEN_WORD': 5,
     'HIDDEN_SIZE': 256,
-    'BATCH_SIZE': 1024,
+    'BATCH_SIZE': 128,
     'MSG_MODE': 'GUMBEL', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
     'MSG_TAU': 1.,
     'L_RESET_FREQ': -1,
@@ -48,6 +48,8 @@ defaults = {
     'NUM_GENERATION': 50,
     'NUM_PLAYITER': 250,
     'NUM_SPKLEARNITER': 20,
+    'NUM_LWARMUPITER':20,
+    'EARLAY_STOP_THRESHOLD': 0.96,
 }
 
 '''
@@ -59,8 +61,8 @@ MAX_LENGTH = defaults['NUM_WORD'] * defaults['MAX_LEN_WORD'] + 1
 '''
 hyperparameters of model
 '''
-MSG_MAX_LEN = defaults['NUM_WORD'] + 2
-MSG_VOCSIZE = defaults['MAX_LEN_WORD'] + 5 # Consider 0 and EOS for MSG
+MSG_MAX_LEN = defaults['NUM_WORD']
+MSG_VOCSIZE = defaults['MAX_LEN_WORD'] + 1 # Consider 0 and EOS for MSG
 
 
 parser = argparse.ArgumentParser()
@@ -150,6 +152,10 @@ parser.add_argument('--num-play-iter', type=int, default=defaults['NUM_PLAYITER'
         help='number of playing game iterations')
 parser.add_argument('--num-spklearn-iter', type=int, default=defaults['NUM_SPKLEARNITER'],
         help='number of speaker learning iterations')
+parser.add_argument('--num-lwarmup-iter', type=int, default=defaults['NUM_LWARMUPITER'],
+        help='number of listener warming up iterations')
+parser.add_argument('--early-stop', type=float, default=defaults['EARLAY_STOP_THRESHOLD'],
+        help='threshold for early stopping during game playing phase')
 args = parser.parse_args()
 
 args.device = torch.device("cuda:" + str(args.device) \
@@ -157,6 +163,7 @@ args.device = torch.device("cuda:" + str(args.device) \
 args.optimiser = defaults['OPTIMISER'] if args.optimiser == 'adam' else None
 args.loss_function = defaults['LOSS_FUNCTION'] if args.loss_function == 'cross_entropy' else None
 args.param_file = None if len(args.param_file) == 0 else args.param_file
+args.max_seq_len = args.num_words * args.max_len_word + 1
 
 
 def set_random_seed(seed:int):

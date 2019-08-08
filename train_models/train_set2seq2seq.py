@@ -5,8 +5,10 @@ import torch.nn as nn
 import os
 import numpy as np
 import pandas as pd
+import math
 
 from utils.conf import args, set_random_seed
+from utils.schedulers import tau_scheduler
 from models.Set2Seq2Seq import Set2Seq2Seq
 from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
@@ -19,13 +21,13 @@ def get_batches4sim_check(voc, dataset_file_path=args.data_file):
     return in_set, batch_set
 
 
-def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=args.clip):
+def train_epoch(model, data_batch, tau, m_optimizer, s_optimizer, l_optimizer, clip=args.clip):
     m_optimizer.zero_grad()
     s_optimizer.zero_grad()
     l_optimizer.zero_grad()
 
     loss, log_msg_prob, log_seq_prob, baseline, print_losses, \
-        seq_correct, tok_acc, seq_acc , _, s_entropy = model(data_batch)
+        seq_correct, tok_acc, seq_acc , _, s_entropy = model(data_batch, tau)
     
     if args.msg_mode == 'REINFORCE':
         log_msg_prob = (-seq_correct.detach() * log_msg_prob).mean()
@@ -130,11 +132,7 @@ def train():
     print('done')
 
     in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
-        model, sim_chk_inset, sim_chk_batchset, 
-        in_dis_measure='euclidean',
-        spk_hidden_measure='euclidean',
-        lis_hidden_measure='euclidean',
-        msg_dis_measure='euclidean'
+        model, sim_chk_inset, sim_chk_batchset
     )
     print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
                 0, in_spk_sim, in_msg_sim, in_lis_sim))
@@ -142,8 +140,15 @@ def train():
     print('training...')
     for iter in range(start_iteration, args.iter_num+1):
         for idx, data_batch in enumerate(train_set):
-            seq_acc, tok_acc, loss = train_epoch(model,
+            if len(eval_seq_acc) > 10:
+                tau = tau_scheduler(sum(eval_seq_acc[-10:]) / 10.)
+            else:
+                tau = tau_scheduler(0.)
+
+            seq_acc, tok_acc, loss = train_epoch(
+                model,
                 data_batch,
+                tau,
                 model_optimiser,
                 speaker_optimiser,
                 listner_optimiser
@@ -180,10 +185,7 @@ def train():
 
         if iter % args.sim_chk_freq == 0:
             in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
-                model, sim_chk_inset, sim_chk_batchset, 
-                in_dis_measure='euclidean',
-                spk_hidden_measure='euclidean',
-                msg_dis_measure='euclidean'
+                model, sim_chk_inset, sim_chk_batchset
             )
             training_in_spkh_sim.append(in_spk_sim)
             training_in_msg_sim.append(in_msg_sim)

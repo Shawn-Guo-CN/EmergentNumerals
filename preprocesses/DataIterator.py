@@ -3,6 +3,7 @@ from torch.utils.data import Dataset
 import math
 import itertools
 import numpy as np
+import random
 
 from utils.conf import args
 from preprocesses.Voc import Voc
@@ -261,17 +262,25 @@ class ChooseDataset(Dataset):
     def __getitem__(self, idx):
         correct_batch = self.databatch_set[idx]
 
-        distract_batches = []
-        for _ in range(self.d_num):
-            distract_batches.append(self.generate_distractor_batch(idx))
+        candidate_batches = []
+        golden_idx = random.randint(0, self.d_num)
+        for i in range(self.d_num+1):
+            if i == golden_idx:
+                candidate_batches.append(self.databatch_set[idx])
+            else:
+                candidate_batches.append(self.generate_distractor_batch(idx))
         
         return {
             'correct': correct_batch,
-            'distracts': distract_batches
+            'candidates': candidate_batches,
+            'label': golden_idx
         }
 
     def generate_distractor_batch(self, tgt_idx):
         sample_idx = np.random.choice(self.batch_indices)
+        while self.batch_size == 1 and sample_idx == tgt_idx:
+            sample_idx = np.random.choice(self.batch_indices)
+        
         if sample_idx == tgt_idx:
             return self.reperm_batch(tgt_idx)
         else:
@@ -327,7 +336,11 @@ class ChooseDataset(Dataset):
         string_set = FruitSeqDataset.load_stringset(self.file_path)
         input_indices = self.string_set2input_target_indices(string_set)
 
-        num_batches = math.ceil(len(input_indices) / self.batch_size)
+        # ceil/floor
+        if len(input_indices) < self.batch_size:
+            num_batches = 1
+        else:
+            num_batches = math.floor(len(input_indices) / self.batch_size)
 
         for i in range(num_batches):
             input_indices_batch = input_indices[i*self.batch_size:
@@ -371,13 +384,18 @@ class ChoosePairDataset(Dataset):
     def __getitem__(self, idx):
         correct_batch = self.databatch_set[idx]
 
-        distract_batches = []
-        for _ in range(self.d_num):
-            distract_batches.append(self.generate_distractor_batch(idx))
+        candidate_batches = []
+        golden_idx = random.randint(0, self.d_num)
+        for i in range(self.d_num+1):
+            if i == golden_idx:
+                candidate_batches.append(self.databatch_set[idx])
+            else:
+                candidate_batches.append(self.generate_distractor_batch(idx))
         
         return {
             'correct': correct_batch,
-            'distracts': distract_batches
+            'candidates': candidate_batches,
+            'label': golden_idx
         }
 
     def generate_distractor_batch(self, tgt_idx):
@@ -441,7 +459,10 @@ class ChoosePairDataset(Dataset):
         pair_set = PairDataset.load_pairset(self.file_path)
         msg_indices, io_indices = self.pair_set2msg_io_indices(pair_set)
 
-        num_batches = math.ceil(len(msg_indices) / self.batch_size)
+        if len(io_indices) < self.batch_size:
+            num_batches = 1
+        else:
+            num_batches = math.floor(len(io_indices) / self.batch_size)
 
         for i in range(num_batches):
             msg_indices_batch = msg_indices[i*self.batch_size:
