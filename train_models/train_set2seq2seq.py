@@ -24,18 +24,19 @@ def train_epoch(model, data_batch, m_optimizer, s_optimizer, l_optimizer, clip=a
     s_optimizer.zero_grad()
     l_optimizer.zero_grad()
 
-    # model.speaker.eval()
-
-    loss, log_msg_prob, baseline, print_losses, \
-        _, tok_acc, seq_acc , _, s_entropy = model(data_batch)
+    loss, log_msg_prob, log_seq_prob, baseline, print_losses, \
+        seq_correct, tok_acc, seq_acc , _, s_entropy = model(data_batch)
     
     if args.msg_mode == 'REINFORCE':
-        log_msg_prob = (loss.detach() * log_msg_prob).mean()
+        log_msg_prob = (-seq_correct.detach() * log_msg_prob).mean()
         log_msg_prob.backward()
+        log_seq_prob = (-seq_correct.detach() * log_seq_prob).mean()
+        log_seq_prob.backward()
     elif args.msg_mode == 'SCST':
         log_msg_prob = ((loss.detach() - baseline.detach()) * log_msg_prob).mean()
         log_msg_prob.backward()
-    loss.mean().backward()
+    elif args.msg_mode == 'GUMBEL':
+        loss.mean().backward()
     
     nn.utils.clip_grad_norm_(model.parameters(), clip)
     m_optimizer.step()
@@ -52,7 +53,7 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        print_losses, _, t_acc, s_acc = model(data_batch)[3:-2]
+        print_losses, _, t_acc, s_acc = model(data_batch)[4:-2]
         loss += sum(print_losses) / len(print_losses)
         seq_acc += s_acc
         tok_acc += t_acc
