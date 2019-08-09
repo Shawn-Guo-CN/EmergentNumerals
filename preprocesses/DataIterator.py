@@ -4,9 +4,9 @@ import math
 import itertools
 import numpy as np
 import random
-from skimage import io, transform
 import os
 import torchvision
+from PIL import Image
 
 from utils.conf import args
 from preprocesses.Voc import Voc
@@ -557,7 +557,7 @@ class ImgChooseDataset(Dataset):
     @staticmethod
     def load_img_set(dir_path):
         img_file_names = os.listdir(dir_path)
-        imgs = [io.imread(os.path.join(dir_path, name)) for name in img_file_names]
+        imgs = [Image.open(os.path.join(dir_path, name)).convert('RGB') for name in img_file_names]
         return img_file_names, imgs
 
     @staticmethod
@@ -607,7 +607,7 @@ if __name__ == '__main__':
     )
 
     print('correct batch:')
-    print(dataset[0]['correct'])
+    print(dataset[0]['correct']['imgs'].shape)
 
-    print('first distract:')
-    print(dataset[0]['candidates'][0])
+    # print('first distract:')
+    # print(dataset[0]['candidates'][0])
