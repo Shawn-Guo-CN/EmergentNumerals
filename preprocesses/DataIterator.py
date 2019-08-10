@@ -561,11 +561,11 @@ class ImgChooseDataset(Dataset):
         return img_file_names, imgs
 
     @staticmethod
-    def build_img_tensors(imgs):
+    def build_img_tensors(imgs, device=args.device):
         tensors = []
         for img in imgs:
             tensors.append(torchvision.transforms.ToTensor()(img))
-        tensors = torch.stack(tensors)
+        tensors = torch.stack(tensors).to(device)
         return tensors
 
     def build_batches(self):
@@ -587,7 +587,10 @@ class ImgChooseDataset(Dataset):
             num_batches = math.floor(len(imgs) / self.batch_size)
 
         for i in range(num_batches):
-            img_batch = ImgChooseDataset.build_img_tensors(imgs[i*self.batch_size: min((i+1)*self.batch_size, len(imgs))])
+            img_batch = ImgChooseDataset.build_img_tensors(
+                    imgs[i*self.batch_size: min((i+1)*self.batch_size, len(imgs))],
+                    device=self.device
+                )
             img_label_batch = img_names[i*self.batch_size: min((i+1)*self.batch_size, len(imgs))]
 
             batches.append({
