@@ -10,11 +10,15 @@ def sim_check(
     spk_hidden_measure='euclidean',
     msg_dis_measure='edit',
     lis_hidden_measure='euclidean',
-    corr_measure='pearson'
+    corr_measure='pearson',
+    label_mode=False
 ):
     in_np_set = []
     for in_str in in_set:
-        in_np_set.append(distances.instr2np_array(in_str))
+        if label_mode:
+            in_np_set.append(distances.label2np_array(in_str))
+        else:
+            in_np_set.append(distances.instr2np_array(in_str))
     spk_hset = reproduce_spk_hidden_set(model, batch_set)
     msg_set = reproduce_msg_set(model, batch_set)
     lis_hset = reproduce_lis_hidden_set(model, batch_set)

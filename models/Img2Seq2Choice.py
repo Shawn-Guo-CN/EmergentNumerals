@@ -55,7 +55,6 @@ class ListeningAgent(nn.Module):
             msg_embedding=None
         ):
         super().__init__()
-        self.voc_size = voc_size
         self.msg_vocsize = msg_vocsize
         self.hidden_size = hidden_size
 
@@ -84,7 +83,7 @@ class ListeningAgent(nn.Module):
         can_encoder_hiddens = []
         for candidate in candidates:
             input_imgs = candidate['imgs']
-            encoder_hidden, _ = self.can_encoder(input_imgs)
+            encoder_hidden = self.can_encoder(input_imgs)
             can_encoder_hiddens.append(encoder_hidden)
 
         can_encoder_hiddens = torch.stack(can_encoder_hiddens).transpose(0, 1)
@@ -144,6 +143,8 @@ class Img2Seq2Choice(nn.Module):
             self.listener.train()
         else:
             baseline = 0.
+
+        del data_batch
         
         return loss, print_loss, acc, c_correct, log_msg_prob, log_choose_prob, baseline, spk_entropy
 

@@ -10,6 +10,11 @@ def instr2np_array(in_str):
     return np.asarray(coordinate)
 
 
+def label2np_array(in_str):
+    coordinate = [int(i) for i in in_str]
+    return np.asarray(coordinate)
+
+
 def in_ham_dis(in1, in2):
     return np.sum(in1 != in2)
 
