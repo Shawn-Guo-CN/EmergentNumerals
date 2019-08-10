@@ -21,49 +21,6 @@ def get_batches4sim_check(dataset_dir_path=args.data_file):
     batch_set = ImgChooseDataset(batch_size=1, dataset_dir_path=dataset_dir_path)
     return in_set, batch_set
 
-"""
-def train_epoch(model, data_batch, tau, s_optimizer, l_optimizer, clip=args.clip):
-    s_optimizer.zero_grad()
-    l_optimizer.zero_grad()
-
-    loss, print_loss, acc, c_correct, log_msg_prob, log_choose_prob,\
-         baseline, spk_entropy = model(data_batch, tau)
-    
-    if args.msg_mode == 'REINFORCE':
-        (c_correct.detach() * log_msg_prob + 0.05 * spk_entropy).mean().backward()
-        (c_correct.detach() * log_choose_prob).mean().backward()
-    elif args.msg_mode == 'SCST':
-        ((c_correct.detach()-baseline.detach()) * log_msg_prob).mean().backward()
-        ((c_correct.detach()-baseline.detach()) * log_choose_prob).mean().backward()
-    elif args.msg_mode == 'GUMBEL':
-        loss.mean().backward()
-    else:
-        raise NotImplementedError
-    
-    nn.utils.clip_grad_norm_(model.parameters(), clip)
-    s_optimizer.step()
-    l_optimizer.step()
-
-    return acc, print_loss
-
-
-def eval_model(model, dataset):
-    model.eval()
-
-    loss = 0.
-    avg_acc = 0.
-    for _, data_batch in enumerate(dataset):
-        print_loss, acc = model(data_batch)[1:3]
-        loss += print_loss
-        avg_acc += acc
-
-    loss /= len(dataset)
-    avg_acc /=len(dataset)
-
-    model.train()
-
-    return avg_acc, loss
-"""
 
 def train():
     print('loading data and building batches...')
@@ -116,12 +73,11 @@ def train():
     eval_acc = []
     print('done')
 
-    # TODO: uncomment and update check the following sim check function
-    # in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
-    #     model, sim_chk_inset, sim_chk_batchset
-    # )
-    # print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
-    #             0, in_spk_sim, in_msg_sim, in_lis_sim))
+    in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
+        model, sim_chk_inset, sim_chk_batchset, label_mode=True
+    )
+    print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
+                0, in_spk_sim, in_msg_sim, in_lis_sim))
 
     print('training...')
     for iter in range(start_iteration, args.iter_num+1):
@@ -156,7 +112,7 @@ def train():
 
         if iter % args.sim_chk_freq == 0:
             in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
-                model, sim_chk_inset, sim_chk_batchset
+                model, sim_chk_inset, sim_chk_batchset, label_mode=True
             )
             training_in_spkh_sim.append(in_spk_sim)
             training_in_msg_sim.append(in_msg_sim)
@@ -165,7 +121,7 @@ def train():
                 iter, in_spk_sim, in_msg_sim, in_lis_sim))
         
         if iter % args.save_freq == 0:
-            path_join = 'set2seq2choice_' + str(args.num_words) + '_' + args.msg_mode
+            path_join = 'img2seq2choice_' + str(args.num_words) + '_' + args.msg_mode
             path_join += '_hard' if not args.soft else '_soft'
             directory = os.path.join(args.save_dir, path_join)
             if not os.path.exists(directory):
