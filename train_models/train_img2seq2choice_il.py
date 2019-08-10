@@ -168,10 +168,8 @@ def train_generation(
     model, train_set, dev_set, learn_set, sim_chk_inset, sim_chk_batchset,
     clip=args.clip, generation_idx=0
 ):
-    s_optimiser = args.optimiser(model.speaker.decoder.parameters(), 
-                                        lr=args.learning_rate * args.speaker_ratio)
-    l_optimiser = args.optimiser(model.listener.parameters(),
-                                        lr=args.learning_rate * args.listener_ratio)
+    s_optimiser = args.optimiser(model.speaker.parameters(), lr=args.learning_rate)
+    l_optimiser = args.optimiser(model.listener.parameters(), lr=args.learning_rate)
 
     training_losses, training_acc, training_in_spkh_sim, training_in_msg_sim, \
         training_in_lish_sim, eval_acc = \
@@ -188,10 +186,8 @@ def train_generation(
         model.reset_listener()
         print('Generation: {}; Listener Reset Done.'.format(generation_idx))
 
-        s_optimiser = args.optimiser(model.speaker.decoder.parameters(), 
-                                            lr=args.learning_rate * args.speaker_ratio)
-        l_optimiser = args.optimiser(model.listener.parameters(),
-                                            lr=args.learning_rate * args.listener_ratio)
+        s_optimiser = args.optimiser(model.speaker.parameters(), lr=args.learning_rate)
+        l_optimiser = args.optimiser(model.listener.parameters(), lr=args.learning_rate)
 
         speaker_learning_phase(model, s_optimiser, \
             learn_set, reproduced_msg_set, reproduced_msg_masks, generation_idx, clip)
