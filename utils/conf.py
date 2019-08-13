@@ -9,6 +9,7 @@ from torch import optim
 default values for argparser
 '''
 defaults = {
+    'SEED': 1234,
     'DEVICE': 1,
     'LEARNING_RATE':1e-4,
     'DROPOUT_RATIO': 0.2,
@@ -66,6 +67,8 @@ MSG_VOCSIZE = defaults['MAX_LEN_WORD'] + 1 # Consider 0 and EOS for MSG
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-s', '--seed', type=int, default=defaults['SEED'], 
+        help='random seed')
 parser.add_argument('-d', '--device', type=int, default=defaults['DEVICE'], choices=[0, 1, 2, 3, -1],
         help="which gpu to use, -1 for cpu")
 parser.add_argument('-lr', '--learning-rate', type=float, default=defaults['LEARNING_RATE'],

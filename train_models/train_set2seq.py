@@ -73,7 +73,7 @@ def train_epoch(model, data_batch, param_optimizer, decoder_optimizer, clip=args
     decoder_optimizer.zero_grad()
 
     loss, print_losses, _, _, tok_acc, seq_acc = model(data_batch)
-    loss.backward()
+    loss.mean().backward()
 
     nn.utils.clip_grad_norm_(model.parameters(), clip)
 
@@ -90,7 +90,7 @@ def eval_model(model, dataset):
     seq_acc = 0.
     tok_acc = 0.
     for _, data_batch in enumerate(dataset):
-        loss, print_losses, _, _, t_acc, s_acc = model(data_batch)
+        _, print_losses, _, _, t_acc, s_acc = model(data_batch)
         loss += sum(print_losses) / len(print_losses)
         seq_acc += t_acc
         tok_acc += s_acc
@@ -204,7 +204,7 @@ def train():
                     'eval_tok_acc': eval_tok_acc,
                     'eval_seq_acc': eval_seq_acc
                 }
-            }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
+            }, os.path.join(directory, '{}_{}_{}.tar'.format(args.seed, iter, 'checkpoint')))
 
 
 def test():

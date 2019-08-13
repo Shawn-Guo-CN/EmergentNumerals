@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import os
 
-from utils.conf import args
+from utils.conf import args, set_random_seed
 from models.Set2Seq2Seq import SpeakingAgent
 from models.Losses import mask_NLL_loss, mask_NLL_loss_simple, seq_cross_entropy_loss
 from preprocesses.DataIterator import PairDataset
@@ -215,7 +215,7 @@ def train():
                     'eval_tok_acc': eval_tok_acc,
                     'eval_seq_acc': eval_seq_acc
                 }
-            }, os.path.join(directory, '{}_{}.tar'.format(iter, 'checkpoint')))
+            }, os.path.join(directory, '{}_{}_{}.tar'.format(args.seed, iter, 'checkpoint')))
 
 
 def test():
@@ -250,9 +250,7 @@ def test():
 
 
 if __name__ == '__main__':
-    random.seed(1234)
-    torch.manual_seed(1234)
-    torch.cuda.manual_seed(1234)
+    set_random_seed(args.seed)
     with autograd.detect_anomaly():
         print('with detect_anomaly')
         if args.test:

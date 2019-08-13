@@ -4,7 +4,7 @@ import torch.autograd as autograd
 import torch.nn as nn
 import os
 
-from utils.conf import args
+from utils.conf import args, set_random_seed
 from models.Seq2Seq import Seq2Seq
 from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
@@ -145,7 +145,7 @@ def train():
                     'eval_tok_acc': eval_tok_acc,
                     'eval_seq_acc': eval_seq_acc
                 }
-            }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_seq_acc, 'checkpoint')))
+            }, os.path.join(directory, '{}_{}_{}.tar'.format(args.seed, iter, 'checkpoint')))
 
 
 def test():
@@ -180,6 +180,7 @@ def test():
 
 
 if __name__ == '__main__':
+    set_random_seed(args.seed)
     if args.test:
         test()
     else:
