@@ -91,21 +91,25 @@ def plot_into_1_figure(chk_points_dirs:list, label_list:list) -> None:
 
 def main():
     chk_point_dir_path_list = [
-        './params/test_learning_speed_0813/listener/comp_4/',
-        './params/test_learning_speed_0813/listener/holistic_4/',
-        './params/test_learning_speed_0813/listener/emergent_4/',
-        './params/test_learning_speed_0813/listener/seq2seq/',
-        './params/test_learning_speed_0813/listener/comp_2/',
-        './params/test_learning_speed_0813/listener/holistic_2/',
+        './params/test_learning_speed_0813/speaker/comp_4/',
+        './params/test_learning_speed_0813/speaker/holistic_4/',
+        './params/test_learning_speed_0813/speaker/emergent_4_gen/',
+        './params/test_learning_speed_0813/speaker/emergent_2/',
+        './params/test_learning_speed_0813/speaker/comp_2/',
+        './params/test_learning_speed_0813/speaker/holistic_2/',
+        # './params/test_learning_speed_0813/speaker/emergent_4_refer/',
+        './params/test_learning_speed_0813/speaker/set2seq/',
     ]
 
     label_list = [
         'compositional (len 4)',
         'holistic (len 4)',
-        'emergent (len 4)',
-        'seq2seq',
+        'emergent - reconstruct (len 4)',
+        'emergent - select (len 2)',
         'compositional (len 2)',
         'holistic (len 2)',
+        # 'emergent - select (len 4)',
+        'set2seq',
     ]
 
     plot_into_1_figure(chk_point_dir_path_list, label_list)
