@@ -60,7 +60,7 @@ To have give an intuitive demonstration of the emergent language, we list all me
 
 As we can see from Table \ref{tab4.2:emregent_language_generation}, there is no clear compositional structure in it. 
 
-Based on the 2 properties of compositional languages illustrated in Section \ref{sec3.3:measurements}, we could see that the emergent language shown in Table \ref{tab4.2:emregent_language_generation} satisfies neither of mutual exclusivity nor orthogonality. To be specific, there is no common substrings of messages in every column/row, and some substrings, e.g. ``tt'' in column ``0A'', may be used in multiple columns/rows. Thus, the emergent language is not a perfectly compositional one as we expect.
+Based on the 2 properties of compositional languages illustrated in Section \ref{sec3.3:metrics}, we could see that the emergent language shown in Table \ref{tab4.2:emregent_language_generation} satisfies neither of mutual exclusivity nor orthogonality. To be specific, there is no common substrings of messages in every column/row, and some substrings, e.g. ``tt'' in column ``0A'', may be used in multiple columns/rows. Thus, the emergent language is not a perfectly compositional one as we expect.
 
 However, as Set-Reconstruct game is a generation task, the agents may transmit more than numeric concepts in order that listeners could generate the original input. Thus, to verify whether this is the case, we illustrate an emergent language in a Set-Select game whose settings are exactly the same as the Set-Reconstruct game illustrated above, i.e. $|\mathcal{O}|=2, |N_o|=5, |M|=4, |V|=10$. The meanings and corresponding messages are shown in Table \ref{tab4.3:emregent_language_referential} given as follow.
 
@@ -103,7 +103,7 @@ According to \cite{kottur2017natural}, another alternative probability is that t
 \subsection{Topological Similarities}
 \label{ssec4.2.2:topo_sim}
 
-As introduced in subsection \ref{sec3.3:measurements}, we measure the topological similarity between meaning space and message space as a measure of compositionality. We list compositionality scores under different kinds of measurements in Table \ref{tab4.4:topo_sim_lans} given as follow.
+As introduced in subsection \ref{sec3.3:metrics}, we measure the topological similarity between meaning space and message space as a measure of compositionality. We list compositionality scores under different kinds of metrics in Table \ref{tab4.4:topo_sim_lans} given as follow.
 
 \begin{table}[!h]
     \centering
@@ -119,22 +119,22 @@ As introduced in subsection \ref{sec3.3:measurements}, we measure the topologica
     \label{tab4.4:topo_sim_lans}
 \end{table}
 
-\noindent\textbf{Ham+Edit}: We first follow the distance measurements in \cite{brighton2006understanding}: i) use hamming distances between meaning sequences as the similarity measurement for meaning space; ii) use edit distances between corresponding messages as the similarity measurement for message space.
+\noindent\textbf{Ham+Edit}: We first follow the distance metrics in \cite{brighton2006understanding}: i) use hamming distances between meaning sequences as the similarity metric for meaning space; ii) use edit distances between corresponding messages as the similarity metric for message space.
 
-\noindent\textbf{Ham+BLEU}: In this setting, we use: i) hamming for meaning space too; ii) BLEU score illustrated in Section \ref{sec3.3:measurements} as the the similarity measurement for message space.
+\noindent\textbf{Ham+BLEU}: In this setting, we use: i) hamming for meaning space too; ii) BLEU score illustrated in Section \ref{sec3.3:metrics} as the the similarity metric for message space.
 
-\noindent\textbf{Euclid+Edit}: In this setting, we use: i) Euclidean distance as the measurement for meaning space, e.g. Euclidean distance between ``4A2B'' and ``1A3B'' is \\ $\sqrt{(4-1)^2 + (2-3)^2}=\sqrt{10}$; ii) edit distance for message space.
+\noindent\textbf{Euclid+Edit}: In this setting, we use: i) Euclidean distance as the metric for meaning space, e.g. Euclidean distance between ``4A2B'' and ``1A3B'' is \\ $\sqrt{(4-1)^2 + (2-3)^2}=\sqrt{10}$; ii) edit distance for message space.
 
-\noindent\textbf{Euclid+BLEU}: In this setting, we use: i) Euclidean distance for meaning space; ii) BLEU score illustrated in Section \ref{sec3.3:measurements} for message space.
+\noindent\textbf{Euclid+BLEU}: In this setting, we use: i) Euclidean distance for meaning space; ii) BLEU score illustrated in Section \ref{sec3.3:metrics} for message space.
 
-To get the upper bound and lower bound of compositionalities, we specifically designed: i) a perfectly compositional language, in which the message is exactly the same as meaning sequence, e.g. ``4A2B'' is represented as ``4829'' ($\mbox{A}\rightarrow 8, \mbox{B} \rightarrow 9$); ii) a holistic language, in which messages are randomly generated.
+To get the upper bound and lower bound of compositionality, we specifically designed: i) a perfectly compositional language, in which the message is exactly the same as meaning sequence, e.g. ``4A2B'' is represented as ``wsyr'' ($\mbox{A}\rightarrow s, \mbox{B} \rightarrow r, \mbox{4} \rightarrow w, \mbox{2} \rightarrow y$); ii) a holistic language, in which messages are randomly generated.
 
-Then, from the above results, we could see that although the emergent languages in Set-Reconstruct and Set-Select games gain low topological similarity scores under Hamming distance for meaning space, they obtain much higher similarity scores under Euclidean distances for meaning space. Therefore, we argue that, although the emergent languages do not look like compositional, they can reflect the underlying structure of the meaning space. Based on the above results, we could also say that the meaning of symbols in the emergent language \textbf{is not numerals} defined in Subsection \ref{ssec3.1.2:numeral_in_game}. 
+Then, from the above results, we could see that although the emergent languages in Set-Reconstruct and Set-Select games gain low topological similarity scores under Hamming distance for meaning space, they obtain much higher similarity scores under Euclidean distances for meaning space. As for the compositional language, they obtain very low scores under Euclidean distances, which is caused by that the numerals in natural language encode numeric concepts as different symbols and thus the edit/BLEU distance between messages are all the same for different meanings. For example, although meaning ``2A1B'' is closer to ``1A1B'' than meaning ``4A1B'', the edit distance between ``yszr'' (message of ``2A1B'') and ``zszr'' (message of ``1A1B'') is exactly the same as the edit distance between ``wszr'' (message of ``4A1B'') and ``zszr''.
 
 \subsection{Significance Test of Same Numeric Concepts}
 \label{ssec4.2.3:significance_test}
 
-Although the compositionality of emergent language is not like our natural language, we could also see that it reflects the underlying structure of meaning space. Thus, we further verify whether messages for meaning pairs that share same numeric concepts are more similar. To do this, we established 2 different datasets: i) meaning pairs sharing exactly same numeric concepts, e.g. ``4A3B'' and ``3A4B'', and corresponding BLEU similarity scores for their messages; ii) pairs of meaning sequences that share no numeric concept, e.g. ``4A3B'' and ``5A1B'', and corresponding BLEU similarity for their messages.
+Although the compositionality of emergent language is not like our natural language, we could also see that it may reflect the underlying structure of meaning space. Thus, to further verify this point of view, we further verify whether messages for meaning pairs that share same numeric concepts are more similar. To do this, we established 2 different datasets: i) meaning pairs sharing exactly same numeric concepts, e.g. ``4A3B'' and ``3A4B'', and corresponding BLEU similarity scores for their messages; ii) pairs of meaning sequences that share no numeric concept, e.g. ``4A3B'' and ``5A1B'', and corresponding BLEU similarity for their messages. Thus, we have 1,190 ($2 \times (35 \times 34 \div 2)$) meaning pairs in total, of which half share same numeric concepts and the other half do not. We then calculate the BLEU-1/2/3 scores of the messages of these pairs and test whether these BLEU scores are correlated to sharing same numeric concepts. 
 
 Then, we establish the following hypotheses for significance test:
 
@@ -143,25 +143,33 @@ Then, we establish the following hypotheses for significance test:
     \item \textbf{Alternative hypothesis}: The BLEU scores between messages are \textbf{not} independent from whether meaning pairs share same numeric concepts.
 \end{itemize}
 
-The the $p$-values got on different languages are given in Table \ref{tab4.5:p-values} as follow.
+To test whether there is a correlation between BLEU scores and sharing same numeric concepts, we calculate the Spearman correlation coefficient and the corresponding $p$-values. The results got on different types of languages based on different $n$-grams are given in Table \ref{tab4.5:p-values} as follow. \footnote{It is clear that an effective language would not contain identical messages for different meanings. As the maximum length of messages is 4 and there is no identical messages in all languages, we thus skip the BLEU-4 score (which would 0 for all languages) here. }
 
 \begin{table}[!h]
     \centering
-    \begin{tabular}{|c|c|c|c|c|}
+    \begin{tabular}{|l|c|c|c|c|c|c|}
     \hline
-    Language  & Compositional         & Set-Reconstruct          & Set-Select           & Holistic \\ \hline
-    $p$-value & $1.93\times 10^{-69}$ & $7.01\times 10^{-3}$ & $2.87\times 10^{-3}$ & 0.57 \\ \hline
+    \multicolumn{1}{|c|}{\multirow{2}{*}{Language Type}} & \multicolumn{2}{c|}{BLEU-1}      & \multicolumn{2}{c|}{BLEU-2}                                      & \multicolumn{2}{c|}{BLEU-3}    \\ \cline{2-7} 
+    \multicolumn{1}{|c|}{}                               & $\rho$  & $p$-value              & $\rho$ & $p$-value                                               & $\rho$ & $p$-value             \\ \hline
+    Compositional                                        & $0.96$  & $7.84 \times 10^{-39}$ & $0.28$ & $2.01\times 10^{-2}$                                   & $0.28$ & $2.01\times 10^{-2}$ \\ \hline
+    Emergent-R                                           & $0.27$  & $2.42\times 10^{-2}$  & $0.26$ & $2.74\times 10^{-2}$                                   & $0.33$ & $5.07\times 10^{-3}$ \\ \hline
+    Emergent-S                                           & $0.29$  & $1.49\times 10^{-2}$  & $0.38$ & $1.16\times 10^{-3}$                                   & $0.38$ & $1.06\times 10^{-3}$ \\ \hline
+    Holistic                                             & $-0.08$ & $4.93\times 10^{-1}$  & $0.05$ & $6.77 \times 10^{-1}$ & $0.22$ & $6.10\times 10^{-2}$ \\ \hline
     \end{tabular}
-    \caption{$p$-values of different languages.}
+    \caption{$\rho$ and $p$-values of different types of languages. $\rho$ represents the Spearman correlation coefficient between meanings and messages, and the ``Emergent-R'' and ``Emergent-S'' are emergent languages in Set-Reconstruct game and Set-Select game respectively. }
     \label{tab4.5:p-values}
 \end{table}
 
-The $p$-values for compositional language as well as emergent languages in both Set-Reconstruct and Set-Select games are smaller than $0.01$. Thus, it is safe to reject null hypothesis and accept the alternative hypothesis. That is, The BLEU scores between messages depend on whether their meaning pairs share same numeric concepts. To be more precise, the messages of meaning pairs share same numeric concepts have more unigrams and bi-grams in common.
+The $p$-values under BLEU-1/2/3 for compositional language as well as emergent languages in both Set-Reconstruct and Set-Select games are all smaller than $0.05$. Thus, it is safe to reject null hypothesis and accept the alternative hypothesis. That is, The BLEU scores between messages are highly correlated with whether their meaning pairs share same numeric concepts. To be more precise, as we can tell from the table, the messages of meaning pairs sharing same numeric concepts have more uni-grams, bi-grams  and tri-grams in common.
 
 \subsection{Generalisation of Emergent Language}
 \label{ssec4.2.4:emergent_lan_generalise}
 
-To verify whether the emergent language can be generalised to unseen sets, we train the randomly initialised listeners with several kinds of languages: i) compositional language; ii) an emergent language invented by other agents; iii) holistic language. And, the game settings are $|M|=8$, $|V|=10$, $|\mathcal{O}|=4$, $|N_{o}|=10$. Learning and performance curves of these languages on Set-Reconstruct and Set-Select games are given in  Figure \ref{fig4.0:listener_learning_generalise_gen} and Figure \ref{fig4.00:listener_learning_generalise_ref} respectively.
+A further question about the structure of emergent languages is to verify whether the emergent language can be generalised to unseen sets. If the emergent languages can be generalised, we then could say that these languages do capture the structure of meaning spaces.
+
+Therefore, we train many randomly initialised listeners with several kinds of languages: i) compositional language; ii) an emergent language invented by other agents; iii) holistic language. The game settings are $|M|=8$, $|V|=10$, $|\mathcal{O}|=4$, $|N_{o}|=10$. We expose listeners with only the training set (which contains $80\%$ sets of objects randomly sampled from the whole meaning space), but test their performance on evaluation set (which contains unseen $20\%$ sets of objects left in the meaning space). Then, the generalisation ability of languages can be measured as the performance on evaluation set.Learning and performance curves of different languages on Set-Reconstruct and Set-Select games are given in Figure \ref{fig4.0:listener_learning_generalise_gen} and Figure \ref{fig4.00:listener_learning_generalise_ref} respectively. 
+
+Note that we run all experiments with 10 different random seeds to avoid the effect brought by different initialisations. The mean of 10 different runs are given as lines in Figure \ref{fig4.0:listener_learning_generalise_gen} and Figure \ref{fig4.00:listener_learning_generalise_ref}, and the shadow areas are corresponding standard deviations. Meanings of y-axes are given as the title for each sub-plot, and the numbers in parentheses are length of messages in each language. Peculiarly, ``emergent - reconstruct'' and ``emergent - select'' represent emergent languages from Set-Reconstruct and Set-Select games respectively. This is also the case for all the following figures.
 
 \begin{figure}[!h]
     \centering
@@ -173,15 +181,18 @@ To verify whether the emergent language can be generalised to unseen sets, we tr
 \begin{figure}[!h]
     \centering
     \includegraphics[width=\textwidth]{graphs/listener_learning_generalise.pdf}
-    \caption{Learning and performance curves of different languages in Set-Select game. Lines of ``emergent'' and ``emergent-forward'' overlap with each other.}
+    \caption{Learning and performance curves of different languages in Set-Select game. Lines of ``emergent'' and ``emergent-forward'' overlap with each other. Texts in legends has the same meaning as they are in Figure \ref{fig4.0:listener_learning_generalise_gen}.}
     \label{fig4.00:listener_learning_generalise_ref}
 \end{figure}
 
-It is quite suprising that, although we cannot see any significant pattern in the emergent language, it actually can be generalised to unseen sets of objects by listeners, as illustrated by the performance of listeners on evaluation dataset. Also, listener trained with emergent language converges faster on evaluation performance as well as training loss, although length of emergent messages ($|M|=8$) are longer than that of compositional language ($|M|=4$).
+It is quite surprising that, although we cannot see any significant pattern in the emergent language, it actually can be generalised to unseen sets of objects by listeners, as illustrated by the performance of listeners on evaluation dataset. Meanwhile, listeners trained with emergent languages converge faster on evaluation performance as well as training loss, although length of emergent messages ($|M|=8$) are longer than that of compositional language ($|M|=4$).
 
-Besides, we also train listeners in Set-Reconstruct and Set-Select with languages emerged in the other game, i.e. ``emergent-select'' in Figure \ref{fig4.0:listener_learning_generalise_gen} and ``emergent-forward'' in Figure \ref{fig4.00:listener_learning_generalise_ref}. From the evaluation accuracy in Figure \ref{fig4.00:listener_learning_generalise_ref}, we could see that the emergent language in Set-Reconstruct game can be well generalised to unseen samples by listeners in Set-Select game. However, listeners in Set-Reconstruct game cannot generalise emergent language from Set-Select game, which is illustrated by the evaluation accuracies in Figure \ref{fig4.0:listener_learning_generalise_gen}. This phenomenon demonstrates that the information encoded by speakers in Set-Reconstruct games are richer than the information encoded by speakers in Set-Select games, or to say this demonstrates that speakers in Set-Reconstruct games may encode more than only numeric concepts.
+From the evaluation accuracy in Figure \ref{fig4.00:listener_learning_generalise_ref}, we could see that the emergent language in Set-Reconstruct game can be well generalised to unseen samples by listeners in Set-Select game. On the other hand, listeners in Set-Reconstruct game, however, cannot generalise emergent language from Set-Select game, which is illustrated by the evaluation accuracies in Figure \ref{fig4.0:listener_learning_generalise_gen}. This phenomenon demonstrates that the information encoded by speakers in Set-Reconstruct games are richer than the information encoded by speakers in Set-Select games. As the only difference between candidates in Set-Select game is the numbers of different types of objects, if we assume that the different numbers of objects are encoded by speakers in Set-Select game, then we can infer that speakers in Set-Reconstruct game would encode more than only numeric concepts. Another possible explanation is that speakers in Set-Reconstruct encode only numeric concepts, then speakers in Set-Select game would encode less than that. However, as agents could always get almost perfect performance on both training set and evaluation set, it is reasonable to believe that the later assumption is less possible.
 
-Sum up from all above, although we cannot find observable patterns in emergent languages under various game settings, the emergent languages are actually easier for agents to learn and also can be generalised to unseen sets of objects. Thus, based on the previous topological similarity measurements and significance test, we claim that the emergent languages do capture the underlying structure of meaning space and encode them into sequences consisting of discrete variables.
+\subsection{Section Conclusion}
+\label{ssec4.2.5:sec_conclusion}
+
+To sum up from all above, although we cannot find observable patterns in emergent languages under various game settings, the emergent languages are actually easier for agents to learn and also can be generalised to unseen sets of objects. Thus, based on the previous topological similarity metrics and significance test, we claim that the emergent languages do capture the underlying structure of meaning space.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -193,56 +204,58 @@ From the previous sections, we could see that the emergent languages can reflect
 \subsection{For Listener}
 \label{ssec4.3.1:learning_listener}
 
-The first thing we are curious is whether the emergent language is the most easy one for listeners to understand. To verify this, we test the learning speeds of all kinds of languages with randomly initialised new listeners in both Set-Reconstruct game and Set-Select Game, and the results are shown in Figure \ref{fig4.1:listener_learning_generation} and Figure \ref{fig4.2:listener_learning_refer} respectively.
+First we attempted to verify whether the emergent languages are the most easy ones for listeners to understand. To verify this, we first trained agents with game setting $|V|=10$, $|\mathcal{O}|=2$, $|N_{o}|=5$ and 2 different $|M|$ (2 or 4), to got 2 different emergent languages. Then, we test the learning speeds of all kinds of languages with randomly initialised new listeners in both Set-Reconstruct game and Set-Select Game. Again, we run experiments with 10 different random seeds, and draw the mean and corresponding standard deviations of performance results from Set-Reconstruct and Set-Select in Figure \ref{fig4.1:listener_learning_generation} and Figure \ref{fig4.2:listener_learning_refer} respectively.
+
+To get an upper bound of the learning curves, we also trained a vanilla Seq-to-Seq model to get the upper bounds for learning speeds and performance, as we assume that the original input space is the best message space for both speaker and listener. However, as time is limited, we have not done the same experiment on Set-Select game.
 
 \begin{figure}[!h]
     \centering
     \includegraphics[width=\textwidth]{graphs/listener_learning_generation.pdf}
-    \caption{Learning and performance curves of different languages in Set-Reconstruct game.}
+    \caption{Learning and performance curves of different languages for listeners in Set-Reconstruct game. Numbers in the parentheses are length of messages in a language.}
     \label{fig4.1:listener_learning_generation}
 \end{figure}
 
 \begin{figure}[!h]
     \centering
     \includegraphics[width=\textwidth]{graphs/listener_learning_refer.pdf}
-    \caption{Learning and performance curves of different languages in Set-Select game.}
+    \caption{Learning and performance curves of different languages for listeners in Set-Select game. Numbers in the parentheses are length of messages in a language.}
     \label{fig4.2:listener_learning_refer}
 \end{figure}
 
-From the above figures, we could easily see that emergent languages are learnt faster than compositional and holistic language in whichever the game, which implies that the emergent language has a lower sample complexity\cite{vapnik2013nature}.
+From the above figures, we could easily see that emergent languages are learnt faster than compositional and holistic language in Set-Reconstruct game, while they have very similar performance to the compositional language with length 2 in Set-Select game but still have lower loss.
 
 \subsection{For Speaker}
 \label{ssec4.3.2:learning_speaker}
 
-We then test the learning speed of different languages on speaker, i.e. we randomly initialise new speakers and let it learn to produce messages of input sets under different languages. Note that the architecture of speaker is identical in Set2Seq2Seq and Set2Seq2Choice model, thus all the curves are shown in Figure \ref{fig4.3:speaker_learning} given as follow.
+We then test the learning speed of different languages on speaker, i.e. we randomly initialise several new speakers and let it learn to produce messages of input sets under different languages. Note that the architecture of speakers are identical in Set2Seq2Seq and Set2Seq2Choice model, and all the curves are drawn in one figure, i.e. Figure \ref{fig4.3:speaker_learning} given as follow. The game settings are the same as they are during testing listener leaning speed. One thing we need to mention is that we also test an emergent language in Set-Select game with $|M|=2, |V|=10, |\mathcal{O}|=2, |N_o|=5$ which is denoted as ``emergent (len 2)''.
 
 \begin{figure}[!h]
     \centering
     \includegraphics[width=\textwidth]{graphs/speaker_learning.pdf}
-    \caption{Speaker learning curves of different languages.}
+    \caption{Learning curves of different languages for speakers in both games. Numbers in the parentheses are length of messages in a language.}
     \label{fig4.3:speaker_learning}
 \end{figure}
 
-One thing we need to mention is that we also test an emergent language in Set-Select game with $|M|=2, |V|=10, |\mathcal{O}|=2, |N_o|=5$ which is denoted as ``emergent (len 2)''. Compared learning messages with length $2$ and $4$, we could easily see that smaller message spaces are always easier to learn than the larger ones.
+Meanwhile, by comparing learning emergent languages with length $2$ and $4$, we could easily see that larger message spaces are always easier to learn than the smaller ones, which is counterintuitive. Considering that facts that the original meaning space is always the easiest for both speakers and listeners to learn, which is demonstrated by Figure \ref{fig4.1:listener_learning_generation}, Figure \ref{fig4.2:listener_learning_refer} and Figure \ref{fig4.3:speaker_learning}, our explanation about this phenomenon is that the larger message spaces are easier to be shaped like the original set space for agents. To be specific, as the maximum size of sets is  $|N_o|\times |\mathcal{O}|$ and the vacancies in the sets can all be represented by some special symbols (e.g. blank space in English), a larger $|M|$ would make it easier for agents to create a message space that is highly similar to the original set space and becomes easier to learn for agents.
 
-Meanwhile, it is clear compositional languages are always easier for speaker to learn than the same sized emergent languages, which is contradictory to the situation on listener side. Our hypothesis is that compositional language is smoother function for speaker to learn and thus it is easier to be optimised. However, as time is limited, this phenomenon is not further discussed in this work but will be explored in the future works.
+From the above figures, it is quite clear that compositional languages always converge faster than the same sized emergent languages, which is contradictory to the situation on listener side. However, it is still the case that the emergent languages have lower losses than compositional languages. Our hypothesis is that compositional language is a smoother function for speaker to learn and thus it is easier to be optimised. As time is limited, this phenomenon is not further discussed in this work but will be explored in the future works.
 
 \subsection{Improvement by Iterated Learning}
 \label{ssec4.3.:iterated_learning_improve}
 
-Although the iterated learning framework \cite{kirby2002emergence} is proven to be effective in experiments with both Bayesian agents and humans, there are several obstacles for directly applying it into our neural agents:
+Iterated learning framework \cite{kirby2002emergence} has been proposed to explain the emergence of language structure more than one decade. Thus, we are curious about whether it could improve the compositionality of the emergent languages in our system. However, there are several obstacles for directly applying iterated learning into our neural agents:
 
 \begin{enumerate}
     \item we cannot feed prior probability that favours high compositional languages to neural networks;
     \item the pre-training procedure in learning phase of original iterated learning need to be re-designed, as speakers and listeners in our game are not inverse functions to each other.
 \end{enumerate}
 
-Thus, we adapt iterated learning into our project, which is illustrated in Subsection \ref{ssec3.2.4:iterated_learning}, and train agent population with respect to normal training mechanism and iterated learning. The results are shown in Figure \ref{fig4.4:il_improve}. It needs to be pointed out that the distance measurement for meaning space is Euclidean distance for topological similarity, and measurement for message space is edit distance.
+Thus, we adapt iterated learning into our project, which is illustrated in Subsection \ref{ssec3.2.4:iterated_learning}, and train agent population with respect to normal training mechanism and iterated learning. The results are shown in Figure \ref{fig4.4:il_improve}. It needs to be pointed out that the distance metric for meaning space is Euclidean distance for topological similarity, and metric for message space is edit distance. Reminds that the topological similarity of compositional language under this metric is 0.38.
 
 \begin{figure}[!h]
     \centering
     \includegraphics[width=\textwidth]{graphs/il_improvement.pdf}
-    \caption{Topological similarity curves of iterated learning and normal training in Set-Select game.}
+    \caption{Topological similarity curves of iterated learning and normal training in Set-Reconstruct game. Note that one generation contains many epochs and we only test the topological similarity every 10 epochs or at the end of game playing phase, so the two plots have different scales on the x-axis.}
     \label{fig4.4:il_improve}
 \end{figure}
 
@@ -253,11 +266,13 @@ By comparing the curves of iterated learning and normal training, we can see a s
 \section{Effects of Different Representations}
 \label{sec4.4:represent_effect}
 
-Compared our results in Section \ref{sec4.1:emergence} to \ref{sec4.3:learning_speed} with previous works in GLL, we argue that the different characteristics of emergents languages in our works are due to the feature representations of meanings.
+Compared our results in Section \ref{sec4.1:emergence} to \ref{sec4.3:learning_speed} with previous works in GLL, we argue that the different characteristics of emergent languages in our works are due to the feature representations of meanings.
 
-To be specific, in our games, listeners need to generate object sequences or select the correct object sequence according to features representing each kind of objects. For example, the feature representation of set $\{A, B, A\}$ would be a sequence $\{[1 0], [0 1], [1 0]\}$ (assume that $|\mathcal{O}|=2, |N_o|=8$), and the corresponding message would be $\{2, 1\}=\{[0 0 1 0 0 0 0 0 0], [0 1 0 0 0 0 0 0 0]\}$ (assume that $|M|=|\mathcal{O}|=2, |V|=|N_o|=8$). Thus, to understand the message, the listener needs to correctly count the numbers of each kind of objects in the set and ground symbols to the counting results. During this procedure, there are 2 gaps between meanings (or perceptions) and messages: i) from meaning to numeric concepts; ii) from numeric concepts.
+To be specific, in our games, listeners need to generate object sequences or select the correct object sequence according to features representing each kind of objects. For example, the feature representation of set $\{A, B, A\}$ would be a sequence $\{[1 0], [0 1], [1 0]\}$ (assume that $|\mathcal{O}|=2, |N_o|=8$), and the corresponding message would be $\{2, 1\}=\{[0 0 1 0 0 0 0 0 0], [0 1 0 0 0 0 0 0 0]\}$ (assume that $|M|=|\mathcal{O}|=2, |V|=|N_o|=8$). Thus, to understand the message, the listener needs to correctly count the numbers of each kind of objects in the set and ground symbols to the counting results. During this procedure, there are 2 gaps between meanings (or perceptions) and messages: i) from meaning to numeric concepts; ii) from numeric concepts to messages.
 
-To verify which step imports bias towards emergent language, we slightly change the representation of sets in Set-Select game, i.e. we directly encode the numbers of each kind of objects as one-hot vectors and concatenate them to be the representation of the whole set. Take set $\{A, B, A\}$ as example, its representation would be \textbf{vector} $[0 0 1 0 0 0 0 0 0; 0 1 0 0 0 0 0 0 0]$, whereas its message is still the \textbf{sequence} \\ $\{[0 0 1 0 0 0 0 0 0], [0 1 0 0 0 0 0 0 0]\}$. Then, it is straightforward that mapping from messages to meanings is a linear transformation and thus it should be easy for neural networks to fit.
+To verify which step imports bias towards emergent language, we slightly change the representation of sets in Set-Select game, i.e. we directly encode the numbers of each kind of objects as one-hot vectors and concatenate them to be the representation of the whole set. Take set $\{A, B, A\}$ as example, its representation would be \textbf{vector} $[0 0 1 0 0 0 0 0 0; 0 1 0 0 0 0 0 0 0]$, whereas its message is still the \textbf{sequence} \\ $\{[0 0 1 0 0 0 0 0 0], [0 1 0 0 0 0 0 0 0]\}$. Then, it is straightforward that mapping from messages to meanings is a linear transformation and thus it should be easy for neural networks to fit. 
+
+First of all, we test the learning speed of manually designed languages with different topological similarity scores on both speaker and listener side, and the results are shown in Figure \ref{fig4.5:learning_speed_joshua}. Note that the metric for meaning distance is Hamming distance and thus languages with higher $\rho$-values would ``look'' more like our natural language. A higher $\rho$ means that the language is more compositional from perspective of human beings, e.g. $\rho=1$ means that the language is perfectly compositional from our view.
 
 \begin{figure}[!h]
     \centering
@@ -271,9 +286,11 @@ To verify which step imports bias towards emergent language, we slightly change 
     \label{fig4.5:learning_speed_joshua}
 \end{figure}
 
-First of all, we test the learning speed of manually designed languages with different topological similarity scores on both speaker and listener side, and the results are shown in Figure \ref{fig4.5:learning_speed_joshua}. Note that the measurement for meaning distance is Hamming distance and thus languages with higher $\rho$-values would ``look'' more like our natural language. As we can see in Figure \ref{fig4.5:learning_speed_joshua}, language with higher $\rho$-values are much more easier to learn for both speaker and listener, under the current scenario.
+As we can see in Figure \ref{fig4.5:learning_speed_joshua}, language with higher $\rho$-values are much more easier to learn for both speaker and listener, under the current scenario.  
 
-Then, we track the probabilities with different $\rho$-values during the iterated leaning procedure and the results are shown in Figure \ref{fig4.6:lan_prob_IL}. It is straightforward to see that high compositional languages gradually dominate among all kinds of languages generation by generation. 
+Then, we are curious about probability distributions of languages generation by generation. Recall that a language $L$ is a mapping function from meaning space $\mathcal{S}$ to message space $\mathcal{M}$, i.e. $L\in \mathcal{S} \times \mathcal{M}$. Then, we can define the probability of a language $p(L)$ as the product of probabilities of the message corresponding a given set in it, i.e. $p(L)=\prod_{i} p(m_i|s_i), \forall s_i\in \mathcal{S}$ where $m_i$ is the corresponding message in language $L$ for set $s_i$. The probability of a message given an input set is then the product of probabilities of each symbol, i.e. $p(m_i) = \prod_k p(t_{i_k}|h_s^s, t_{i_{-k}})$ where $h_s^s$ is the hidden representation of set $s_i$ and $t_{i_{-k}}$ is the symbols that appear before $t_{i_k}$.
+
+We track the probabilities with different $\rho$-values during the iterated leaning procedure. To be specific, we manually designed many languages with different $\rho$ and calculate their probabilities at the end of each generation. The results are shown in Figure \ref{fig4.6:lan_prob_IL}.
 
 \begin{figure}[!h]
     \centering
@@ -282,6 +299,8 @@ Then, we track the probabilities with different $\rho$-values during the iterate
     \label{fig4.6:lan_prob_IL}
 \end{figure}
 
+From the above figure, it is straightforward to see that high compositional languages gradually dominate among all kinds of languages generation by generation. 
+
 To have an intuitive feeling about the final emergent language with iterated learning and current feature representations, we illustrate it in Table \ref{tab4.6:emregent_language_referential_perfect}. 
 
 \begin{table}[!h]
@@ -289,29 +308,29 @@ To have an intuitive feeling about the final emergent language with iterated lea
     \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|}
         \hline
            & 0A & 1A & 2A & 3A & 4A & 5A & 6A & 7A & 8A \\ \hline
-        0B &    & 20 & 60 & 30 & 30 & 10 & 50 & 70 & 00 \\ \hline
-        1B & 42 & 22 & 62 & 82 & 32 & 12 & 52 & 72 & 02 \\ \hline
-        2B & 48 & 28 & 68 & 88 & 38 & 18 & 58 & 78 & 08 \\ \hline
-        3B & 47 & 27 & 67 & 87 & 37 & 17 & 57 & 77 & 07 \\ \hline
-        4B & 46 & 26 & 66 & 86 & 36 & 16 & 56 & 76 & 06 \\ \hline
-        5B & 45 & 25 & 65 & 85 & 35 & 15 & 55 & 75 & 05 \\ \hline
-        6B & 41 & 21 & 61 & 85 & 31 & 11 & 51 & 71 & 01 \\ \hline
-        7B & 44 & 24 & 64 & 84 & 34 & 14 & 54 & 74 & 04 \\ \hline
-        8B & 33 & 23 & 63 & 83 & 33 & 13 & 53 & 73 & 03 \\ \hline
+        0B &    & yq & uq & xq & xq & zq & vq & tq & qq \\ \hline
+        1B & wy & yy & uy & sy & xy & zy & vy & ty & qy \\ \hline
+        2B & ws & ys & us & ss & xs & zs & vs & ts & qs \\ \hline
+        3B & wt & yt & ut & st & xt & zt & vt & tt & qt \\ \hline
+        4B & wu & yu & uu & su & xu & zu & vu & tu & qu \\ \hline
+        5B & wv & yv & uv & sv & xv & zv & vv & tv & qv \\ \hline
+        6B & wz & yz & uz & sv & xz & zz & vz & tz & qz \\ \hline
+        7B & ww & yw & uw & sw & xw & zw & vw & tw & qw \\ \hline
+        8B & xx & yx & ux & sx & xx & zx & vx & tx & qx \\ \hline
         \end{tabular}
     \caption{Final emergent language in linear feature representation and iterated learning.}
     \label{tab4.6:emregent_language_referential_perfect}
 \end{table}
 
-Then, it is straightforward to decipher the emergent language shown in Table \ref{tab4.6:emregent_language_referential_perfect}. Basically, the symbols appeared in the first digit represent the numbers of ``A'' and the symbols appeared in second digit represent the numbers of ``B''. Of course, the language is still not perfect compositional, as there are some repetitive messages for different meanings, such as ``3A5B'' (85) and ``3A6B'' (85). Besides, it worth mentioning that the same symbol still represents different meanings if it appears at different positions.
+Then, it is straightforward to decipher the emergent language shown in Table \ref{tab4.6:emregent_language_referential_perfect}. Basically, the symbols appeared in the first digit represent the numbers of ``A'' and the symbols appeared in second digit represent the numbers of ``B''. Of course, the language is still not perfect compositional, as there are some repetitive messages for different meanings, such as ``3A5B'' (sv) and ``3A6B'' (sv). Besides, it worth mentioning that the same symbol still represents different meanings if it appears at different positions.
 
-Overall, we could say the the obstacle for the emergence of compositional languages in our Set-Reconstruct and Set-Select games is that symbols in messages do not directly correspond to any feature in the original meaning spaces. As long as the features we want the emergent language to represent is established, the agents could invent almost perfect compositional language by iterated learning.
+Overall, we could say the the obstacle for the emergence of compositional languages in our Set-Reconstruct and Set-Select games is that symbols in messages do not directly correspond to numeric features in the original meaning spaces. As long as the features we want the emergent language to represent is established, the agents could invent almost perfect compositional language by iterated learning.
 
 \section{Further Discussion}
 \label{sec4.5:discuss}
 
 Comparing the experimental results in this chapter with previous work in GLL, e.g. \cite{kottur2017natural, hermann2017grounded, havrylov2017emergence, mordatch2018emergence}, we propose an alternative hypothesis to explain the emergence of compositional language (some previous works call it natural language) during the autonomous communication among agents population.
 
-First of all, we argue that the feature vectors of input experience and perceptions should be inherently disentangled, i.e. the feature vectors of these inputs should satisfy mutual exclusivity and orthogonality defined in Subsection \ref{ssec4.2.1:emergent_languages}, in order to facilitate the emergence of compositional language. Then, it could be an optimal method to use a single symbol as a feature representation of a disentangled element in feature vectors. By comparing the emergent languages in Section \ref{sec4.1:emergence} to \ref{sec4.3:learning_speed} with that in Section \ref{sec4.4:represent_effect}, it is straightforward to see that linear transformed feature representations would be much more optimal for the emergence of highly compositional languages. However, as lots of previous use images as the perceptions for speakers, there is still a gap between our 2 representing methods. Without further experiment, we are not sure about whether the emergence of compositional languages of those works are caused by that convolutional neural networks (CNN) can spontaneously encode images into independent features.
+First of all, we argue that the feature vectors of input experience and perceptions should be inherently disentangled, i.e. the feature vectors of these inputs should satisfy mutual exclusivity and orthogonality defined in Subsection \ref{ssec4.2.1:emergent_languages}, in order to facilitate the emergence of compositional language. Then, it could be an optimal method to use a single symbol as a feature representation of a disentangled element in feature vectors. By comparing the emergent languages in Section \ref{sec4.1:emergence} to \ref{sec4.3:learning_speed} with that in Section \ref{sec4.4:represent_effect}, it is straightforward to see that linear transformed feature representations would be much more optimal for the emergence of highly compositional languages. However, as lots of previous use images as the perceptions for speakers, there is still a gap between our 2 representing methods. Without further experiment, we are not sure about whether the emergence of compositional languages of those works are caused by that convolutional neural networks (CNN) can spontaneously encode images into disentangled representations. Previously, it has been widely believed that the success of unsupervised learning for CNNs depends on that models can automatically establish disentangled representations \cite{bengio2013representation}. However, recently, this common assumption become questioned and challenged by researchers \cite{locatello2018challenging}. Thus, our hypothesis is that the emergence of compositionality is actually highly related to the disentangled representation of models.
 
-Secondly, we argue that iterated learning is an effective method to introduce inductive bias into multi-agent autonomous communication systems, and thus improve the compositionalities of emergent languages. Considering the discoveries in \cite{locatello2018challenging}, we claim that the compositional languages are highly correlated with the appearance of disentangled representations. Further, inductive bias towards compositionalities of different kinds of symbols (which correspond to words in natural languages) should be introduced to different spaces. For example, inductive bias towards the compositionality of symbols corresponding to objects/attributes that physically exists in real/virtual world can be introduced by iterated learning, as the feature values of these objects/attributes are mutually exclusive and independent (or to say, they are inherently disentangled). On the other hand, compositionality of function words, such as numerals in our project, requires the agents to first encode the input features in some specific ways and obtain disentangled representations. Thus, without specially designed training mechanism or data samples that could introduce such pressure, it is natural for agents to invent effective but non-natural ``languages'' during their autonomous communication.
+Secondly, we argue that iterated learning is an effective method to amplify inductive bias into multi-agent autonomous communication systems, and thus improve the compositionalities of emergent languages. Considering the discoveries in \cite{locatello2018challenging}, we claim that the compositional languages are highly correlated with the appearance of disentangled representations. Further, inductive bias towards compositionalities of different kinds of symbols (which correspond to words in natural languages) should be introduced to different spaces. For example, inductive bias towards the compositionality of symbols corresponding to objects/attributes that physically exists in real/virtual world can be introduced by iterated learning, as the feature values of these objects/attributes are mutually exclusive and independent (or to say, they are inherently disentangled). On the other hand, compositionality of function words, such as numerals in our project, requires the agents to first encode the input features in some specific ways and obtain disentangled representations. Thus, without specially designed training mechanism or data samples that could introduce such pressure, it is natural for agents to invent effective but non-natural ``languages'' during their autonomous communication.

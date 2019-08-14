@@ -1,4 +1,4 @@
-\chapter{Game, Models and Measurements}
+\chapter{Game, Models and Metrics}
 \label{ch3:game_model}
 
 In this chapter, we first describe the proposed language game and the definition of numerals in our game. We then introduce the architecture of models we used and also the iterated learning for training models.
@@ -30,8 +30,8 @@ It worth mentioning that one premise of our project is that we do not have any a
 
 According to the steps of playing games at iteration $i$, the components of our games are illustrated as follows:
 \begin{enumerate}
-  \item Perceptions: the perception from environments is a \textbf{set} of objects, i.e. $s_i=\{o_{i_1}, o_{i_2}, \dots\ o_{i_n}\}$ where $n$ is the number of elements.
-  \item Speaker observation and message generation: after observing and encoding the perception, speaker $S$ would generate a message $m_i=\{s_{i_1}, s_{i_2}, \dots, s_{|M|}\}$ where $|M|$ is the maximum length of messages and $s_k, k \in {1, \dots, |V|}$ are selected from a randomly initialised vocabulary such that the symbols in the initially meaningless vocabulary whose size is $|V|$;
+  \item Perceptions: the perception from environments is a \textbf{set} of objects, i.e. $s_i=\{o_{i_1}, o_{i_2}, \dots\ o_{i_n}\} \in \mathcal{S}$ where $n$ is the number of elements.
+  \item Speaker observation and message generation: after observing and encoding the perception, speaker $S$ would generate a message $m_i=\{t_{i_1}, t_{i_2}, \dots, t_{|M|}\} \in \mathcal{M}$ where $|M|$ is the maximum length of messages and $t_k, k \in {1, \dots, |V|}$ are selected from a randomly initialised vocabulary such that the symbols in the initially meaningless vocabulary whose size is $|V|$;
   \item Listener receiving message and perception reconstruction: after receiving and encoding the message $m_i$, the listener would generate a \textbf{sequence} $\hat{s}_i = \{\hat{o}_{i_1}, \hat{o}_{i_2}, \dots\ \hat{o}_{i_n}\}$ whose symbols are identical to those in the original perception $s_i$;
   \item Reward and parameter update: by comparing $s_i$ and $\hat{s}_i$, we take the cross-entropy between them as the reward for both listener and speaker and update parameters of both speaker and listener with respect to it.\footnote{Different ways of updating parameters are introduced in Section \ref{sec3.2:models}.}
 \end{enumerate}
@@ -114,7 +114,7 @@ Besides, in our implementation, $T$ is set to be the same as the number of all t
 
 To generate the message $m_i$, we follow \cite{havrylov2017emergence} and adopt a LSTM-based sequence decoder with 2 different kinds of sampling mechanisms: i)direct sampling that directly sample from the corresponding categorical distribution specified by $softmax(Wh_k + b)$; ii) GUMBEL-softmax estimator proposed by \cite{jang2016categorical} with straight-through trick introduced in \cite{bengio2013estimating}. Beside, the learning mechanisms also vary for these 2 different sampling methods, which is further discussed in Subsection \ref{ssec3.2.3:loss_learning}.
 
-Note that the length of each message $m_i$ is fixed to $ $ and symbols $s_{i_1},\dots,s_{i_|M|}$ are all one-hot vectors that represent different discrete symbols. The effect of number of all discrete message symbols $|V|$ and length of messages $|M|$ on the emergent language is further discussed in Chapter \ref{ch4:results_analysis}.
+Note that the length of each message $m_i$ is fixed to $|M|$ and symbols $t_{i_1},\dots,t_{i_|M|}$ are all one-hot vectors that represent different discrete symbols. The effect of number of all discrete message symbols $|V|$ and length of messages $|M|$ on the emergent language is further discussed in Chapter \ref{ch4:results_analysis}.
 
 \subsection{Listener}
 \label{ssec3.2.2:listeners}
@@ -149,7 +149,7 @@ In the case that we use GUMBEL-softmax for sampling messages from speaker $S$, p
 \subsection{Neural Iterated Learning}
 \label{ssec3.2.4:iterated_learning}
 
-The evolutionary linguistic community has already studied the origins and measurements of language compositionality since \cite{kirby2002emergence} which points out a cultural evolutionary account of the origins of compositionality and proposes iterated learning to model this procedure. Thus, to facilitate the emergence of compositionality among the autonomous communication between agents, we also trained our agents in a iterated learning fashion. In the original iterated learning, an agent can both speak and listen. However, in this project, agent can be either a speaker or a listener, not both at the same time. Thus, we slightly transform the iterated learning framework and call the following one ``neural iterated learning'' (NIL).
+The evolutionary linguistic community has already studied the origins and metrics of language compositionality since \cite{kirby2002emergence} which points out a cultural evolutionary account of the origins of compositionality and proposes iterated learning to model this procedure. Thus, to facilitate the emergence of compositionality among the autonomous communication between agents, we also trained our agents in a iterated learning fashion. In the original iterated learning, an agent can both speak and listen. However, in this project, agent can be either a speaker or a listener, not both at the same time. Thus, we slightly transform the iterated learning framework and call the following one ``neural iterated learning'' (NIL).
 
 Following the overall architecture of iterated learning, we also train agents generation by generation. In the beginning of each generation $t$, we would instantiate a new speaker $S_t$ and a new listener $L_t$ and then execute the following 3 phases:
 
@@ -168,8 +168,8 @@ In Set-Reconstruct game, our baseline is Set-to-Seq model which first encodes th
 
 As for in Set-Select game, our baseline is Set-to-Choose model, in which speaker directly transmit representation vector $h^s_s$ of set $s_i$ to listener. And, listener compare $h^s_s$ with all candidate sets to make a selection.
 
-\section{Compositionality and Measurements}
-\label{sec3.3:measurements}
+\section{Compositionality and Metrics}
+\label{sec3.3:metrics}
 
 With the recent rapid development of GLL, measuring the compositionality of emergent communication protocol attracts more and more attention nowadays, e.g. \cite{andreas2019measuring}, \cite{lowe2019pitfalls}.
 
@@ -180,11 +180,11 @@ First of all, to better define compositionality, we argue that if a language is 
     \item \textbf{Orthogonality}: Appearance of symbols for describing a property should be independent from the appearance of symbols used to describe another property. For example, the appearance of symbols used for describing colours of objects should be independent from the appearance of symbols used for describing shapes of objects.
 \end{itemize}
 
-As the setting of our game is simple and the space size is limited, we follow \cite{brighton2006understanding} and take the topological similarity between meaning space (space of all sets of objects) and message space as the measurement of compositionality. Briefly speaking, as much of language is neighbourhood related, i.e. nearby meanings tend to be mapped to nearby messages, the compositionality of language can be measured as the correlation degree between distances of meanings and distances of corresponding messages. For example, the meaning of set $\{A,A,A,B,B\}$ is closer to $\{A,A,B,B\}$ than $\{A,A,A,A,B,B,B\}$. In natural language (which is perfectly compositional), messages for  $\{A,A,A,B,B\}, \{A,A,B,B\}, \{A,A,A,A,B,B,B\}$ are ``3A2B'', ``2A2B'' and ``4A3B'' respectively. However, in a non-compositional language, the messages may be ``5B5A'', ``1C2E'' and ``3A4C''.
+As the setting of our game is simple and the space size is limited, we follow \cite{brighton2006understanding} and take the topological similarity between meaning space (space of all sets of objects) and message space as the metric of compositionality. Briefly speaking, as much of language is neighbourhood related, i.e. nearby meanings tend to be mapped to nearby messages, the compositionality of language can be measured as the correlation degree between distances of meanings and distances of corresponding messages. For example, the meaning of set $\{A,A,A,B,B\}$ is closer to $\{A,A,B,B\}$ than $\{A,A,A,A,B,B,B\}$. In natural language (which is perfectly compositional), messages for  $\{A,A,A,B,B\}, \{A,A,B,B\}, \{A,A,A,A,B,B,B\}$ are ``3A2B'', ``2A2B'' and ``4A3B'' respectively. However, in a non-compositional language, the messages may be ``5B5A'', ``1C2E'' and ``3A4C''.
 
-In order to calculate the topological compositionality, we need define the distance measurement for meaning space and message space respectively. Thus, for an input set $s_i$, we could first count the number of each kind of object and then concatenate the Arabic numerals as the meaning sequence. Take a set $s_i=\{A, A, A, B, B\}$ for example, the corresponding meaning sequence would be ``32'' as there are 3 $A$ and 2 $B$ in $s_i$.\footnote{Again, the appearing order of objects would not effect the meaning sequence of a set.} As for the message space, we have several different settings which are further illustrated in subsection \ref{ssec4.2.2:topo_sim}, and edit distance as in \cite{brighton2006understanding} is also included.
+In order to calculate the topological compositionality, we need define the distance metric for meaning space and message space respectively. Thus, for an input set $s_i$, we could first count the number of each kind of object and then concatenate the Arabic numerals as the meaning sequence. Take a set $s_i=\{A, A, A, B, B\}$ for example, the corresponding meaning sequence would be ``32'' as there are 3 $A$ and 2 $B$ in $s_i$.\footnote{Again, the appearing order of objects would not effect the meaning sequence of a set.} As for the message space, we have several different settings which are further illustrated in subsection \ref{ssec4.2.2:topo_sim}, and edit distance as in \cite{brighton2006understanding} is also included.
 
-Meanwhile, as we could perfectly encode the meaning of a set into natural language, we could take the speaker as a machine translation model that translates a meaning represented in natural language into emergent language invented by computational agents themselves. Inspired by this point of view, we could also use BLEU score proposed by \cite{papineni2002bleu} as a measurement of semantic similarities between messages. For the sets that share more similar meanings, we expect their corresponding messages to share more uni-grams or bi-grams or so on. Following the above example, in a perfectly compositional language, as $\{A,A,A,B,B\}$ locates very close to $\{A,A,B,B\}$, their messages (``3A2B'' and ``2A2B'') share $3$ uni-grams (``A'', ``B'' and ``2'') and $2$ bi-grams (``A2'' and ``2B'') in common. However, in a non-compositional language, e.g. in which the messages for $\{A,A,A,B,B\}$ and $\{A,A,B,B\}$ are ``5B5A'' and ``1C2E'' respectively, the messages share no uni-gram and bi-gram in common.
+Meanwhile, as we could perfectly encode the meaning of a set into natural language, we could take the speaker as a machine translation model that translates a meaning represented in natural language into emergent language invented by computational agents themselves. Inspired by this point of view, we could also use BLEU score proposed by \cite{papineni2002bleu} as a metric of semantic similarities between messages. For the sets that share more similar meanings, we expect their corresponding messages to share more uni-grams or bi-grams or so on. Following the above example, in a perfectly compositional language, as $\{A,A,A,B,B\}$ locates very close to $\{A,A,B,B\}$, their messages (``3A2B'' and ``2A2B'') share $3$ uni-grams (``A'', ``B'' and ``2'') and $2$ bi-grams (``A2'' and ``2B'') in common. However, in a non-compositional language, e.g. in which the messages for $\{A,A,A,B,B\}$ and $\{A,A,B,B\}$ are ``5B5A'' and ``1C2E'' respectively, the messages share no uni-gram and bi-gram in common.
 
 In our case, the BLEU score between $m_i$ and $m_j$ is calculated as follow:
 
@@ -192,5 +192,6 @@ In our case, the BLEU score between $m_i$ and $m_j$ is calculated as follow:
   BLEU(m_i, m_j) = 1 - \sum_{n=1}^{N} \omega_n \cdot \frac{\mbox{Number of common } n\mbox{-grams}}{\mbox{Number of total different } n\mbox{-grams}}
   \label{eq3.3.1:bleu_score}
 \end{equation}
+where $n$ is the size of $n$-grams and $\omega_n$ is the weight for similarity based on $n$-grams. In the following discussions, we would denote BLEU score based on $n$-grams as BLEU-$n$, e.g. BLEU score based on uni-grams would be represented as BLEU-1.
 
-where $n$ is the size of $n$-grams and $\omega_n$ is the weight for similarity based on $n$-grams.
+
