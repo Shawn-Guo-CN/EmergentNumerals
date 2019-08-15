@@ -1,7 +1,7 @@
 \chapter{Game, Models and Metrics}
 \label{ch3:game_model}
 
-In this chapter, we first describe the proposed language game and the definition of numerals in our game. We then introduce the architecture of models we used and also the iterated learning for training models.
+In this chapter, we first describe the proposed language game and the definition of numerals in our game. We then introduce the architecture of models we trained and also the transformed iterated learning framework for training models.
 
 \section{Game Description}
 \label{sec3.1:game_description}
@@ -30,8 +30,8 @@ It worth mentioning that one premise of our project is that we do not have any a
 
 According to the steps of playing games at iteration $i$, the components of our games are illustrated as follows:
 \begin{enumerate}
-  \item Perceptions: the perception from environments is a \textbf{set} of objects, i.e. $s_i=\{o_{i_1}, o_{i_2}, \dots\ o_{i_n}\} \in \mathcal{S}$ where $n$ is the number of elements.
-  \item Speaker observation and message generation: after observing and encoding the perception, speaker $S$ would generate a message $m_i=\{t_{i_1}, t_{i_2}, \dots, t_{|M|}\} \in \mathcal{M}$ where $|M|$ is the maximum length of messages and $t_k, k \in {1, \dots, |V|}$ are selected from a randomly initialised vocabulary such that the symbols in the initially meaningless vocabulary whose size is $|V|$;
+  \item Perceptions: the perception from environments is a \textbf{set} of objects, i.e. $s_i=\{o_{i_1}, o_{i_2}, \dots\ o_{i_n}\} \in \mathcal{S}$ where $n$ is the number of elements and $\mathcal{S}$ is meaning space.
+  \item Speaker observation and message generation: after observing and encoding the perception, speaker $S$ would generate a message $m_i=\{t_{i_1}, t_{i_2}, \dots, t_{i_{|M|}}\} \in \mathcal{M}$ where $|M|$ is the maximum length of messages, $t_k \in V$ ($k \in {1, \dots, |V|}$) are selected from a randomly initialised vocabulary such that the symbols in the initially meaningless vocabulary whose size is $|V|$, and $\mathcal{M}$ is message space;
   \item Listener receiving message and perception reconstruction: after receiving and encoding the message $m_i$, the listener would generate a \textbf{sequence} $\hat{s}_i = \{\hat{o}_{i_1}, \hat{o}_{i_2}, \dots\ \hat{o}_{i_n}\}$ whose symbols are identical to those in the original perception $s_i$;
   \item Reward and parameter update: by comparing $s_i$ and $\hat{s}_i$, we take the cross-entropy between them as the reward for both listener and speaker and update parameters of both speaker and listener with respect to it.\footnote{Different ways of updating parameters are introduced in Section \ref{sec3.2:models}.}
 \end{enumerate}
@@ -41,16 +41,16 @@ One thing that needs to be highlighted is that the perceptions $s_i$ are sets an
 \subsection{Functions of Numerals in the Game}
 \label{ssec3.1.2:numeral_in_game}
 
-Broadly speaking, numerals are words that can describe the numerical quantities and usually act as determiners to specify the quantities of nouns, e.g. "two dogs" and "three people". Also, under most scenarios, numerals correspond to non-referential concepts\cite{da2016wow}. Considering the objective of listeners $L$ in our language game, we define a numeral as a symbol $s^n$ at \textbf{position} $i$ indicating a function that reconstructs some object $o_i$ exactly $n$ times:
+Broadly speaking, numerals are words that can describe the numerical quantities and usually act as determiners to specify the quantities of nouns, e.g. "two dogs" and "three people". Also, under most scenarios, numerals correspond to non-referential concepts\cite{da2016wow}. Considering the objective of listeners $L$ in our language game, we define a numeral as a symbol $t^n$ at \textbf{position} $i$ indicating a function that reconstructs some object $o_i$ exactly $n$ times:
 
 \begin{equation}
-  s^n: o_i \rightarrow \{\overbrace{o_i, \dots, o_i}^{n \mbox{ elements}}\}
+  t^n: o_i \rightarrow \{\overbrace{o_i, \dots, o_i}^{n \mbox{ elements}}\}
   \label{eq:3.1numeral_define}
 \end{equation}
 
 Note that, the meaning of a symbol is not only decided by itself but also its position in message, as $L$ would encode meanings of symbols according to their appearance in messages.
 
-From the side of speakers $S$, a numeral is defined as a symbol $s^n$ at \textbf{position} $i$ that represents the numbers of specific object $o_i$, as we cannot whether agents realise the meanings of symbols are not related to their positions in the messages, without specifically designed model architecture. Thus, we expect $S$ would first learn to count the number of different objects and then encode them into a sequence of discrete symbols. As \cite{Siegelmann1992NN} shows that Recurrent Neural Networks (RNNs) are Turing-complete and Long-short Term Memory (LSTM) model proposed by \cite{hochreiter1997long} is a super set of RNN, it is safe to claim that LSTM is also Turing-complete and thus capable of counting numbers of objects.
+From the side of speakers $S$, a numeral is defined as a symbol $t^n$ at \textbf{position} $i$ that represents the numbers of specific object $o_i$, as we cannot tell whether agents realise the meanings of symbols are not related to their positions in the messages without specifically designed model architecture. Thus, we expect speaker $S$ would first learn to count the number of different objects and then encode them into a sequence of discrete symbols. As \cite{Siegelmann1992NN} shows that Recurrent Neural Networks (RNNs) are Turing-complete and Long-short Term Memory (LSTM) model proposed by \cite{hochreiter1997long} is a super set of RNN, it is safe to claim that LSTM is also Turing-complete and thus capable of counting numbers of objects.
 
 \subsection{A Variant: Set-Select Game}
 \label{ssec:3.1.3:refer_game}
@@ -74,7 +74,11 @@ We illustrate the Set-Select game, a referential variant of Set-Reconstruct game
   \label{fig4:model_arch}
 \end{figure}
 
-We illustrate the overall architecture of our models in Figure \ref{fig4:model_arch} given above. A speaker $S$ consists of 2 components: i) a set encoder that takes a set of objects as input and outputs its vector representation $h_s^s$; ii) a standard LSTM sequence decoder that can generate a message $s_{i_1}, s_{i_2}, s_{i_3}, \dots$ based on $h_s^s$. As for a listeners $L$, it would first encode messages with a LSTM sequence encoder and get the feature vector $h^l_m$. Then, in the Set-Reconstruct game, $L$ would take $h^l_m$ as the initial hidden state and predict a sequence of objects with a LSTM sequence decoder. As for in Set-Select game, $L$ would compare $h^l_m$ with several sets which are encoded by set encoders of $L$ and select the one shown to $S$ based on the dot product between $h^l_m$ and feature vectors of each set.
+We illustrate the overall architecture of our models in Figure \ref{fig4:model_arch} given above. 
+
+A speaker $S$ consists of 2 components: i) a set encoder that takes a set of objects as input and outputs its vector representation $h_s^s$; ii) a standard LSTM sequence decoder that can generate a message $s_{i_1}, s_{i_2}, s_{i_3}, \dots$ based on $h_s^s$. 
+
+As for a listeners $L$, it would first encode messages with a LSTM sequence encoder and get the feature vector $h^l_m$. Then, in the Set-Reconstruct game, $L$ would take $h^l_m$ as the initial hidden state and predict a sequence of objects with a LSTM sequence decoder, which is shown by the right upper part of Figure \ref{fig4:model_arch}. As for in Set-Select game, $L$ would compare $h^l_m$ with several sets which are encoded by set encoders of $L$, and select the one shown to $S$ based on the dot product between $h^l_m$ and feature vectors of all candidate sets.
 
 Further details are shown in the following subsections.
 
@@ -112,7 +116,7 @@ Besides, in our implementation, $T$ is set to be the same as the number of all t
 \subsubsection{Message Generator}
 \label{sssec3.2.1.2:msg_generator}
 
-To generate the message $m_i$, we follow \cite{havrylov2017emergence} and adopt a LSTM-based sequence decoder with 2 different kinds of sampling mechanisms: i)direct sampling that directly sample from the corresponding categorical distribution specified by $softmax(Wh_k + b)$; ii) Gumbel-softmax estimator proposed by \cite{jang2016categorical} with straight-through trick introduced in \cite{bengio2013estimating}. Beside, the learning mechanisms also vary for these 2 different sampling methods, which is further discussed in Subsection \ref{ssec3.2.3:loss_learning}.
+To generate the message $m_i$, we follow \cite{havrylov2017emergence} and adopt a LSTM-based sequence decoder with 2 different kinds of sampling mechanisms: i) direct sampling that directly sample from the corresponding categorical dist6ribution specified by $softmax(Wh_k^s + b)\ \forall k\in {1, 2, \dots, |M|}$; ii) Gumbel-softmax estimator proposed by \cite{jang2016categorical} with straight-through trick introduced by \cite{bengio2013estimating}. Beside, the learning mechanisms also vary for these 2 different sampling methods, which is further discussed in Subsection \ref{ssec3.2.3:loss_learning}.
 
 Note that the length of each message $m_i$ is fixed to $|M|$ and symbols $t_{i_1},\dots,t_{i_|M|}$ are all one-hot vectors that represent different discrete symbols. The effect of number of all discrete message symbols $|V|$ and length of messages $|M|$ on the emergent language is further discussed in Chapter \ref{ch4:results_analysis}.
 
@@ -151,7 +155,7 @@ In the case that we use Gumbel-softmax to approximate sampling messages from spe
 
 The evolutionary linguistic community has already studied the origins and metrics of language compositionality since \cite{kirby2002emergence} which points out a cultural evolutionary account of the origins of compositionality and proposes iterated learning to model this procedure. Thus, to facilitate the emergence of compositionality among the autonomous communication between agents, we also trained our agents in a iterated learning fashion. In the original iterated learning, an agent can both speak and listen. However, in this project, agent can be either a speaker or a listener, not both at the same time. Thus, we slightly transform the iterated learning framework and call the following one ``neural iterated learning'' (NIL).
 
-Following the overall architecture of iterated learning, we also train agents generation by generation. In the beginning of each generation $t$, we would instantiate a new speaker $S_t$ and a new listener $L_t$ and then execute the following 3 phases:
+Following the overall architecture of iterated learning, we also train agents generation by generation. In the beginning of each generation $t$, we would randomly re-instantiate a new speaker $S_t$ and a new listener $L_t$ and then execute the following 3 phases:
 
 \begin{enumerate}
   \item \textbf{Speaker Learning phase}: During this phase, we would train $S_t$ with the set-message pairs generated by $S_{t-1}$, and the number of epochs is set to be fixed. Note that there is no such phase in the initial generation, as there is no set-message pair for training $S_t$.
@@ -171,7 +175,7 @@ As for in Set-Select game, our baseline is Set-to-Choose model, in which speaker
 \section{Compositionality and Metrics}
 \label{sec3.3:metrics}
 
-With the recent rapid development of GLL, measuring the compositionality of emergent communication protocol attracts more and more attention nowadays, e.g. \cite{andreas2019measuring}, \cite{lowe2019pitfalls}.
+With the recent rapid development of grounded language learning, measuring the compositionality of emergent communication protocol attracts more and more attention nowadays, e.g. \cite{andreas2019measuring}, \cite{lowe2019pitfalls}.
 
 First of all, to better define compositionality, we argue that if a language is said to be perfect compositional, then it should satisfy the following 2 properties:
 
@@ -180,7 +184,7 @@ First of all, to better define compositionality, we argue that if a language is 
     \item \textbf{Orthogonality}: Appearance of symbols for describing a property should be independent from the appearance of symbols used to describe another property. For example, the appearance of symbols used for describing colours of objects should be independent from the appearance of symbols used for describing shapes of objects.
 \end{itemize}
 
-As the setting of our game is simple and the space size is limited, we follow \cite{brighton2006understanding} and take the topological similarity between meaning space (space of all sets of objects) and message space as the metric of compositionality. Briefly speaking, as much of language is neighbourhood related, i.e. nearby meanings tend to be mapped to nearby messages, the compositionality of language can be measured as the correlation degree between distances of meanings and distances of corresponding messages. For example, the meaning of set $\{A,A,A,B,B\}$ is closer to $\{A,A,B,B\}$ than $\{A,A,A,A,B,B,B\}$. In natural language (which is perfectly compositional), messages for  $\{A,A,A,B,B\}, \{A,A,B,B\}, \{A,A,A,A,B,B,B\}$ are ``3A2B'', ``2A2B'' and ``4A3B'' respectively. However, in a non-compositional language, the messages may be ``5B5A'', ``1C2E'' and ``3A4C''.
+As the setting of our game is simple and the space size is limited, we follow \cite{brighton2006understanding} and take the topological similarity between meaning space (space of all sets of objects) and message space as the metric of compositionality. Briefly speaking, as much of language is neighbourhood related, i.e. nearby meanings tend to be mapped to nearby messages, the compositionality of language can be measured as the correlation degree between distances of meanings and distances of corresponding messages. For example, the meaning of set $\{A,A,A,B,B\}$ is closer to $\{A,A,B,B\}$ than $\{A,A,A,A,B,B,B\}$. In natural language (which is perfectly compositional), messages for  $\{A,A,A,B,B\}, \{A,A,B,B\}, \{A,A,A,A,B,B,B\}$ are ``3A2B'', ``2A2B'' and ``4A3B''\footnote{In Chapter \ref{ch4:results_analysis}, we would illustrate messages with lower case alphabets. To make them easier to understand, we use natural language here.} respectively. However, in a non-compositional language, the messages may be ``5B5A'', ``1C2E'' and ``3A4C'',  which are randomly sampled mappings between meaning space and message space.
 
 In order to calculate the topological compositionality, we need define the distance metric for meaning space and message space respectively. Thus, for an input set $s_i$, we could first count the number of each kind of object and then concatenate the Arabic numerals as the meaning sequence. Take a set $s_i=\{A, A, A, B, B\}$ for example, the corresponding meaning sequence would be ``32'' as there are 3 $A$ and 2 $B$ in $s_i$.\footnote{Again, the appearing order of objects would not effect the meaning sequence of a set.} As for the message space, we have several different settings which are further illustrated in subsection \ref{ssec4.2.2:topo_sim}, and edit distance as in \cite{brighton2006understanding} is also included.
 
