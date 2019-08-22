@@ -101,6 +101,7 @@ def listener_warming_up_phase(
             acc, loss = train_epoch(
                 model,
                 data_batch,
+                args.tau,
                 s_optimiser,
                 l_optimiser
             )

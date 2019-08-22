@@ -216,11 +216,11 @@ def train():
                     'training_acc': training_acc,
                     'eval_acc': eval_acc,
                 }
-            }, os.path.join(directory, '{}_{}.tar'.format(iter, 'checkpoint')))
+            }, os.path.join(directory, '{}_{}_{}.tar'.format(args.seed, iter, 'checkpoint')))
 
 
 if __name__ == '__main__':
-    set_random_seed(1234)
+    set_random_seed(args.seed)
     with autograd.detect_anomaly():
         print('with detect_anomaly')
         if args.test:

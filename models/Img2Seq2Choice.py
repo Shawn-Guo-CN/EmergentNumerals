@@ -214,4 +214,4 @@ class Img2Seq2Choice(nn.Module):
         del self.listener
         self.listener = ListeningAgent(
             self.msg_vocsize, self.hidden_size,self.dropout, self.msg_embedding,
-        ).to(self.speaker.embedding.weight.device)
+        ).to(self.speaker.msg_embedding.device)
