@@ -101,19 +101,19 @@ class ImgCNNEncoder(nn.Module):
         super().__init__()
         self.hidden_size = hidden_size
 
+        # input has to be 3 channels
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.conv2 = nn.Conv2d(6, 16, 5)
         
-        self.fc1 = nn.Linear(16 * 47 * 72, 4096)
-        self.fc2 = nn.Linear(4096, 1024)
-        self.fc3 = nn.Linear(1024, self.hidden_size)
+        # the following size is only feasible for images with size 3*100*50
+        self.fc1 = nn.Linear(16 * 22 * 9, 1024)
+        self.fc2 = nn.Linear(1024, self.hidden_size)
 
     def forward(self, imgs_tensor):
         x = F.max_pool2d(F.relu(self.conv1(imgs_tensor)), (2, 2))
         # If the size is a square you can only specify a single number
         x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        x = x.view(-1, 16 * 47 * 72)
+        x = x.view(-1, 16 * 22 * 9)
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = self.fc2(x)
         return x
