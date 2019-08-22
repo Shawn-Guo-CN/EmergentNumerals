@@ -2,22 +2,30 @@ from PIL import Image, ImageDraw
 import os
 from utils.conf import args
 
-def generate_image(digits, base_img, obj_imgs, out_file):
+SIZE_SPACE = 20 # size of the space for a single object
+
+def generate_image(digits, base_img, obj_imgs, out_file, max_num_objs=5):
     assert len(digits) <= len(obj_imgs)
 
     cur_base = base_img.copy()
     for i in range(len(digits)):
         cur_num = int(digits[i])
         for j in range(cur_num):
-            cur_base.paste(obj_imgs[i], (60*j + 5, 60*i + 5))
+            cur_base.paste(obj_imgs[i], (SIZE_SPACE*j + max_num_objs, SIZE_SPACE*i + max_num_objs))
     cur_base.save(out_file, 'PNG')
 
-def generate_all_combinations(base_img, obj_imgs, prefix='', type_idx=0, out_dir='data/img_set_25'):
+def generate_all_combinations(base_img, obj_imgs, prefix='', type_idx=0, out_dir='data/img_set_25', max_num_objs=5):
     if type_idx == args.num_words - 1:
         for i in range(0, args.max_len_word+1):
             target_str = str(i)
             print(prefix+target_str)
-            generate_image(prefix+target_str, base_img, obj_imgs, out_file=os.path.join(out_dir, prefix+target_str+'.png'))
+            generate_image(
+                prefix+target_str, 
+                base_img,
+                obj_imgs, 
+                out_file=os.path.join(out_dir, prefix+target_str+'.png'), 
+                max_num_objs=max_num_objs
+            )
     else:
         for i in range(0, args.max_len_word+1):
             target_str = str(i)
@@ -39,7 +47,7 @@ def generate_image_set(
 
     obj_imgs = [Image.open(os.path.join(obj_img_dir+name)) for name in obj_file_names]
 
-    generate_all_combinations(base_img, obj_imgs, out_dir='data/img_set_25')
+    generate_all_combinations(base_img, obj_imgs, out_dir='data/img_set_25', max_num_objs=max_num_objs)
 
     
 
