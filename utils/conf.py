@@ -1,5 +1,6 @@
 import argparse
 import random
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -171,5 +172,6 @@ args.max_seq_len = args.num_words * args.max_len_word + 1
 
 def set_random_seed(seed:int):
     random.seed(seed)
+    np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
