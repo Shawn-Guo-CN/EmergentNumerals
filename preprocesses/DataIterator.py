@@ -4,6 +4,9 @@ import math
 import itertools
 import numpy as np
 import random
+import os
+import torchvision
+from PIL import Image
 
 from utils.conf import args
 from preprocesses.Voc import Voc
@@ -487,12 +490,127 @@ class ChoosePairDataset(Dataset):
         return batches
 
 
+class ImgChooseDataset(Dataset):
+    def __init__(
+            self,
+            batch_size=args.batch_size, 
+            dataset_dir_path=args.train_file,
+            device=args.device,
+            d_num=args.num_distractors
+        ):
+        super().__init__()
+        self.batch_size = batch_size
+        self.device = device
+        self.dir_path = dataset_dir_path
+        self.d_num = d_num # number of disctractors
+
+        self.databatch_set = self.build_batches()
+        self.batch_indices = np.arange(len(self.databatch_set))
+
+    def __len__(self):
+        return len(self.databatch_set)
+    
+    def __getitem__(self, idx):
+        correct_batch = self.databatch_set[idx]
+
+        candidate_batches = []
+        golden_idx = random.randint(0, self.d_num)
+        for i in range(self.d_num+1):
+            if i == golden_idx:
+                candidate_batches.append(self.databatch_set[idx])
+            else:
+                candidate_batches.append(self.generate_distractor_batch(idx))
+        
+        return {
+            'correct': correct_batch,
+            'candidates': candidate_batches,
+            'label': golden_idx
+        }
+
+    def generate_distractor_batch(self, tgt_idx):
+        sample_idx = np.random.choice(self.batch_indices)
+        while self.batch_size == 1 and sample_idx == tgt_idx:
+            sample_idx = np.random.choice(self.batch_indices)
+        
+        if sample_idx == tgt_idx:
+            return self.reperm_batch(tgt_idx)
+        else:
+            return self.databatch_set[sample_idx]
+
+    def reperm_batch(self, tgt_idx):
+        batch_size = self.databatch_set[tgt_idx]['imgs'].shape[0]
+
+        original_idx = torch.arange(batch_size, device=self.device)
+        new_idx = torch.randperm(batch_size, device=self.device)
+
+        while not (original_idx == new_idx).sum().eq(0):
+            new_idx = torch.randperm(batch_size, device=self.device)
+
+        shuffled_imgs = self.databatch_set[tgt_idx]['imgs'][new_idx]
+        shuffled_labels = [self.databatch_set[tgt_idx]['label'][i] for i in new_idx]
+
+        return {
+            'imgs': shuffled_imgs,
+            'label': shuffled_labels,
+        }
+
+    @staticmethod
+    def load_img_set(dir_path):
+        img_file_names = os.listdir(dir_path)
+        imgs = [Image.open(os.path.join(dir_path, name)).convert('RGB') for name in img_file_names]
+        return img_file_names, imgs
+
+    @staticmethod
+    def build_img_tensors(imgs, device=args.device):
+        tensors = []
+        for img in imgs:
+            tensors.append(torchvision.transforms.ToTensor()(img))
+        tensors = torch.stack(tensors).to(device)
+        return tensors
+
+    def build_batches(self):
+        batches = []
+
+        img_names, imgs = ImgChooseDataset.load_img_set(self.dir_path)
+        img_names = [name.split('.')[0] for name in img_names]
+
+        assert len(img_names) == len(imgs)
+        c = list(zip(img_names, imgs))
+        img_names, imgs = zip(*c)
+        img_names = list(img_names)
+        imgs = list(imgs)
+
+        # ceil/floor
+        if len(imgs) < self.batch_size:
+            num_batches = 1
+        else:
+            num_batches = math.floor(len(imgs) / self.batch_size)
+
+        for i in range(num_batches):
+            img_batch = ImgChooseDataset.build_img_tensors(
+                    imgs[i*self.batch_size: min((i+1)*self.batch_size, len(imgs))],
+                    device=self.device
+                )
+            img_label_batch = img_names[i*self.batch_size: min((i+1)*self.batch_size, len(imgs))]
+
+            batches.append({
+                'imgs': img_batch,
+                'label': img_label_batch,
+            })
+
+        return batches
+
+
 if __name__ == '__main__':
-    voc = Voc()
-    batchset = ChoosePairDataset(voc, dataset_file_path='./data/2_perfect/all_data.txt')
+    dataset = ImgChooseDataset(
+        batch_size=7, 
+        dataset_dir_path='data/img_set_25/',
+        device=torch.device('cpu'),
+        d_num=11
+    )
 
     print('correct batch:')
-    print(batchset[0]['correct'])
+    print(dataset[0]['correct']['imgs'].shape)
 
-    print('first distract:')
-    print(batchset[0]['distracts'][0])
+    # print('first distract:')
+    # print(dataset[0]['candidates'][0])
