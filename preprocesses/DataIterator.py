@@ -513,14 +513,18 @@ class ImgChooseDataset(Dataset):
     def __getitem__(self, idx):
         correct_batch = self.databatch_set[idx]
 
-        candidate_batches = []
-        golden_idx = random.randint(0, self.d_num)
-        for i in range(self.d_num+1):
-            if i == golden_idx:
-                candidate_batches.append(self.databatch_set[idx])
-            else:
-                candidate_batches.append(self.generate_distractor_batch(idx))
-        
+        candidate_batches = [
+            self.generate_distractor_batch(idx) for _ in range(self.d_num+1)
+        ]
+
+        golden_idx = np.random.randint(0, high=self.d_num+1, size=(correct_batch['imgs'].shape[0]))
+
+        for i in range(correct_batch['imgs'].shape[0]):
+            candidate_batches[golden_idx[i]]['imgs'][i, :, :, :] = correct_batch['imgs'][i, :, :, :]
+            candidate_batches[golden_idx[i]]['label'][i] = correct_batch['label'][i]
+
+        golden_idx = torch.from_numpy(golden_idx).to(self.device).to(torch.long)
+
         return {
             'correct': correct_batch,
             'candidates': candidate_batches,
@@ -596,6 +600,145 @@ class ImgChooseDataset(Dataset):
             batches.append({
                 'imgs': img_batch,
                 'label': img_label_batch,
+            })
+
+        return batches
+
+
+class ImgChoosePairDataset(Dataset):
+    def __init__(
+            self,
+            batch_size=args.batch_size, 
+            dataset_dir_path=args.train_file,
+            lan_file_path=args.data_file,
+            device=args.device,
+            d_num=args.num_distractors
+        ):
+        super().__init__()
+        self.batch_size = batch_size
+        self.device = device
+        self.dir_path = dataset_dir_path
+        self.lan_path = lan_file_path
+        self.d_num = d_num # number of disctractors
+
+        self.databatch_set = self.build_batches()
+        self.batch_indices = np.arange(len(self.databatch_set))
+
+    def __len__(self):
+        return len(self.databatch_set)
+    
+    def __getitem__(self, idx):
+        correct_batch = self.databatch_set[idx]
+
+        candidate_batches = [
+            self.generate_distractor_batch(idx) for _ in range(self.d_num+1)
+        ]
+
+        golden_idx = np.random.randint(0, high=self.d_num+1, size=(correct_batch['imgs'].shape[0]))
+
+        for i in range(correct_batch['imgs'].shape[0]):
+            candidate_batches[golden_idx[i]]['imgs'][i, :, :, :] = correct_batch['imgs'][i, :, :, :]
+            candidate_batches[golden_idx[i]]['label'][i] = correct_batch['label'][i]
+
+        golden_idx = torch.from_numpy(golden_idx).to(self.device).to(torch.long)
+
+        return {
+            'correct': correct_batch,
+            'candidates': candidate_batches,
+            'label': golden_idx
+        }
+
+    def generate_distractor_batch(self, tgt_idx):
+        sample_idx = np.random.choice(self.batch_indices)
+        while self.batch_size == 1 and sample_idx == tgt_idx:
+            sample_idx = np.random.choice(self.batch_indices)
+        
+        if sample_idx == tgt_idx:
+            return self.reperm_batch(tgt_idx)
+        else:
+            return self.databatch_set[sample_idx]
+
+    def reperm_batch(self, tgt_idx):
+        batch_size = self.databatch_set[tgt_idx]['imgs'].shape[0]
+
+        original_idx = torch.arange(batch_size, device=self.device)
+        new_idx = torch.randperm(batch_size, device=self.device)
+
+        while not (original_idx == new_idx).sum().eq(0):
+            new_idx = torch.randperm(batch_size, device=self.device)
+
+        shuffled_imgs = self.databatch_set[tgt_idx]['imgs'][new_idx]
+        shuffled_labels = [self.databatch_set[tgt_idx]['label'][i] for i in new_idx]
+
+        return {
+            'imgs': shuffled_imgs,
+            'label': shuffled_labels,
+        }
+
+    def msg_set2msg_indices(self, msg_set:list) -> list:
+        def _msgstring2indices_(msg):
+            return [int(c) for c in msg]
+        
+        msg_indices = [_msgstring2indices_(msg) for msg in msg_set]
+        
+        return msg_indices
+
+    def build_tensor_mask_lens_maxlen(self, indices_batch, value=args.pad_index):
+        padded_indices = PairDataset.pad(indices_batch)
+        
+        lens = torch.tensor([len(indices) for indices in indices_batch]).to(self.device)
+        max_len = max([len(indices) for indices in indices_batch])
+        
+        mask = PairDataset.build_mask(padded_indices, value)
+        mask = torch.ByteTensor(mask).to(self.device)
+
+        padded_indices = torch.LongTensor(padded_indices).to(self.device)
+        
+        return padded_indices, mask, lens, max_len
+
+    def build_batches(self):
+        batches = []
+
+        img_names, imgs = ImgChooseDataset.load_img_set(self.dir_path)
+        img_names = [name.split('.')[0] for name in img_names]
+
+        lan_pairs = PairDataset.load_pairset(self.lan_path)
+        language = {}
+        for pair in lan_pairs:
+            language[pair[0]] = pair[1]
+
+        assert len(img_names) == len(imgs)
+        c = list(zip(img_names, imgs))
+        random.shuffle(c)
+        img_names, imgs = zip(*c)
+        img_names = list(img_names)
+        imgs = list(imgs)
+
+        msg_set = [language[name] for name in img_names]
+        msg_indices = self.msg_set2msg_indices(msg_set)
+
+        # ceil/floor
+        if len(imgs) < self.batch_size:
+            num_batches = 1
+        else:
+            num_batches = math.floor(len(imgs) / self.batch_size)
+
+        for i in range(num_batches):
+            img_batch = ImgChooseDataset.build_img_tensors(
+                    imgs[i*self.batch_size: min((i+1)*self.batch_size, len(imgs))],
+                    device=self.device
+                )
+            img_label_batch = img_names[i*self.batch_size: min((i+1)*self.batch_size, len(imgs))]
+            msg_indices_batch = msg_indices[i*self.batch_size:min((i+1)*self.batch_size, len(imgs))]
+            msg_var, msg_mask, msg_len, _ = \
+                self.build_tensor_mask_lens_maxlen(msg_indices_batch, value=-1)
+
+            batches.append({
+                'imgs': img_batch,
+                'label': img_label_batch,
+                'message': msg_var,
+                'msg_mask': msg_mask,
+                'msg_lens': msg_len,
             })
 
         return batches
