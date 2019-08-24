@@ -19,8 +19,7 @@ def load_in_msg_pairs(file_path=MSG_FILE):
         line = line.strip()
         # in_str, msg, _ = line.split('\t')
         # msg = msg[:-1]
-        # msg, in_str = line.split('\t')
-        in_str, msg = line.split('\t')
+        msg, in_str = line.split('\t')
         im_pairs.append([in_str, msg])
 
     return im_pairs
@@ -139,7 +138,7 @@ def cal_topological_sim(
 
 def main():
     sim, p = cal_topological_sim(
-            msg_file_path='./data/img_languages/holistic6.txt',
+            msg_file_path='./data/img_languages/holistic0.txt',
             in_dis_measure='hamming',
             msg_dis_measure='edit',
             corr_method='spearman'

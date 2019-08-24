@@ -55,7 +55,7 @@ def generate_language_file(
 
     with open(out_file_path, 'a') as f:
         for idx in range(len(meaning_list)):
-            print(meaning_list[idx]+'\t'+message_list[idx], file=f)
+            print(message_list[idx]+'\t'+meaning_list[idx], file=f)
 
 if __name__ == '__main__':
     combines = []
