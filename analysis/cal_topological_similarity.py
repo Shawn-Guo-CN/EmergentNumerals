@@ -19,7 +19,8 @@ def load_in_msg_pairs(file_path=MSG_FILE):
         line = line.strip()
         # in_str, msg, _ = line.split('\t')
         # msg = msg[:-1]
-        msg, in_str = line.split('\t')
+        # msg, in_str = line.split('\t')
+        in_str, msg = line.split('\t')
         im_pairs.append([in_str, msg])
 
     return im_pairs
@@ -27,10 +28,16 @@ def load_in_msg_pairs(file_path=MSG_FILE):
 
 def in_ham_dis(in1, in2):
     dis = 0
-    for c in range(args.num_words):
-        cur_char = chr(65+c)
-        if not in1.count(cur_char) == in2.count(cur_char):
-            dis += 1
+
+    # for c in range(args.num_words):
+    #     cur_char = chr(65+c)
+    #     if not in1.count(cur_char) == in2.count(cur_char):
+    #         dis += 1
+
+    assert len(in1) == len(in2)
+    for idx in range(len(in1)):
+        if not in1[idx] == in2[idx]:
+            dis+=1
     return dis
 
 
@@ -59,7 +66,7 @@ def msg_ham_dis(msg1, msg2):
     return dis
 
 
-def msg_bleu_dis(msg1, msg2, weights=[0.9, 0.1, 0.0]):
+def msg_bleu_dis(msg1, msg2, weights=[0.5, 0.5, 0.0]):
     assert len(msg1) == len(msg2)
     assert len(weights) == len(msg1) - 1
     N = len(msg1) - 1
@@ -132,9 +139,9 @@ def cal_topological_sim(
 
 def main():
     sim, p = cal_topological_sim(
-            msg_file_path='./data/rebuilt_language_2_refer_IL.txt',
-            in_dis_measure='euclidean',
-            msg_dis_measure='bleu',
+            msg_file_path='./data/img_languages/holistic6.txt',
+            in_dis_measure='hamming',
+            msg_dis_measure='edit',
             corr_method='spearman'
         )
     print(sim)
