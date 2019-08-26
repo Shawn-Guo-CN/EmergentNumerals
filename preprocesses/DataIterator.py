@@ -6,6 +6,7 @@ import numpy as np
 import random
 import os
 import torchvision
+import copy
 from PIL import Image
 
 from utils.conf import args
@@ -287,7 +288,7 @@ class ChooseDataset(Dataset):
         if sample_idx == tgt_idx:
             return self.reperm_batch(tgt_idx)
         else:
-            return self.databatch_set[sample_idx]
+            return copy.deepcopy(self.databatch_set[sample_idx])
 
     def reperm_batch(self, tgt_idx):
         batch_size = self.databatch_set[tgt_idx]['input'].shape[1]
@@ -406,7 +407,7 @@ class ChoosePairDataset(Dataset):
         if sample_idx == tgt_idx:
             return self.reperm_batch(tgt_idx)
         else:
-            return self.databatch_set[sample_idx]
+            return copy.deepcopy(self.databatch_set[sample_idx])
 
     def reperm_batch(self, tgt_idx):
         batch_size = self.databatch_set[tgt_idx]['message'].shape[1]
@@ -539,7 +540,7 @@ class ImgChooseDataset(Dataset):
         if sample_idx == tgt_idx:
             return self.reperm_batch(tgt_idx)
         else:
-            return self.databatch_set[sample_idx]
+            return copy.deepcopy(self.databatch_set[sample_idx])
 
     def reperm_batch(self, tgt_idx):
         batch_size = self.databatch_set[tgt_idx]['imgs'].shape[0]
@@ -656,7 +657,7 @@ class ImgChoosePairDataset(Dataset):
         if sample_idx == tgt_idx:
             return self.reperm_batch(tgt_idx)
         else:
-            return self.databatch_set[sample_idx]
+            return copy.deepcopy(self.databatch_set[sample_idx])
 
     def reperm_batch(self, tgt_idx):
         batch_size = self.databatch_set[tgt_idx]['imgs'].shape[0]

@@ -62,10 +62,9 @@ class ListeningAgent(nn.Module):
 
 
 class Seq2Choose(nn.Module):
-    def __init__(self, voc_size, msg_length=args.max_msg_len, msg_vocsize=args.msg_vocsize, 
+    def __init__(self, msg_length=args.max_msg_len, msg_vocsize=args.msg_vocsize, 
                     hidden_size=args.hidden_size, dropout=args.dropout_ratio):
         super().__init__()
-        self.voc_size = voc_size
         self.msg_length = msg_length
         self.msg_vocsize = msg_vocsize
         self.hidden_size = hidden_size
@@ -118,10 +117,6 @@ def train_epoch(model, data_batch, m_optimizer, clip=args.clip):
 
 
 def train():
-    print('building vocabulary...')
-    voc = Voc()
-    print('done')
-
     print('loading data and building batches...')
     train_set = ImgChoosePairDataset(dataset_dir_path=args.train_file, lan_file_path=args.data_file)
     dev_set = ImgChoosePairDataset(dataset_dir_path=args.dev_file, lan_file_path=args.data_file)
@@ -132,7 +127,6 @@ def train():
         print('loading saved parameters from ' + args.param_file + '...')
         checkpoint = torch.load(args.param_file, map_location=args.device)
         train_args = checkpoint['args']
-        voc = checkpoint['voc']
         print('done')
 
         print('arguments for training:')
@@ -140,13 +134,13 @@ def train():
 
         print('rebuilding model...')
 
-        model = Seq2Choose(voc.num_words).to(args.device)
+        model = Seq2Choose().to(args.device)
         model.load_state_dict(checkpoint['model'])
         model_optimiser = train_args.optimiser(model.parameters(), lr=train_args.learning_rate)
         print('\tdone')
     else:
         print('building model...')
-        model = Seq2Choose(voc.num_words).to(args.device)
+        model = Seq2Choose().to(args.device)
         model_optimiser = args.optimiser(model.parameters(), lr=args.learning_rate)
         print('done')
     
@@ -201,7 +195,6 @@ def train():
                     model_optimiser.state_dict()
                 ],
                 'loss': loss,
-                'voc': voc,
                 'args': args,
                 'records': {
                     'training_loss': training_losses,
@@ -215,7 +208,4 @@ if __name__ == '__main__':
     set_random_seed(args.seed)
     with autograd.detect_anomaly():
         print('with detect_anomaly')
-        if args.test:
-            test()
-        else:
-            train()
+        train()
