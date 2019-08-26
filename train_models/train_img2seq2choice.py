@@ -71,6 +71,7 @@ def train():
     training_in_msg_sim = []
     training_in_lish_sim = []
     eval_acc = []
+    save_flag = False
     print('done')
 
     in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
@@ -109,6 +110,8 @@ def train():
             eval_acc.append(dev_acc)
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Acc: {:.4f}; Best Acc: {:.4f}".format(
                 iter, dev_loss, dev_acc, max_dev_acc))
+            if dev_acc > 0.99:
+                save_flag = True
 
         if iter % args.sim_chk_freq == 0:
             in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
@@ -120,7 +123,7 @@ def train():
             print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
                 iter, in_spk_sim, in_msg_sim, in_lis_sim))
         
-        if iter % args.save_freq == 0:
+        if iter % args.save_freq == 0 or save_flag:
             path_join = 'img2seq2choice_' + str(args.num_words) + '_' + args.msg_mode
             path_join += '_hard' if not args.soft else '_soft'
             directory = os.path.join(args.save_dir, path_join)
@@ -144,6 +147,7 @@ def train():
                     'eval_acc': eval_acc,
                 }
             }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, dev_acc, 'checkpoint')))
+            save_flag = False
 
 
 def test():
