@@ -706,7 +706,7 @@ class ImgChoosePairDataset(Dataset):
         lan_pairs = PairDataset.load_pairset(self.lan_path)
         language = {}
         for pair in lan_pairs:
-            language[pair[0]] = pair[1]
+            language[pair[1]] = pair[0]
 
         assert len(img_names) == len(imgs)
         c = list(zip(img_names, imgs))
