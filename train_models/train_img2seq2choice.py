@@ -110,7 +110,7 @@ def train():
             eval_acc.append(dev_acc)
             print("[EVAL]Iteration: {}; Loss: {:.4f}; Avg Acc: {:.4f}; Best Acc: {:.4f}".format(
                 iter, dev_loss, dev_acc, max_dev_acc))
-            if dev_acc > 0.99:
+            if len(eval_acc) > 10 and sum(eval[-10:]) / 10. > 1.01:
                 save_flag = True
 
         if iter % args.sim_chk_freq == 0:
