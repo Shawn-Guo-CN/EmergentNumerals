@@ -127,11 +127,12 @@ def train():
     training_in_spkh_sim = []
     training_in_msg_sim = []
     training_in_lish_sim = []
+    training_spkh_lish_sim = []
     eval_tok_acc = []
     eval_seq_acc = []
     print('done')
 
-    in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
+    in_spk_sim, in_msg_sim, in_lis_sim, spk_lis_sim = sim_check(
         model, sim_chk_inset, sim_chk_batchset
     )
     print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
@@ -184,12 +185,13 @@ def train():
                 iter, dev_loss, dev_seq_acc, dev_tok_acc, max_dev_seq_acc))
 
         if iter % args.sim_chk_freq == 0:
-            in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
+            in_spk_sim, in_msg_sim, in_lis_sim, spk_lis_sim = sim_check(
                 model, sim_chk_inset, sim_chk_batchset
             )
             training_in_spkh_sim.append(in_spk_sim)
             training_in_msg_sim.append(in_msg_sim)
             training_in_lish_sim.append(in_lis_sim)
+            training_spkh_lish_sim.append(spk_lis_sim)
             print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
                 0, in_spk_sim, in_msg_sim, in_lis_sim))
 
@@ -222,6 +224,7 @@ def train():
                     'training_in_spkh_sim': training_in_spkh_sim,
                     'training_in_msg_sim': training_in_msg_sim,
                     'training_in_lish_sim': training_in_lish_sim,
+                    'training_spkh_lish_sim': training_spkh_lish_sim,
                     'eval_tok_acc': eval_tok_acc,
                     'eval_seq_acc': eval_seq_acc
                 }

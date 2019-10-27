@@ -62,10 +62,10 @@ do
     # ================================================================================================================================
     # this part is to train speaker in img select game
     # train speaker to learn compositional language with len 2
-    python3 train_models/train_img_speaker.py -s $s -d 1 --iter 500 --save-freq 500 --eval-freq 11 --msg-vocsize 10 --max-msg-len 2 --save-dir params/test_speaker_learning_speed/imgs/comp --train-file data/img_set_25/ --dev-file data/img_set_25/ --data-file data/img_languages/compositional.txt
+    python3 train_models/train_img_speaker.py -s $s -d 1 --iter 500 --save-freq 500 --eval-freq 1 --msg-vocsize 10 --max-msg-len 2 --save-dir params/test_speaker_learning_speed/imgs/comp --train-file data/img_set_25/ --dev-file data/img_set_25/ --data-file data/img_languages/compositional.txt
     # train speaker to learn emergent language with len 2
-    python3 train_models/train_img_speaker.py -s $s -d 1 --iter 500 --save-freq 500 --eval-freq 11 --msg-vocsize 10 --max-msg-len 2 --save-dir params/test_speaker_learning_speed/imgs/emergent --train-file data/img_set_25/ --dev-file data/img_set_25/ --data-file data/img_languages/emergent.txt
+    python3 train_models/train_img_speaker.py -s $s -d 1 --iter 500 --save-freq 500 --eval-freq 1 --msg-vocsize 10 --max-msg-len 2 --save-dir params/test_speaker_learning_speed/imgs/emergent --train-file data/img_set_25/ --dev-file data/img_set_25/ --data-file data/img_languages/emergent.txt
     # train speaker to learn holistic language with len 2
-    python3 train_models/train_img_speaker.py -s $s -d 1 --iter 500 --save-freq 500 --eval-freq 11 --msg-vocsize 10 --max-msg-len 2 --save-dir params/test_speaker_learning_speed/imgs/holistic --train-file data/img_set_25/ --dev-file data/img_set_25/ --data-file data/img_languages/holistic6.txt
+    python3 train_models/train_img_speaker.py -s $s -d 1 --iter 500 --save-freq 500 --eval-freq 1 --msg-vocsize 10 --max-msg-len 2 --save-dir params/test_speaker_learning_speed/imgs/holistic --train-file data/img_set_25/ --dev-file data/img_set_25/ --data-file data/img_languages/holistic6.txt
 
 done

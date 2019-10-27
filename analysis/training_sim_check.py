@@ -47,14 +47,20 @@ def sim_check(
     lis_h_distances = check_distance_set(lis_h_distances)
 
     dis_table = pd.DataFrame(
-            {'MD': mean_distances, 'SHD': spk_h_distances, 'MSD': msg_distances, 'LHD': lis_h_distances}
+            {
+                'MD': mean_distances, 
+                'SHD': spk_h_distances,
+                'MSD': msg_distances,
+                'LHD': lis_h_distances
+            }
         )
     
     mean_spkh_corr = dis_table.corr(corr_measure)['MD']['SHD']
     mean_msg_corr = dis_table.corr(corr_measure)['MD']['MSD']
     mean_lish_corr = dis_table.corr(corr_measure)['MD']['LHD']
+    spkh_lish_corr = dis_table.corr(corr_measure)['SHD']['LHD']
 
-    return mean_spkh_corr, mean_msg_corr, mean_lish_corr
+    return mean_spkh_corr, mean_msg_corr, mean_lish_corr, spkh_lish_corr
 
 
 def check_distance_set(distances):
