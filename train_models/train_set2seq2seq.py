@@ -13,6 +13,7 @@ from models.Set2Seq2Seq import Set2Seq2Seq
 from preprocesses.DataIterator import FruitSeqDataset
 from preprocesses.Voc import Voc
 from analysis.training_sim_check import sim_check
+from analysis.training_mi_check import mi_check
 
 
 def get_batches4sim_check(voc, dataset_file_path=args.data_file):
@@ -128,6 +129,7 @@ def train():
     training_in_msg_sim = []
     training_in_lish_sim = []
     training_spkh_lish_sim = []
+    training_mi = []
     eval_tok_acc = []
     eval_seq_acc = []
     print('done')
@@ -135,8 +137,9 @@ def train():
     in_spk_sim, in_msg_sim, in_lis_sim, spk_lis_sim = sim_check(
         model, sim_chk_inset, sim_chk_batchset
     )
-    print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
-                0, in_spk_sim, in_msg_sim, in_lis_sim))
+    mi_sim = mi_check(model, sim_chk_batchset)
+    print('[SIM]Iteration: {}; In-SpkH Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisH Sim: {:.4f}; SpkH-LisH Sim: {:.4f}; In-Msg-MI: {:.4f}'.format(
+                0, in_spk_sim, in_msg_sim, in_lis_sim, spk_lis_sim, mi_sim))
 
     print('training...')
     for iter in range(start_iteration, args.iter_num+1):
@@ -188,12 +191,16 @@ def train():
             in_spk_sim, in_msg_sim, in_lis_sim, spk_lis_sim = sim_check(
                 model, sim_chk_inset, sim_chk_batchset
             )
+            mi_sim = mi_check(model, sim_chk_batchset)
+
             training_in_spkh_sim.append(in_spk_sim)
             training_in_msg_sim.append(in_msg_sim)
             training_in_lish_sim.append(in_lis_sim)
             training_spkh_lish_sim.append(spk_lis_sim)
-            print('[SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
-                0, in_spk_sim, in_msg_sim, in_lis_sim))
+            training_mi.append(mi_sim)
+            
+            print('[SIM]Iteration: {}; In-SpkH Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisH Sim: {:.4f}; SpkH-LisH Sim: {:.4f}; In-Msg-MI: {:.4f}'.format(
+                0, in_spk_sim, in_msg_sim, in_lis_sim, spk_lis_sim, mi_sim))
 
 
         if iter % args.l_reset_freq == 0 and not args.l_reset_freq == -1:
@@ -225,6 +232,7 @@ def train():
                     'training_in_msg_sim': training_in_msg_sim,
                     'training_in_lish_sim': training_in_lish_sim,
                     'training_spkh_lish_sim': training_spkh_lish_sim,
+                    'training_mi': training_mi,
                     'eval_tok_acc': eval_tok_acc,
                     'eval_seq_acc': eval_seq_acc
                 }

@@ -34,7 +34,7 @@ def reproduce_all_msg_distribution(
         if all_msg_distribution is None:
             all_msg_distribution = msg_distribution
         else:
-            all_msg_distribution = torch.concat((all_msg_distribution, msg_distribution), 0)
+            all_msg_distribution = torch.cat((all_msg_distribution, msg_distribution), 0)
     
     # shape of all_msg_distribution: [N_in, V^L]
     return all_msg_distribution
@@ -49,6 +49,7 @@ def batch_msg_probs_to_msg_distribution(batch_msg_probs):
             msg_distribution = batch_msg_probs[:, i, :]
         else:
             msg_distribution = torch.einsum('bi,bj->bij', (msg_distribution, batch_msg_probs[:, i, :]))
+            msg_distribution = torch.flatten(msg_distribution, start_dim=1)
     
     # shape of msg_distribution: [B, V^L] 
     return msg_distribution

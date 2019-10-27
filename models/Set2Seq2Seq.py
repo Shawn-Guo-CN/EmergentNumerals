@@ -267,6 +267,7 @@ class Set2Seq2Seq(nn.Module):
         input_mask = data_batch['input_mask']
         
         _, msg_logits, _ = self.speaker(input_var, input_mask)
+        msg_logits = torch.transpose(msg_logits, 0, 1)
 
         if resume_flag:
             self.train()

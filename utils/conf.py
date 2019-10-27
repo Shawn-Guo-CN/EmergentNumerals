@@ -18,14 +18,14 @@ defaults = {
     'TEACHER_FORCING_RATIO': 0.5,
     'SPEAKER_LEARNING_RATIO': 5.0,
     'LISTENER_LEARNING_RATIO': 0.0,
-    'NUM_ITERS': 40000,
+    'NUM_ITERS': 10000,
     'PRINT_EVERY': 1,
     'SAVE_EVERY': 10000,
-    'EVAL_EVERY': 10,
+    'EVAL_EVERY': 1,
     'OPTIMISER': optim.Adam,
     'LOSS_FUNCTION': nn.CrossEntropyLoss(reduce=False),
     'TEST_MODE': False,
-    'SAVE_DIR': './params/',
+    'SAVE_DIR': './params/mi_compare/',
     'PARAM_FILE': '',
     'DATA_FILE_PATH': './data/2/all_data.txt',
     'TRAIN_FILE_PATH': './data/2/train.txt',
@@ -37,16 +37,16 @@ defaults = {
     'SOS_INDEX': 1,  # SOS token index
     'EOS_TOKEN': 'EOS', # End-of-sequence token
     'EOS_INDEX': 2, # EOS token index
-    'NUM_WORD': 2, # Number of different characters
-    'MAX_LEN_WORD': 5,
+    'NUM_WORD': 10, # Number of different characters
+    'MAX_LEN_WORD': 4,
     'HIDDEN_SIZE': 256,
     'BATCH_SIZE': 128,
     'MSG_MODE': 'GUMBEL', # 'SOFTMAX', 'GUMBEL', 'SCST' or 'REINFORCE'
-    'MSG_TAU': 1.,
+    'MSG_TAU': 2.,
     'L_RESET_FREQ': -1,
-    'SIM_CHK_FREQ': 1000,
+    'SIM_CHK_FREQ': 1,
     'SIM_CHK_K': 50,
-    'NUM_DISCTRACTOR': 4,
+    'NUM_DISCTRACTOR': 14,
     'NUM_GENERATION': 50,
     'NUM_PLAYITER': 250,
     'NUM_SPKLEARNITER': 20,
