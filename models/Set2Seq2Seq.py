@@ -255,3 +255,21 @@ class Set2Seq2Seq(nn.Module):
             self.msg_vocsize, self.hidden_size, self.voc_size,
             self.dropout, self.embedding, self.msg_embedding,
         ).to(self.speaker.embedding.weight.device)
+
+    def reproduce_msg_probs(self, data_batch):
+        if self.training:
+            self.eval()
+            resume_flag = True
+        else:
+            resume_flag = False
+
+        input_var = data_batch['input']
+        input_mask = data_batch['input_mask']
+        
+        _, msg_logits, _ = self.speaker(input_var, input_mask)
+
+        if resume_flag:
+            self.train()
+
+        # Shape of return is [B, L_M, V_M] TODO: check this
+        return F.softmax(msg_logits, dim=2)
