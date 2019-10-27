@@ -10,12 +10,10 @@ def mi_check(
     batch_set,
 ):
     in_msg_prob_matrix = reproduce_all_msg_distribution(model, batch_set)
-    # TODO: check that the shape of all_msg_distribution is [N_in, N_msg]
 
     log_in_msg_prob_matrix = torch.log(in_msg_prob_matrix)
-    # TODO: check the device of following operations
+    
     log_in_msg_prob_matrix += math.log(in_msg_prob_matrix.shape[1])
-
     in_msg_mi = (in_msg_prob_matrix * log_in_msg_prob_matrix).sum() / in_msg_prob_matrix.shape[0]
 
     return in_msg_mi

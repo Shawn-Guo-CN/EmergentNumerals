@@ -196,3 +196,22 @@ class Set2Seq2Choice(nn.Module):
             self.voc_size, self.msg_vocsize, self.hidden_size,
             self.dropout, self.embedding, self.msg_embedding,
         ).to(self.speaker.embedding.weight.device)
+
+    def reproduce_msg_probs(self, data_batch):
+        if self.training:
+            self.eval()
+            resume_flag = True
+        else:
+            resume_flag = False
+
+        correct_data = data_batch['correct']
+        input_var = correct_data['input']
+        input_mask = correct_data['input_mask']
+        
+        _, msg_logits, _ = self.speaker(input_var, input_mask)
+        msg_logits = torch.transpose(msg_logits, 0, 1)
+
+        if resume_flag:
+            self.train()
+        # Shape of return is [B, L_M, V_M]
+        return F.softmax(msg_logits, dim=2)

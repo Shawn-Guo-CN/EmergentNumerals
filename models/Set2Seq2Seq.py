@@ -272,5 +272,5 @@ class Set2Seq2Seq(nn.Module):
         if resume_flag:
             self.train()
 
-        # Shape of return is [B, L_M, V_M] TODO: check this
+        # Shape of return is [B, L_M, V_M]
         return F.softmax(msg_logits, dim=2)
