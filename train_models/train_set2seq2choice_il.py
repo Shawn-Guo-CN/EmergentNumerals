@@ -30,6 +30,7 @@ def game_play_phase(
     training_in_spkh_sim = []
     training_in_msg_sim = []
     training_in_lish_sim = []
+    training_spk_lis_sim = []
     eval_acc = []
 
     num_play_iter = args.num_play_iter+1 # if not generation_idx == args.num_generation else args.num_play_iter*3+1
@@ -72,19 +73,20 @@ def game_play_phase(
                 generation_idx, iter, dev_loss, dev_acc, max_dev_acc))
 
         if iter % args.sim_chk_freq == 0 or break_flag:
-            in_spk_sim, in_msg_sim, in_lis_sim = sim_check(
+            in_spk_sim, in_msg_sim, in_lis_sim, spk_lis_sim = sim_check(
                 model, sim_chk_inset, sim_chk_batchset
             )
             training_in_spkh_sim.append(in_spk_sim)
             training_in_msg_sim.append(in_msg_sim)
             training_in_lish_sim.append(in_lis_sim)
+            training_spk_lis_sim.append(spk_lis_sim)
             print('Generation: {}; [SIM]Iteration: {}; In-SpkHidden Sim: {:.4f}; In-Msg Sim: {:.4f}; In-LisHidden Sim: {:.4f}'.format(
                 generation_idx, iter, in_spk_sim, in_msg_sim, in_lis_sim))
 
         if break_flag:
             break
 
-    return training_losses, training_acc, training_in_spkh_sim, training_in_msg_sim, training_in_lish_sim, eval_acc
+    return training_losses, training_acc, training_in_spkh_sim, training_in_msg_sim, training_in_lish_sim, training_spk_lis_sim, eval_acc
 
 
 def listener_warming_up_phase(
@@ -179,7 +181,7 @@ def train_generation(
                                         lr=args.learning_rate * args.listener_ratio)
 
     training_losses, training_acc, training_in_spkh_sim, training_in_msg_sim, \
-        training_in_lish_sim, eval_acc = \
+        training_in_lish_sim, training_spk_lis_sim, eval_acc = \
             game_play_phase(model, train_set, dev_set, sim_chk_inset, sim_chk_batchset, m_optimiser, s_optimiser, l_optimiser, clip, generation_idx)
 
     if not generation_idx == args.num_generation:
@@ -282,6 +284,7 @@ def train():
     training_in_spkh_sim = []
     training_in_msg_sim = []
     training_in_lish_sim = []
+    training_spk_lis_sim = []
     eval_acc = []
     print('done')
 
@@ -303,7 +306,8 @@ def train():
         training_in_spkh_sim += training_records[2]
         training_in_msg_sim+= training_records[3]
         training_in_lish_sim += training_records[4]
-        eval_acc += training_records[5]
+        training_spk_lis_sim += training_records[5]
+        eval_acc += training_records[6]
         
         if iter % args.save_freq == 0:
             path_join = 'set2seq2choice_' + str(args.num_words) + '_' + args.msg_mode
@@ -322,6 +326,7 @@ def train():
                     'training_in_spkh_sim': training_in_spkh_sim,
                     'training_in_msg_sim': training_in_msg_sim,
                     'training_in_lish_sim': training_in_lish_sim,
+                    'training_spkh_lish_sim': training_spk_lis_sim,
                     'eval_acc': eval_acc,
                 }
             }, os.path.join(directory, '{}_{:.4f}_{}.tar'.format(iter, eval_acc[-1], 'checkpoint')))
